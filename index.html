@@ -40,14 +40,29 @@
         title: 'FieldObservation',
         type: 'object',
         properties: {
-            observer: {
-                title: 'Observer',
+            plant: {
+                title: 'Plant',
                 type: 'string'
             },
-            location: {
-                title: 'Location',
+            reference: {
+                title: 'Reference',
                 type: 'string',
-                unit: '[1]'
+                format: 'uri'
+            },
+            observer: {
+                title: 'Observer',
+                type: 'string',
+                enum: ['Frida Krum', 'Tilda Swift']
+            },
+            latitude : {
+                title: 'Latitude',
+                type: 'number',
+                unit: '[DD]'
+            },
+			longitude : {
+                title: 'Longitude',
+                type: 'number',
+                unit: '[DD]'
             },
             measurements: {
                 $ref: 'measurementsSchema'
@@ -66,19 +81,22 @@
                 type: 'object',
                 items: [  // tuple schema
                     {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
-                    {title: 'Age', width: 100, type: 'number'},
-                    {title: 'Weight', width: 100, type: 'number'}
+                    {title: 'Age [d]', width: 100, type: 'number'},
+                    {title: 'Weight [g]', width: 100, type: 'number'}
                 ]
             }
         };
 
     let data = {
+        plant: 'Rubus idaeus',
+        reference: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
         observer: 'Frida Krum',
-        location: 'DE',
+        latitude: 41.40338,
+		longitude: 2.17403,
         measurements: [
-            [new Date(2019, 1, 1), 0, 0],
-            [new Date(2019, 1, 2), 1, 2],
-            [new Date(2019, 1, 3), 2, 4]
+            [new Date(2019, 2, 1), 0, 0],
+            [new Date(2019, 2, 2), 1, 2],
+            [new Date(2019, 2, 3), 2, 4]
         ],
         signature: ''
     };
