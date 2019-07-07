@@ -8,6 +8,10 @@
             font-family: sans-serif;
             margin: 1em;
         }
+        textarea {
+            width:30%;
+            height: 15em;
+        }
         /* See https://alligator.io/css/css-grid-layout-span-keyword/ */
         .fieldContainer {
             display: grid;
@@ -23,13 +27,16 @@
 </head>
 <body>
 
+<textarea class="schema"></textarea>
+<textarea class="data"></textarea>
+<textarea class="patch"></textarea>
 <div id="myform"></div>
 
 </body>
 <script type="module">
     import {bind} from "./modules/FormChen.js"
 
-    const schema = {
+    let schema = {
         title: 'FieldObservation',
         type: 'object',
         properties: {
@@ -52,7 +59,7 @@
         }
     };
 
-    const measurementsSchema = {
+    let measurementsSchema = {
             title: 'Measurements',
             type: 'object',
             items: {
@@ -65,7 +72,7 @@
             }
         };
 
-    const obj = {
+    let data = {
         observer: 'Frida Krum',
         location: 'DE',
         measurements: [
@@ -76,8 +83,48 @@
         signature: ''
     };
 
-    const containerElement = document.getElementById('myform');
-    bind({measurementsSchema}, schema, obj, [], containerElement, () => null);
+    let patchesByPath;
+
+    document.querySelector('.schema').value = JSON.stringify(schema, null, 2);
+    document.querySelector('.data').value = JSON.stringify(data, null, 2);
+
+    document.querySelector('.schema').oninput = rebind;
+    document.querySelector('.data').oninput = rebind;
+
+    function rebind() {
+        patchesByPath = {};
+        const containerElement = document.getElementById('myform');
+
+        try {
+            schema = JSON.parse(document.querySelector('.schema').value);
+        } catch(e) {
+            containerElement.textContent = String(e);
+            //const position  = parseInt(e.message.split(' ').pop());
+            //document.querySelector('.schema').setSelectionRange(position, position+1);
+            return;
+        }
+
+        try {
+            data = JSON.parse(document.querySelector('.data').value);
+        } catch(e) {
+            containerElement.textContent = String(e);
+            //const position  = parseInt(e.message.split(' ').pop());
+            //document.querySelector('.data').setSelectionRange(position+1, position+2);
+            return;
+        }
+
+        containerElement.textContent = '';
+        bind({measurementsSchema}, schema, data, [], containerElement, changeHandler);
+    }
+
+    function changeHandler(pointer, newValue) {
+        const path = '/' + pointer.join('/');
+        patchesByPath[path] = newValue;
+        const patch = Object.entries(patchesByPath).map(([path, value]) => ({op: 'replace', path: path, value: value}));
+        document.querySelector('.patch').value = JSON.stringify(patch, null, 2);
+    }
+
+    rebind();
 
 </script>
 </html>

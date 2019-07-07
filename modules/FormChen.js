@@ -1,5 +1,5 @@
-import "../site-modules/GridChen.js"
-import {createView} from "../site-modules/DataViews.js";
+import "/GridChen/modules/GridChen.js"
+import {createView} from "/GridChen/modules/DataViews.js";
 
 /**
  * @param {number} duration in seconds
@@ -21,27 +21,7 @@ import {createView} from "../site-modules/DataViews.js";
     }
 }*/
 
-/**
- *
- * @param {{items?:object, properties?:object}} schema
- * @returns {boolean}
- */
-function sniffMatrixSchema(schema) {
-    if (schema.items) {
-        // Array of Row Arrays, Array of Row Objects, Array of Column Arrays
-        return true;
-    }
-
-    if (!schema.properties) return false;
-
-    for (const item of Object.values(schema.properties)) {
-        if (!item.items) return false;
-    }
-
-    // Object of columns.
-    return true;
-}
-
+let labelCount = 0;
 /**
  * @param {{}} schemas
  * @param {{properties: Array<>, title: String}} schema
@@ -69,7 +49,10 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
             childSchema = schemas[childSchema['$ref']];
         }
         const value = obj ? obj[key] : undefined;
-        if (sniffMatrixSchema(childSchema)) {
+        // If view cannot be created, schema is not a valid grid schema.
+        const view = createView(childSchema, value);
+
+        if (!(view instanceof Error)) {
             const label = document.createElement('label');
             label.className = 'gridLabel';
             //const title = document.createElement('span');
@@ -79,9 +62,9 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
             grid.resetFromView(createView(childSchema, value));
             fieldContainer.appendChild(label);
             fieldContainer.appendChild(grid);
-            /*grid.addEventListener('datachanged', function () {
-                onDataChanged(childPointer, matrix);
-            });*/
+            grid.setEventListener('datachanged', function () {
+                onDataChanged(childPointer, value);
+            });
         } else if (childSchema.type === 'object') {
             bind(schemas, childSchema, value, childPointer, fieldset, onDataChanged);
         } else {
@@ -157,6 +140,8 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                 label.appendChild(unit);
             }
 
+            label.setAttribute('for', 'formchen-' + (labelCount));
+            input.id = 'formchen-' + (labelCount++);
             fieldContainer.appendChild(label);
             fieldContainer.appendChild(input);
         }
