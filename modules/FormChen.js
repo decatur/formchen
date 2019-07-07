@@ -56,6 +56,9 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
     const legend = document.createElement('legend');
     legend.textContent = schema.title;
     fieldset.appendChild(legend);
+    const fieldContainer = document.createElement('div');
+    fieldContainer.className = 'fieldContainer';
+    fieldset.appendChild(fieldContainer);
 
     for (let key in properties) {
         console.log('bind: ' + key);
@@ -68,14 +71,14 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
         const value = obj ? obj[key] : undefined;
         if (sniffMatrixSchema(childSchema)) {
             const label = document.createElement('label');
-            const title = document.createElement('span');
-            title.textContent = childSchema.title;
+            label.className = 'gridLabel';
+            //const title = document.createElement('span');
+            label.textContent = childSchema.title;
             const grid = document.createElement('grid-chen');
             grid.style.height = '100px';
             grid.resetFromView(createView(childSchema, value));
-            label.appendChild(title);
-            label.appendChild(grid);
-            fieldset.appendChild(label);
+            fieldContainer.appendChild(label);
+            fieldContainer.appendChild(grid);
             /*grid.addEventListener('datachanged', function () {
                 onDataChanged(childPointer, matrix);
             });*/
@@ -83,7 +86,6 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
             bind(schemas, childSchema, value, childPointer, fieldset, onDataChanged);
         } else {
             const label = document.createElement('label');
-            const title = document.createElement('span');
             let input;
 
             if (childSchema.type === 'boolean') {
@@ -142,9 +144,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                 onDataChanged(childPointer, newValue);
             };
 
-            title.textContent = childSchema.title || key;
-            label.appendChild(title);
-            label.appendChild(input);
+            label.textContent = childSchema.title || key;
 
             if (childSchema.comment || childSchema.description) {
                 label.title = childSchema.comment || childSchema.description;
@@ -152,12 +152,13 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
 
             if (childSchema.unit) {
                 const unit = document.createElement('span');
-                unit.style.marginLeft = '2pt';
+                unit.className = 'unit';
                 unit.textContent = childSchema.unit;
                 label.appendChild(unit);
             }
 
-            fieldset.appendChild(label);
+            fieldContainer.appendChild(label);
+            fieldContainer.appendChild(input);
         }
         containerElement.appendChild(fieldset);
     }

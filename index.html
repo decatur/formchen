@@ -2,10 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>FormChen</title>
     <style>
+        body {
+            font-family: sans-serif;
+            margin: 1em;
+        }
+        /* See https://alligator.io/css/css-grid-layout-span-keyword/ */
+        .fieldContainer {
+            display: grid;
+            grid-template-columns: 200px 200px;
+        }
         label {
-            display: block;
+            text-align: left;
+        }
+        .gridLabel, grid-chen {
+            grid-area: span 1 / span 2;
+        }
+        .unit {
+            float: right;
         }
     </style>
 </head>
@@ -27,10 +42,15 @@
             },
             location: {
                 title: 'Location',
-                type: 'string'
+                type: 'string',
+                unit: '[1]'
             },
             measurements: {
                 $ref: 'measurementsSchema'
+            },
+            signature: {
+                title: 'Signature',
+                type: 'string'
             }
         }
     };
@@ -55,7 +75,8 @@
             [new Date(2019, 1, 1), 0, 0],
             [new Date(2019, 1, 2), 1, 2],
             [new Date(2019, 1, 3), 2, 4]
-        ]
+        ],
+        signature: ''
     };
 
     const containerElement = document.getElementById('myform');
