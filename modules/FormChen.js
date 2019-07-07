@@ -1,4 +1,5 @@
-import {} from "./gridchen.js"
+import "../site-modules/GridChen.js"
+import {createView} from "../site-modules/DataViews.js";
 
 /**
  * @param {number} duration in seconds
@@ -19,6 +20,27 @@ import {} from "./gridchen.js"
         duration /= nextUnit[1]
     }
 }*/
+
+/**
+ *
+ * @param {{items?:object, properties?:object}} schema
+ * @returns {boolean}
+ */
+function sniffMatrixSchema(schema) {
+    if (schema.items) {
+        // Array of Row Arrays, Array of Row Objects, Array of Column Arrays
+        return true;
+    }
+
+    if (!schema.properties) return false;
+
+    for (const item of Object.values(schema.properties)) {
+        if (!item.items) return false;
+    }
+
+    // Object of columns.
+    return true;
+}
 
 /**
  * @param {{}} schemas
@@ -44,7 +66,20 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
             childSchema = schemas[childSchema['$ref']];
         }
         const value = obj ? obj[key] : undefined;
-        if (childSchema.type === 'object' && !childSchema.format) {
+        if (sniffMatrixSchema(childSchema)) {
+            const label = document.createElement('label');
+            const title = document.createElement('span');
+            title.textContent = childSchema.title;
+            const grid = document.createElement('grid-chen');
+            grid.style.height = '100px';
+            grid.resetFromView(createView(childSchema, value));
+            label.appendChild(title);
+            label.appendChild(grid);
+            fieldset.appendChild(label);
+            /*grid.addEventListener('datachanged', function () {
+                onDataChanged(childPointer, matrix);
+            });*/
+        } else if (childSchema.type === 'object') {
             bind(schemas, childSchema, value, childPointer, fieldset, onDataChanged);
         } else {
             const label = document.createElement('label');
@@ -61,44 +96,6 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                     const option = document.createElement('option');
                     option.textContent = optionName;
                     input.appendChild(option);
-                });
-            } else if (childSchema.type === 'array') {
-                input = document.createElement('grid-chen');
-                input.style.height = '100px';
-                let colSchemas;
-                let matrix = [];
-                if (childSchema.items.items) {
-                    colSchemas = childSchema.items.items;
-                    if (value !== undefined) {
-                        matrix = value;
-                    }
-                } else if (childSchema.items.properties) {
-                    colSchemas = Object.keys(childSchema.items.properties).map(function (id) {
-                        const colSchema = childSchema.items.properties[id];
-                        colSchema.title = colSchema.title || id;
-                        colSchema._id = id;
-                        return colSchema;
-                    });
-                    if (value !== undefined) {
-                        // TODO: Use map().
-                        value.forEach(function (item) {
-                            matrix.push(colSchemas.map((schema) => item[schema._id]));
-                        });
-                    }
-                } else if (childSchema.items.type !== 'object') {
-                    colSchemas = [childSchema.items];
-                    if (value !== undefined) {
-                        value.forEach((item) => matrix.push[item]);
-                    }
-                }
-
-                colSchemas.forEach(function (schema) {
-                    schema.width = schema.title.length * 12;
-                    if (schema.type === 'object') schema.type = schema.format;
-                });
-                input.resetFromMatrix(colSchemas, matrix);
-                input.addEventListener('datachanged', function () {
-                    onDataChanged(childPointer, matrix);
                 });
             } else {
                 input = document.createElement('input');
@@ -144,6 +141,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                 }
                 onDataChanged(childPointer, newValue);
             };
+
             title.textContent = childSchema.title || key;
             label.appendChild(title);
             label.appendChild(input);
