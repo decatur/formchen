@@ -62,23 +62,31 @@
                 type: 'string',
                 enum: ['Frida Krum', 'Tilda Swift']
             },
+            start: {
+                title: 'Started',
+                type: 'string',
+                format: 'datetime'
+            },
             latitude : {
                 title: 'Latitude',
                 type: 'number',
-                unit: '[DD]'
+                unit: '[DD]',
+                fractionDigits: 5
             },
 			longitude : {
                 title: 'Longitude',
                 type: 'number',
-                unit: '[DD]'
+                unit: '[DD]',
+                fractionDigits: 5
             },
             measurements: {
                 $ref: 'measurementsSchema'
             },
-            signature: {
-                title: 'Signature',
-                type: 'string'
-            }
+            isCompleted: {
+                title: 'Is Completed',
+                type: 'boolean'
+            },
+
         }
     };
 
@@ -99,14 +107,14 @@
         plant: 'Rubus idaeus',
         reference: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
         observer: 'Frida Krum',
+        start: '2019-01-01T00:00Z',
         latitude: 41.40338,
 		longitude: 2.17403,
         measurements: [
             [new Date(2019, 2, 1), 0, 0],
             [new Date(2019, 2, 2), 1, 2],
             [new Date(2019, 2, 3), 2, 4]
-        ],
-        signature: ''
+        ]
     };
 
     let patchesByPath;
