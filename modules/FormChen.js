@@ -1,5 +1,6 @@
-import "/GridChen/modules/GridChen.js"
-import {createView} from "/GridChen/modules/DataViews.js";
+import "./GridChen.js"
+import {createView} from "./DataViews.js";
+import {NumberStringConverter, DateTimeStringConverter} from "./converter.js";
 
 /**
  * @param {number} duration in seconds
@@ -22,6 +23,7 @@ import {createView} from "/GridChen/modules/DataViews.js";
 }*/
 
 let labelCount = 0;
+
 /**
  * @param {{}} schemas
  * @param {{properties: Array<>, title: String}} schema
@@ -91,12 +93,28 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
 
                 if (value === undefined) {
                     input.value = '';
-                } else if (childSchema.unit === '%') {
-                    input.value = 100 * value;
-                } else if (childSchema.format === 'date-time') {
-                    input.value = new Date(value).toLocaleString();
+                } else if (childSchema.type === 'integer') {
+                    if (!childSchema.converter) {
+                        childSchema.converter = new NumberStringConverter(0);
+                    }
+                    input.value = childSchema.converter.toEditable(Number(value));
+                } else if (childSchema.type === 'number') {
+                    if (!childSchema.converter) {
+                        childSchema.converter = new NumberStringConverter(childSchema.fractionDigits || 2);
+                    }
+                    let n = Number(value);
+                    if (childSchema.unit === '%') {
+                        n *= 100;
+                    }
+                    input.value = childSchema.converter.toEditable(n);
+                } else if (childSchema.format === 'datetime') {
+                    if (!childSchema.converter) {
+                        childSchema.converter = new DateTimeStringConverter();
+                    }
+                    input.value = childSchema.converter.toEditable(value);
                 } else {
-                    input.value = value;
+                    // TODO: date, datetimelocal, uri, frequency
+                    input.value = String(value);
                 }
             }
 
@@ -104,24 +122,15 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
             input.style.width = '25ex';
 
             input.onchange = function () {
-                let newValue = input.value.trim();
-                if (childSchema.type === 'array') {
-                    newValue = newValue.split(',').map(function (item) {
-                        return item.trim()
-                    });
-                } else if (childSchema.type === 'boolean') {
+                let newValue;
+                if (childSchema.type === 'boolean') {
                     newValue = input.checked;
-                } else if (childSchema.type === 'number' || childSchema.type === 'integer') {
+                } else {
+                    newValue = input.value.trim();
                     if (newValue === '') {
                         newValue = null;
-                    } else {
-                        newValue = Number(newValue.replace(',', '.'));
-                        if (isNaN(newValue)) {
-                            throw Error('Invalid number: ' + input.value);
-                        }
-                        if (childSchema.unit === '%') {
-                            newValue /= 100;
-                        }
+                    } else if (childSchema.type === 'number' && childSchema.unit === '%') {
+                        newValue /= 100;
                     }
                 }
                 onDataChanged(childPointer, newValue);
@@ -149,39 +158,3 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
     }
 }
 
-/**
- * Disable all child buttons of the form
- * @param {HTMLFormElement} form
- */
-export function disableButtons(form) {
-    const buttons = form.querySelectorAll('button');
-    for (let i = 0; i < buttons.length; i++) {
-        buttons[i].disabled = true;
-    }
-}
-
-/**
- * Set the button to busy state.
- * @param {HTMLButtonElement} button
- */
-export function busy(button) {
-    // Remember idle text content.
-    button.dataset['orgTextContent'] = button.textContent;
-    button.textContent = '⌛';
-}
-
-/**
- * Enable all child buttons of the form
- * @param {HTMLFormElement} form
- */
-export function enableButtons(form) {
-    const buttons = form.querySelectorAll('button');
-    for (let i = 0; i < buttons.length; i++) {
-        /** @type {HTMLButtonElement} */
-        const button = buttons.item(i);
-        button.disabled = false;
-        if ('orgTextContent' in button.dataset) {
-            button.textContent = button.dataset['orgTextContent'];
-        }
-    }
-}
