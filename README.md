@@ -7,9 +7,9 @@ See https://decatur.github.io/FormChen
 
 # CSS Styling
 
-The generated form is optimized for CSS Grid styling. 
+The generated form is optimized for [CSS Grid Layout](https://developer.mozilla.org/de/docs/Web/CSS/CSS_Grid_Layout). 
 
-Note: Do not confuse Grid styling with the grid-chen web component.
+Note: Do not confuse CSS Grid Layout with the [GridChen](https://github.com/decatur/GridChen) web component.
 
 The following classes are used.
 
