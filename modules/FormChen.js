@@ -23,16 +23,22 @@ import {NumberStringConverter, DateTimeStringConverter} from "./converter.js";
 }*/
 
 let labelCount = 0;
+let topSchema;
+
+function getVal(obj, myPath){
+    return myPath.split('/').reduce ( (res, prop) => res[prop], obj );
+}
 
 /**
- * @param {{}} schemas
  * @param {{properties: Array<>, title: String}} schema
  * @param {Object} obj
  * @param {Array<String>} pointer
  * @param {Element} containerElement
  * @param onDataChanged
  */
-export function bind(schemas, schema, obj, pointer, containerElement, onDataChanged) {
+export function bind(schema, obj, pointer, containerElement, onDataChanged) {
+    if (pointer.length === 0) topSchema = schema;
+
     const properties = schema.properties || [];
     const fieldset = document.createElement('fieldset');
     const legend = document.createElement('legend');
@@ -48,7 +54,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
         let childSchema = properties[key];
         if ('$ref' in childSchema) {
             // Resolve reference. TODO: Report unresolved reference.
-            childSchema = schemas[childSchema['$ref']];
+            childSchema = getVal(topSchema, childSchema['$ref'].substr(2));
         }
         const value = obj ? obj[key] : undefined;
         // If view cannot be created, schema is not a valid grid schema.
@@ -68,7 +74,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                 onDataChanged(childPointer, value);
             });
         } else if (childSchema.type === 'object') {
-            bind(schemas, childSchema, value, childPointer, fieldset, onDataChanged);
+            bind(childSchema, value, childPointer, fieldset, onDataChanged);
         } else {
             const label = document.createElement('label');
             let input;
