@@ -9,31 +9,45 @@
             margin: 2em;
             background-color: aliceblue;
         }
+
         textarea {
-            width:30%;
+            width: 30%;
             height: 15em;
         }
+
         /* See https://alligator.io/css/css-grid-layout-span-keyword/ */
         .fieldContainer {
             display: grid;
             grid-template-columns: 200px 200px;
         }
+
         .gridLabel, grid-chen {
             grid-area: span 1 / span 2;
         }
+
         .unit {
             float: right;
         }
     </style>
 </head>
 <body>
-	
+
 <h1>FormChen Demo</h1>
-	
+
 <p>
     Extreme lightweight web form generator for hierarchical and grid data.
-    See the repository <a href="https://github.com/decatur/FormChen">https://github.com/decatur/FormChen</a> for details.
-</p>	
+    See the repository <a href="https://github.com/decatur/FormChen">https://github.com/decatur/FormChen</a> for
+    details.
+</p>
+
+<form>
+    <label>sample1
+        <input type="radio" name="data" value="./demos/sample1.mjs">
+    </label>
+    <label>sample2
+        <input type="radio" name="data" value="./demos/sample2.mjs">
+    </label>
+</form>
 
 <textarea class="schema"></textarea>
 <textarea class="data"></textarea>
@@ -44,111 +58,50 @@
 <script type="module">
     import {bind} from "./modules/FormChen.js"
 
-    let schema = {
-        title: 'FieldObservation',
-        type: 'object',
-        properties: {
-            plant: {
-                title: 'Plant',
-                type: 'string'
-            },
-            reference: {
-                title: 'Reference',
-                type: 'string',
-                format: 'uri'
-            },
-            observer: {
-                title: 'Observer',
-                type: 'string',
-                enum: ['Frida Krum', 'Tilda Swift']
-            },
-            start: {
-                title: 'Started',
-                type: 'string',
-                format: 'datetime'
-            },
-            latitude : {
-                title: 'Latitude',
-                type: 'number',
-                unit: '[DD]',
-                fractionDigits: 5
-            },
-			longitude : {
-                title: 'Longitude',
-                type: 'number',
-                unit: '[DD]',
-                fractionDigits: 5
-            },
-            measurements: {
-                $ref: 'measurementsSchema'
-            },
-            isCompleted: {
-                title: 'Is Completed',
-                type: 'boolean'
-            },
+    Array.from(document.querySelectorAll('input[type="radio"]')).forEach(function(input) {
+        input.onchange = () => bar(input.value);
+    });
 
-        }
-    };
-
-    let measurementsSchema = {
-            title: 'Measurements',
-            type: 'object',
-            items: {
-                type: 'object',
-                items: [  // tuple schema
-                    {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
-                    {title: 'Age [d]', width: 100, type: 'number'},
-                    {title: 'Weight [g]', width: 100, type: 'number'}
-                ]
-            }
-        };
-
-    let data = {
-        plant: 'Rubus idaeus',
-        reference: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
-        observer: 'Frida Krum',
-        start: '2019-01-01T00:00Z',
-        latitude: 41.40338,
-		longitude: 2.17403,
-        measurements: [
-            [new Date(2019, 2, 1), 0, 0],
-            [new Date(2019, 2, 2), 1, 2],
-            [new Date(2019, 2, 3), 2, 4]
-        ]
-    };
+    function bar(moduleName) {
+        document.querySelector('.schema').value = '';
+        import(moduleName)
+            .then((module) => {
+                document.querySelector('.schema').value = JSON.stringify(module.schema, null, 2);
+                document.querySelector('.data').value = JSON.stringify(module.data, null, 2);
+                rebind();
+            })
+            .catch(() => alert('failed'));
+    }
 
     let patchesByPath;
-
-    document.querySelector('.schema').value = JSON.stringify(schema, null, 2);
-    document.querySelector('.data').value = JSON.stringify(data, null, 2);
-
     document.querySelector('.schema').oninput = rebind;
     document.querySelector('.data').oninput = rebind;
 
     function rebind() {
         patchesByPath = {};
         const containerElement = document.getElementById('myform');
+        let schema;
 
         try {
             schema = JSON.parse(document.querySelector('.schema').value);
-        } catch(e) {
+        } catch (e) {
             containerElement.textContent = String(e);
             //const position  = parseInt(e.message.split(' ').pop());
             //document.querySelector('.schema').setSelectionRange(position, position+1);
             return;
         }
 
+        let data;
+
         try {
             data = JSON.parse(document.querySelector('.data').value);
-        } catch(e) {
+        } catch (e) {
             containerElement.textContent = String(e);
-            //const position  = parseInt(e.message.split(' ').pop());
-            //document.querySelector('.data').setSelectionRange(position+1, position+2);
             return;
         }
 
         containerElement.textContent = '';
-        bind({measurementsSchema}, schema, data, [], containerElement, changeHandler);
+        bind(schema, data, [], containerElement, changeHandler);
     }
 
     function changeHandler(pointer, newValue) {
@@ -158,7 +111,6 @@
         document.querySelector('.patch').value = JSON.stringify(patch, null, 2);
     }
 
-    rebind();
 
 </script>
 </html>
