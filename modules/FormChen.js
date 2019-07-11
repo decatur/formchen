@@ -1,5 +1,5 @@
 import "./GridChen.js"
-import {createView} from "./DataViews.js";
+import {selectViewCreator} from "./DataViews.js";
 import {NumberStringConverter, DateTimeStringConverter} from "./converter.js";
 
 /**
@@ -22,145 +22,180 @@ import {NumberStringConverter, DateTimeStringConverter} from "./converter.js";
     }
 }*/
 
+// Global unique label id.
 let labelCount = 0;
-let topSchema;
 
-function getVal(obj, myPath){
-    return myPath.split('/').reduce ( (res, prop) => res[prop], obj );
+/**
+ * Example:
+ *      getValueByPointer({definitions:{foobar: 1}}, '#/definitions/foobar')
+ *      -> 1
+ * @param {object} obj
+ * @param {string} pointer
+ * @returns {object}
+ */
+function getValueByPointer(obj, pointer) {
+    return pointer.substr(2).split('/').reduce((res, prop) => res[prop], obj);
 }
 
 /**
- * @param {{properties: Array<>, title: String}} schema
- * @param {Object} obj
- * @param {Array<String>} pointer
- * @param {Element} containerElement
- * @param onDataChanged
- */
-export function bind(schema, obj, pointer, containerElement, onDataChanged) {
-    if (pointer.length === 0) topSchema = schema;
+     * @param {{properties: Array<>, title: String}} topSchema
+     * @param {object} topObj
+     * @param {Element} topContainer
+     * @param onDataChanged
+     */
+export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
-    const properties = schema.properties || [];
-    const fieldset = document.createElement('fieldset');
-    const legend = document.createElement('legend');
-    legend.textContent = schema.title;
-    fieldset.appendChild(legend);
-    const fieldContainer = document.createElement('div');
-    fieldContainer.className = 'fieldContainer';
-    fieldset.appendChild(fieldContainer);
+    bindObject(topSchema, topObj, [], topContainer);
 
-    for (let key in properties) {
-        console.log('bind: ' + key);
-        const childPointer = pointer.concat(key);
-        let childSchema = properties[key];
-        if ('$ref' in childSchema) {
-            // Resolve reference. TODO: Report unresolved reference.
-            childSchema = getVal(topSchema, childSchema['$ref'].substr(2));
-        }
-        const value = obj ? obj[key] : undefined;
-        // If view cannot be created, schema is not a valid grid schema.
-        const view = createView(childSchema, value);
+    /**
+     * @param {{properties: Array<>, title: String}} schema
+     * @param {Object} obj
+     * @param {Array<String>} pointer
+     * @param {Element} containerElement
+     */
+    function bindObject(schema, obj, pointer, containerElement) {
+        if (pointer.length === 0) topSchema = schema;
 
-        if (!(view instanceof Error)) {
-            const label = document.createElement('label');
-            label.className = 'gridLabel';
-            //const title = document.createElement('span');
-            label.textContent = childSchema.title;
-            const grid = document.createElement('grid-chen');
-            grid.style.height = '100px';
-            grid.resetFromView(createView(childSchema, value));
-            fieldContainer.appendChild(label);
-            fieldContainer.appendChild(grid);
-            grid.setEventListener('datachanged', function () {
-                onDataChanged(childPointer, value);
-            });
-        } else if (childSchema.type === 'object') {
-            bind(childSchema, value, childPointer, fieldset, onDataChanged);
-        } else {
-            const label = document.createElement('label');
-            let input;
+        const properties = schema.properties || [];
+        const fieldset = document.createElement('fieldset');
+        const legend = document.createElement('legend');
+        legend.textContent = schema.title;
+        fieldset.appendChild(legend);
+        const fieldContainer = document.createElement('div');
+        fieldContainer.className = 'fieldContainer';
+        fieldset.appendChild(fieldContainer);
 
-            if (childSchema.type === 'boolean') {
-                input = document.createElement('input');
-                input.type = 'checkbox';
-                input.checked = value === undefined ? false : value;
-            } else if (childSchema.enum) {
-                input = document.createElement('select');
-                childSchema.enum.forEach(function (optionName) {
-                    const option = document.createElement('option');
-                    option.textContent = optionName;
-                    input.appendChild(option);
-                });
-            } else {
-                input = document.createElement('input');
-
-                if (childSchema.type === 'number' || childSchema.type === 'integer') {
-                    input.style.textAlign = 'right'
-                }
-
-                if (value === undefined) {
-                    input.value = '';
-                } else if (childSchema.type === 'integer') {
-                    if (!childSchema.converter) {
-                        childSchema.converter = new NumberStringConverter(0);
-                    }
-                    input.value = childSchema.converter.toEditable(Number(value));
-                } else if (childSchema.type === 'number') {
-                    if (!childSchema.converter) {
-                        childSchema.converter = new NumberStringConverter(childSchema.fractionDigits || 2);
-                    }
-                    let n = Number(value);
-                    if (childSchema.unit === '%') {
-                        n *= 100;
-                    }
-                    input.value = childSchema.converter.toEditable(n);
-                } else if (childSchema.format === 'datetime') {
-                    if (!childSchema.converter) {
-                        childSchema.converter = new DateTimeStringConverter();
-                    }
-                    input.value = childSchema.converter.toEditable(value);
-                } else {
-                    // TODO: date, datetimelocal, uri, frequency
-                    input.value = String(value);
-                }
-            }
-
-            input.disabled = childSchema.editable === undefined ? false : !childSchema.editable;
-            input.style.width = '25ex';
-
-            input.onchange = function () {
-                let newValue;
-                if (childSchema.type === 'boolean') {
-                    newValue = input.checked;
-                } else {
-                    newValue = input.value.trim();
-                    if (newValue === '') {
-                        newValue = null;
-                    } else if (childSchema.type === 'number' && childSchema.unit === '%') {
-                        newValue /= 100;
-                    }
-                }
-                onDataChanged(childPointer, newValue);
-            };
-
-            label.textContent = childSchema.title || key;
-
-            if (childSchema.comment || childSchema.description) {
-                label.title = childSchema.comment || childSchema.description;
-            }
-
-            if (childSchema.unit) {
-                const unit = document.createElement('span');
-                unit.className = 'unit';
-                unit.textContent = childSchema.unit;
-                label.appendChild(unit);
-            }
-
-            label.setAttribute('for', 'formchen-' + (labelCount));
-            input.id = 'formchen-' + (labelCount++);
-            fieldContainer.appendChild(label);
-            fieldContainer.appendChild(input);
+        for (let key in properties) {
+            bindProperty(properties[key], key, obj ? obj[key] : undefined, pointer.concat(key), fieldContainer);
         }
         containerElement.appendChild(fieldset);
     }
-}
+
+    function bindProperty(schema, key, value, pointer, container) {
+            console.log('bind: ' + key);
+            if ('$ref' in schema) {
+                // Resolve reference. TODO: Report unresolved reference.
+                schema = getValueByPointer(topSchema, schema['$ref']);
+                if (!schema) {
+                    const label = document.createElement('label');
+                    label.textContent = key;
+                    container.appendChild(label);
+                    const span = document.createElement('span');
+                    span.textContent = 'Undefined $ref at ' + pointer;
+                    container.appendChild(span);
+                    return
+                }
+            }
+
+            schema.title = schema.title || key;
+
+            // If view cannot be created, schema is not a valid grid schema.
+            const viewCreator = selectViewCreator(schema);
+
+            if (!(viewCreator instanceof Error)) {
+                const view = viewCreator(value);
+                const label = document.createElement('label');
+                label.className = 'gridLabel';
+                //const title = document.createElement('span');
+                label.textContent = schema.title;
+                const grid = document.createElement('grid-chen');
+                grid.style.height = '100px';
+                grid.resetFromView(view);
+                container.appendChild(label);
+                container.appendChild(grid);
+                grid.setEventListener('dataChanged', function () {
+                    onDataChanged(pointer, value);
+                });
+            } else if (schema.type === 'object') {
+                bindObject(schema, value, pointer, container);
+            } else {
+                const label = document.createElement('label');
+                let input;
+
+                if (schema.type === 'boolean') {
+                    input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.checked = value === undefined ? false : value;
+                } else if (schema.enum) {
+                    input = document.createElement('select');
+                    schema.enum.forEach(function (optionName) {
+                        const option = document.createElement('option');
+                        option.textContent = optionName;
+                        input.appendChild(option);
+                    });
+                } else {
+                    input = document.createElement('input');
+
+                    if (schema.type === 'number' || schema.type === 'integer') {
+                        input.style.textAlign = 'right'
+                    }
+
+                    if (value === undefined) {
+                        input.value = '';
+                    } else if (schema.type === 'integer') {
+                        if (!schema.converter) {
+                            schema.converter = new NumberStringConverter(0);
+                        }
+                        input.value = schema.converter.toEditable(Number(value));
+                    } else if (schema.type === 'number') {
+                        if (!schema.converter) {
+                            schema.converter = new NumberStringConverter(schema.fractionDigits || 2);
+                        }
+                        let n = Number(value);
+                        if (schema.unit === '%') {
+                            n *= 100;
+                        }
+                        input.value = schema.converter.toEditable(n);
+                    } else if (schema.format === 'datetime') {
+                        if (!schema.converter) {
+                            schema.converter = new DateTimeStringConverter();
+                        }
+                        input.value = schema.converter.toEditable(value);
+                    } else {
+                        // TODO: date, datetimelocal, uri, frequency
+                        input.value = String(value);
+                    }
+                }
+
+                input.disabled = schema.editable === undefined ? false : !schema.editable;
+                input.style.width = '25ex';
+
+                input.onchange = function () {
+                    let newValue;
+                    if (schema.type === 'boolean') {
+                        newValue = input.checked;
+                    } else {
+                        newValue = input.value.trim();
+                        if (newValue === '') {
+                            newValue = null;
+                        } else if (schema.type === 'number' && schema.unit === '%') {
+                            newValue /= 100;
+                        }
+                    }
+                    onDataChanged(pointer, newValue);
+                };
+
+                label.textContent = schema.title;
+
+                if (schema.comment || schema.description) {
+                    label.title = schema.comment || schema.description;
+                }
+
+                if (schema.unit) {
+                    const unit = document.createElement('span');
+                    unit.className = 'unit';
+                    unit.textContent = schema.unit;
+                    label.appendChild(unit);
+                }
+
+                label.setAttribute('for', 'formchen-' + (labelCount));
+                input.id = 'formchen-' + (labelCount++);
+                container.appendChild(label);
+                container.appendChild(input);
+            }
+
+    }
+};
+
+
 

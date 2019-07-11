@@ -10,9 +10,20 @@
             background-color: aliceblue;
         }
 
-        textarea {
-            width: 30%;
+        controller {
+            width:100%;
+
+        }
+
+        controller,  label {
+            margin-right: 2em;
+        }
+
+        controller,  textarea {
+            margin-right: 2em;
+            width: 100%;
             height: 15em;
+            display: block;
         }
 
         /* See https://alligator.io/css/css-grid-layout-span-keyword/ */
@@ -40,26 +51,31 @@
     details.
 </p>
 
-<form>
-    <label>sample1
-        <input type="radio" name="data" value="./demos/sample1.mjs">
-    </label>
-    <label>sample2
-        <input type="radio" name="data" value="./demos/sample2.mjs">
-    </label>
+<form class="controller">
+    <div>
+        <label>sample1
+            <input type="radio" name="data" value="./demos/sample1.mjs">
+        </label>
+        <label>sample2
+            <input type="radio" name="data" value="./demos/sample2.mjs">
+        </label>
+    </div>
+    <div style="display: grid;grid-template-columns: 33% 33% 33%;">
+    <label>Schema <textarea class="schema"></textarea></label>
+    <label>Data <textarea class="data"></textarea></label>
+    <label>Patch <textarea class="patch"></textarea></label>
+    </div>
 </form>
 
-<textarea class="schema"></textarea>
-<textarea class="data"></textarea>
-<textarea class="patch"></textarea>
-<div id="myform"></div>
+<div id="myFormChen"></div>
 
 </body>
-<script nomodule>alert('Your browser is not supported')</script>    
+<script nomodule>alert('Your browser is not supported')</script>
 <script type="module">
-    import {bind} from "./modules/FormChen.js"
+    import {createFormChen} from "./modules/FormChen.js"
 
-    Array.from(document.querySelectorAll('input[type="radio"]')).forEach(function(input) {
+    const radios = document.querySelectorAll('input[type="radio"]');
+    Array.from(radios).forEach(function (input) {
         input.onchange = () => bar(input.value);
     });
 
@@ -71,7 +87,10 @@
                 document.querySelector('.data').value = JSON.stringify(module.data, null, 2);
                 rebind();
             })
-            .catch(() => alert('failed'));
+            .catch(function(e) {
+                console.error(e);
+                alert(e);
+            });
     }
 
     let patchesByPath;
@@ -80,7 +99,7 @@
 
     function rebind() {
         patchesByPath = {};
-        const containerElement = document.getElementById('myform');
+        const containerElement = document.getElementById('myFormChen');
         let schema;
 
         try {
@@ -102,7 +121,7 @@
         }
 
         containerElement.textContent = '';
-        bind(schema, data, [], containerElement, changeHandler);
+        createFormChen(schema, data, containerElement, changeHandler);
     }
 
     function changeHandler(pointer, newValue) {
@@ -111,6 +130,8 @@
         const patch = Object.entries(patchesByPath).map(([path, value]) => ({op: 'replace', path: path, value: value}));
         document.querySelector('.patch').value = JSON.stringify(patch, null, 2);
     }
+
+    radios[0].click()
 
 
 </script>
