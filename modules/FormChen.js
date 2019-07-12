@@ -25,6 +25,12 @@ import {NumberStringConverter, DateTimeStringConverter} from "./converter.js";
 // Global unique label id.
 let labelCount = 0;
 
+function createElement(tagName) {
+    const element = document.createElement(tagName);
+    element.className = 'form-chen';
+    return element;
+}
+
 /**
  * Example:
  *      getValueByPointer({definitions:{foobar: 1}}, '#/definitions/foobar')
@@ -54,21 +60,17 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
      * @param {Element} containerElement
      */
     function bindObject(schema, obj, pointer, containerElement) {
-        if (pointer.length === 0) topSchema = schema;
+        containerElement.className = 'form-chen fields';
 
         const properties = schema.properties || [];
-        const fieldset = document.createElement('fieldset');
-        const legend = document.createElement('legend');
-        legend.textContent = schema.title;
-        fieldset.appendChild(legend);
-        const fieldContainer = document.createElement('div');
-        fieldContainer.className = 'fieldContainer';
-        fieldset.appendChild(fieldContainer);
+        const fieldset = createElement('div');
+        fieldset.className += ' sub-form';
+        fieldset.textContent = schema.title;
+        containerElement.appendChild(fieldset);
 
         for (let key in properties) {
-            bindProperty(properties[key], key, obj ? obj[key] : undefined, pointer.concat(key), fieldContainer);
+            bindProperty(properties[key], key, obj ? obj[key] : undefined, pointer.concat(key), containerElement);
         }
-        containerElement.appendChild(fieldset);
     }
 
     function bindProperty(schema, key, value, pointer, container) {
@@ -77,10 +79,10 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 // Resolve reference. TODO: Report unresolved reference.
                 schema = getValueByPointer(topSchema, schema['$ref']);
                 if (!schema) {
-                    const label = document.createElement('label');
+                    const label = createElement('label');
                     label.textContent = key;
                     container.appendChild(label);
-                    const span = document.createElement('span');
+                    const span = createElement('span');
                     span.textContent = 'Undefined $ref at ' + pointer;
                     container.appendChild(span);
                     return
@@ -94,11 +96,12 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
             if (!(viewCreator instanceof Error)) {
                 const view = viewCreator(value);
-                const label = document.createElement('label');
-                label.className = 'gridLabel';
-                //const title = document.createElement('span');
+                const label = createElement('label');
+                label.className += ' grid-label';
+                //const title = createElement('span');
                 label.textContent = schema.title;
-                const grid = document.createElement('grid-chen');
+                const grid = createElement('grid-chen');
+                grid.className += ' grid-chen';
                 grid.style.height = '100px';
                 grid.resetFromView(view);
                 container.appendChild(label);
@@ -109,22 +112,22 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             } else if (schema.type === 'object') {
                 bindObject(schema, value, pointer, container);
             } else {
-                const label = document.createElement('label');
+                const label = createElement('label');
                 let input;
 
                 if (schema.type === 'boolean') {
-                    input = document.createElement('input');
+                    input = createElement('input');
                     input.type = 'checkbox';
                     input.checked = value === undefined ? false : value;
                 } else if (schema.enum) {
-                    input = document.createElement('select');
+                    input = createElement('select');
                     schema.enum.forEach(function (optionName) {
-                        const option = document.createElement('option');
+                        const option = createElement('option');
                         option.textContent = optionName;
                         input.appendChild(option);
                     });
                 } else {
-                    input = document.createElement('input');
+                    input = createElement('input');
 
                     if (schema.type === 'number' || schema.type === 'integer') {
                         input.style.textAlign = 'right'
@@ -182,8 +185,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 }
 
                 if (schema.unit) {
-                    const unit = document.createElement('span');
-                    unit.className = 'unit';
+                    const unit = createElement('span');
+                    unit.className += ' unit';
                     unit.textContent = schema.unit;
                     label.appendChild(unit);
                 }
@@ -195,7 +198,4 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             }
 
     }
-};
-
-
-
+}
