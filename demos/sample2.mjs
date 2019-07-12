@@ -31,10 +31,20 @@ export let schema = {
             type: 'string',
             enum: ['Frida Krum', 'Tilda Swift']
         },
+        aDate: {
+            title: 'A Date',
+            type: 'string',
+            format: 'date'
+        },
         aDateTime: {
             title: 'A DateTime',
             type: 'string',
             format: 'datetime'
+        },
+        aDateTimeLocal: {
+            title: 'A DateTimeLocal',
+            type: 'string',
+            format: 'datetimelocal'
         },
         aBoolean: {
             title: 'A Boolean',
@@ -57,24 +67,40 @@ export let schema = {
             fractionDigits: 1
         },
         unresolvedRef: {
+            title: 'A Unresolvable Reference',
             $ref: '#/definitions/foobar'
         },
         aMatrix: {
+            title: 'Some Matrix',
             $ref: '#/definitions/refSchema'
         },
+        anObject: {
+            title: 'An Object',
+            type: 'object',
+            properties: {
+                someOtherString: {
+                    type: 'string'
+                }
+            }
+        },
         anEmptyMatrix: {
+            title: 'An Undefined Matrix',
             $ref: '#/definitions/refSchema'
         }
     }
 };
 
 export let data = {
-    plant: 'Rubus idaeus',
-    reference: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
-    observer: 'Frida Krum',
-    start: '2019-01-01T00:00Z',
-    latitude: 41.40338,
-    longitude: 2.17403,
+    aString: 'Rubus idaeus',
+    aURI: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
+    anEnum: 'Frida Krum',
+    aDate: '2019-01-01',
+    aDateTime: '2019-01-01T00:00Z',
+    aDateTimeLocal: '2019-01-01T00:00',
+    aPercentValue: 0.5,
+    aBoolean: true,
+    aInteger: 7,
+    aFloat: 3.14,
     aMatrix: [
         [new Date(2019, 2, 1), 0, 0],
         [new Date(2019, 2, 2), 1, 2],

@@ -7,7 +7,9 @@ import {
     DateStringConverter,
     DateTimeLocalStringConverter,
     DateTimeStringConverter,
-    NumberStringConverter
+    NumberStringConverter,
+    BooleanStringConverter,
+    StringStringConverter
 } from "./converter.js";
 
 const numeric = new Set(['number', 'integer']);
@@ -76,27 +78,10 @@ function updateSchema(schemas) {
         } else if (schema.format === 'date') {
             schema.converter = new DateStringConverter();
         } else if (schema.type === 'boolean') {
-            schema.converter = {
-                toString: (value) => String(value),
-                fromString: function(value) {
-                    value = value.trim();
-                    if (['true', 'wahr', '1', 'y'].indexOf(value.toLowerCase()) >= 0) {
-                        return true
-                    }
-                    if (['false', 'falsch', '0', 'n'].indexOf(value.toLowerCase()) >= 0) {
-                        return false
-                    }
-                    return value;
-                },
-                toEditable: (value) => String(value)
-            };
+            schema.converter = new BooleanStringConverter();
         } else {
             // string and others
-            schema.converter = {
-                toString: (value) => String(value),
-                toEditable: (value) => String(value),
-                fromString: (value) => value
-            };
+            schema.converter = new StringStringConverter();
         }
     }
 }
@@ -144,7 +129,8 @@ export function selectViewCreator(schema) {
         return function(matrix) {
             if (!matrix) {
                 return new Error('createView() received undefined data with schema title ' + schema.title);
-            };
+
+            }
             return cons(colSchema, matrix);
         }
     }
@@ -179,15 +165,25 @@ export function selectViewCreator(schema) {
         const entries = sortedColumns(schema.properties);
         const colSchemas = {
             title: schema.title,
-            columnSchemas: entries.map(e => e[1]).map(function(property) {
-                const colSchema = property.items;
-                if (typeof colSchema !== 'object') return invalidError;
-                if (!colSchema.title) colSchema.title = property.title;
-                if (!colSchema.width) colSchema.width = property.width;
-                return colSchema;
-            }),
+
+            columnSchemas: [],
             ids: entries.map(e => e[0])
         };
+
+        for (const entry of entries) {
+            const property = entry[1];
+            const colSchema = property.items;
+            if (typeof colSchema !== 'object') {
+                return invalidError;
+            }
+            if (!colSchema.title) colSchema.title = property.title;
+            if (!colSchema.width) colSchema.width = property.width;
+
+
+
+
+            colSchemas.columnSchemas.push(colSchema);
+        }
 
         // Normalize missing columnCount (ragged columnCount are allowed).
         // TODO: Must use matrix!
