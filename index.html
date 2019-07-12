@@ -26,18 +26,22 @@
             display: block;
         }
 
-        /* See https://alligator.io/css/css-grid-layout-span-keyword/ */
-        .fieldContainer {
+        .form-chen.fields {
             display: grid;
-            grid-template-columns: 200px 200px;
+            grid-template-columns: 300px 200px;
         }
 
-        .gridLabel, grid-chen {
+        .form-chen.grid-label, .form-chen.grid-chen, .form-chen.sub-form {
             grid-area: span 1 / span 2;
         }
 
-        .unit {
+        .form-chen.unit {
             float: right;
+            padding-right: 1ex;
+        }
+        .form-chen.sub-form {
+            margin-top: 1ex;
+            background-color: bisque;
         }
     </style>
 </head>
