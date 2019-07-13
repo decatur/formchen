@@ -17,51 +17,51 @@ export let schema = {
     title: 'FieldObservation',
     type: 'object',
     properties: {
-        aString: {
-            title: 'A String',
+        someString: {
+            title: 'Some String',
             type: 'string'
         },
-        aURI: {
-            title: 'a URI',
+        someURI: {
+            title: 'Some URI',
             type: 'string',
             format: 'uri'
         },
-        anEnum: {
-            title: 'An Enum',
+        someEnum: {
+            title: 'Some Enum',
             type: 'string',
             enum: ['Frida Krum', 'Tilda Swift']
         },
-        aDate: {
-            title: 'A Date',
+        someDate: {
+            title: 'Some Date',
             type: 'string',
             format: 'date'
         },
-        aDateTime: {
-            title: 'A DateTime',
+        someDateTime: {
+            title: 'Some DateTime',
             type: 'string',
             format: 'datetime'
         },
-        aDateTimeLocal: {
-            title: 'A DateTimeLocal',
+        someDateTimeLocal: {
+            title: 'Some DateTimeLocal',
             type: 'string',
             format: 'datetimelocal'
         },
-        aBoolean: {
-            title: 'A Boolean',
+        someBoolean: {
+            title: 'Some Boolean',
             type: 'boolean'
         },
-        aInteger: {
-            title: 'A Integer',
+        someInteger: {
+            title: 'Some Integer',
             type: 'integer'
         },
-        aFloat: {
-            title: 'A Float',
+        someFloat: {
+            title: 'Some Float',
             type: 'number',
             unit: '[DD]',
             fractionDigits: 2
         },
-        aPercentValue: {
-            title: 'A Percent Value',
+        somePercentValue: {
+            title: 'Some Percent Value',
             type: 'number',
             unit: '[%]',
             fractionDigits: 1
@@ -70,7 +70,7 @@ export let schema = {
             title: 'A Unresolvable Reference',
             $ref: '#/definitions/foobar'
         },
-        aMatrix: {
+        someMatrix: {
             title: 'Some Matrix',
             $ref: '#/definitions/refSchema'
         },
@@ -86,24 +86,29 @@ export let schema = {
         anEmptyMatrix: {
             title: 'An Undefined Matrix',
             $ref: '#/definitions/refSchema'
+        },
+        invalidSchema: {
+            title: 'Invalid Schema',
+            type: 'Date'
         }
     }
 };
 
 export let data = {
-    aString: 'Rubus idaeus',
-    aURI: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
-    anEnum: 'Frida Krum',
-    aDate: '2019-01-01',
-    aDateTime: '2019-01-01T00:00Z',
-    aDateTimeLocal: '2019-01-01T00:00',
-    aPercentValue: 0.5,
-    aBoolean: true,
-    aInteger: 7,
-    aFloat: 3.14,
-    aMatrix: [
+    someString: 'Rubus idaeus',
+    someURI: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
+    someEnum: 'Frida Krum',
+    someDate: '2019-01-01',
+    someDateTime: '2019-01-01T00:00Z',
+    someDateTimeLocal: '2019-01-01T00:00',
+    somePercentValue: 0.5,
+    someBoolean: true,
+    someInteger: 7,
+    someFloat: 3.14,
+    someMatrix: [
         [new Date(2019, 2, 1), 0, 0],
         [new Date(2019, 2, 2), 1, 2],
         [new Date(2019, 2, 3), 2, 4]
-    ]
+    ],
+    invalidSchema: new Date()
 };

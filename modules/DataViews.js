@@ -93,8 +93,10 @@ function updateSchema(schemas) {
 function sortedColumns(properties) {
     const entries = Object.entries(properties);
     entries.sort(function(e1, e2) {
-        if ('columnOrder' in e1[1] && 'columnOrder' in e2[1]) {
-            return e1[1].columnOrder - e2[1].columnOrder;
+        const o1 = e1[1]['columnOrder'];
+        const o2 = e2[1]['columnOrder'];
+        if (o1 !== undefined && o2 !== undefined) {
+            return o1 - o2;
         }
         return 0;
     });
@@ -105,58 +107,48 @@ function sortedColumns(properties) {
 /**
  * @param {GridChen.JSONSchema} schema
  * @param {Array<object>} matrix
- * @returns {}
+ * @returns {?}
  */
 export function createView(schema, matrix) {
-    if (!schema) {
+    const columnSchemas = createColumnSchemas(schema);
+    if (schema instanceof Error) {
         return new Error('createView() received undefined schema')
     }
-
-    const creator = selectViewCreator(schema);
-    return creator(matrix);
+    return columnSchemas.viewCreator(columnSchemas, matrix);
 }
 
 /**
  * @param {GridChen.JSONSchema} schema
- * @returns {}
+ * @returns {object | Error}
  */
-export function selectViewCreator(schema) {
+export function createColumnSchemas(schema) {
     if (!schema) {
         return new Error('selectViewCreator() received undefined schema')
-    }
-
-    function foo(cons, colSchema) {
-        return function(matrix) {
-            if (!matrix) {
-                return new Error('createView() received undefined data with schema title ' + schema.title);
-
-            }
-            return cons(colSchema, matrix);
-        }
     }
 
     const invalidError = new Error('Invalid schema: ' + schema.title);
 
     if (schema.items && Array.isArray(schema.items.items)) {
-        const colSchema = {title: schema.title, columnSchemas: schema.items.items};
-        return foo(createRowMatrixView, colSchema);
+        return {title: schema.title, columnSchemas: schema.items.items, viewCreator: createRowMatrixView}
     }
 
     if (schema.items && schema.items.type === 'object') {
         const entries = sortedColumns(schema.items.properties);
 
-        const colSchema = {
+        return {
             title: schema.title,
             columnSchemas: entries.map(e => e[1]),
-            ids: entries.map(e => e[0])
-        };
-
-        return foo(createRowObjectsView, colSchema);
+            ids: entries.map(e => e[0]),
+            viewCreator: createRowObjectsView
+        }
     }
 
     if (Array.isArray(schema.items)) {
-        const colSchema = {title: schema.title, columnSchemas: schema.items.map(item => item.items)};
-        return foo(createColumnMatrixView, colSchema);
+        return {
+            title: schema.title,
+            columnSchemas: schema.items.map(item => item.items),
+            viewCreator: createColumnMatrixView
+        }
     }
 
     if (typeof schema.properties === 'object') {
@@ -167,20 +159,18 @@ export function selectViewCreator(schema) {
             title: schema.title,
 
             columnSchemas: [],
-            ids: entries.map(e => e[0])
+            ids: entries.map(e => e[0]),
+            viewCreator: createColumnMatrixView
         };
 
         for (const entry of entries) {
             const property = entry[1];
             const colSchema = property.items;
             if (typeof colSchema !== 'object') {
-                return invalidError;
+                return invalidError
             }
             if (!colSchema.title) colSchema.title = property.title;
             if (!colSchema.width) colSchema.width = property.width;
-
-
-
 
             colSchemas.columnSchemas.push(colSchema);
         }
@@ -188,26 +178,33 @@ export function selectViewCreator(schema) {
         // Normalize missing columnCount (ragged columnCount are allowed).
         // TODO: Must use matrix!
         // const columns = colSchemas.ids.map(id => matrix[id] || Array());
-        return foo(createColumnMatrixView, colSchemas);
+        return colSchemas
     }
 
-    return invalidError;
+    return invalidError
 }
 
 /**
  * @param {GridChen.IGridSchema} schema
  * @param {Array<object>} rows
- * @returns {GridChen.DataView}
+ * @returns {GridChen.DataView | Error}
  */
 export function createRowMatrixView(schema, rows) {
     let schemas = schema.columnSchemas;
     updateSchema(schemas);
+
+    if (!rows) {
+        return new Error('createView() received undefined data with schema title ' + schema.title);
+    }
 
     // Normalize missing rowCount (ragged rowCount are allowed).
     /*rowCount.forEach(function (row, i) {
         if (row === undefined) rowCount[i] = Array(schemas.length);
     });*/
 
+    /**
+     * @implements {GridChen.DataView}
+     */
     class RowMatrixView {
         constructor() {
             this.schema = schema;
@@ -241,7 +238,7 @@ export function createRowMatrixView(schema, rows) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @returns {object}
+         * @returns {*}
          */
         getCell(rowIndex, colIndex) {
             if (!rows[rowIndex]) return undefined;
@@ -274,7 +271,7 @@ export function createRowMatrixView(schema, rows) {
          * @returns {number}
          */
         sort(colIndex) {
-            let [type, sortDirection] = updateSortDirection(schemas, colIndex);
+            let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
             return rows.length;
         }
@@ -290,18 +287,25 @@ export function createRowMatrixView(schema, rows) {
 /**
  * @param {GridChen.IGridSchema} schema
  * @param {Array<object>} rows
- * @returns {GridChen.DataView}
+ * @returns {GridChen.DataView | Error}
  */
 export function createRowObjectsView(schema, rows) {
     const schemas = schema.columnSchemas;
     const ids = schema.ids;
     updateSchema(schemas);
 
+    if (!rows) {
+        return new Error('createView() received undefined data with schema title ' + schema.title);
+    }
+
     // Normalize missing rowCount (ragged rowCount are allowed).
     /*rowCount.forEach(function (row, i) {
         if (row === undefined) rowCount[i] = {};
     });*/
 
+    /**
+     * @implements {GridChen.DataView}
+     */
     class RowObjectsView {
         constructor() {
             this.schema = schema;
@@ -326,7 +330,7 @@ export function createRowObjectsView(schema, rows) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @returns {object}
+         * @returns {*}
          */
         getCell(rowIndex, colIndex) {
             if (!rows[rowIndex]) return undefined;
@@ -359,7 +363,7 @@ export function createRowObjectsView(schema, rows) {
          * @returns {number}
          */
         sort(colIndex) {
-            let [type, sortDirection] = updateSortDirection(schemas, colIndex);
+            let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
             return rows.length;
         }
@@ -379,6 +383,10 @@ export function createRowObjectsView(schema, rows) {
 export function createColumnMatrixView(schema, columns) {
     let schemas = schema.columnSchemas;
     updateSchema(schemas);
+
+    if (!columns) {
+        return new Error('createView() received undefined data with schema title ' + schema.title);
+    }
 
     // Normalize missing columnCount (ragged columnCount are allowed).
     /*columnCount.forEach(function (column, j) {
@@ -418,7 +426,7 @@ export function createColumnMatrixView(schema, columns) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @returns {object}
+         * @returns {*}
          */
         getCell(rowIndex, colIndex) {
             return columns[colIndex][rowIndex];
@@ -451,7 +459,7 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {number}
          */
         sort(colIndex) {
-            let [type, sortDirection] = updateSortDirection(schemas, colIndex);
+            let [, sortDirection] = updateSortDirection(schemas, colIndex);
             const indexes = columns[colIndex].map((value, rowIndex) => [value, rowIndex]);
 
             indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);

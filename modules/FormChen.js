@@ -1,5 +1,5 @@
 import "./GridChen.js"
-import {selectViewCreator} from "./DataViews.js";
+import {createColumnSchemas} from "./DataViews.js";
 import {
     NumberStringConverter,
     DateTimeStringConverter,
@@ -84,7 +84,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             const label = createElement('label');
             label.textContent = title;
             container.appendChild(label);
-            const span = createElement('span')
+            const span = createElement('span');
             span.className += ' error';
             span.textContent = text;
             container.appendChild(span);
@@ -105,11 +105,11 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         }
 
         // If view cannot be created, schema is not a valid grid schema.
-        const viewCreator = selectViewCreator(schema);
+        const columnSchemas = createColumnSchemas(schema);
         const isPercent = schema.unit === '[%]';
 
-        if (!(viewCreator instanceof Error)) {
-            const view = viewCreator(value);
+        if (!(columnSchemas instanceof Error)) {
+            const view = columnSchemas.viewCreator(columnSchemas, value);
             const label = createElement('label');
             label.className += ' grid-label';
             //const title = createElement('span');
@@ -142,24 +142,28 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 });
             } else {
                 input = createElement('input');
-
-                if (schema.type === 'number' || schema.type === 'integer') {
-                    input.style.textAlign = 'right'
-                }
+                input.style.textAlign = 'right';
 
                 if (schema.type === 'integer') {
                     if (!schema.converter) {
-                        schema.converter = new NumberStringConverter(0, undefined, isPercent);
+                        schema.converter = new NumberStringConverter(0);
+                        schema.converter.isPercent = isPercent;
                     }
                     input.value = schema.converter.toEditable(value);
                 } else if (schema.type === 'number') {
                     if (!schema.converter) {
-                        schema.converter = new NumberStringConverter(schema.fractionDigits || 2, undefined, isPercent);
+                        schema.converter = new NumberStringConverter(schema.fractionDigits || 2);
+                        schema.converter.isPercent = isPercent;
                     }
                     input.value = schema.converter.toEditable(value);
                 } else if (schema.format === 'datetime') {
                     if (!schema.converter) {
                         schema.converter = new DateTimeStringConverter();
+                    }
+                    input.value = schema.converter.toEditable(value);
+                } else if (schema.format === 'datetimelocal') {
+                    if (!schema.converter) {
+                        schema.converter = new DateTimeLocalStringConverter();
                     }
                     input.value = schema.converter.toEditable(value);
                 } else if (schema.format === 'date') {
@@ -171,9 +175,11 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                     if (!schema.converter) {
                         schema.converter = new StringStringConverter();
                     }
+                    input.style.textAlign = 'left';
                     input.value = schema.converter.toEditable(value);
                 } else {
                     createError(title, 'Invalid schema at ' + pointer);
+                    return
                 }
             }
 
@@ -184,12 +190,12 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 let newValue;
                 if (schema.type === 'boolean') {
                     newValue = input.checked;
+                } else if (schema.enum) {
+                    newValue = input.value;
                 } else {
                     newValue = schema.converter.fromString(input.value.trim());
                     if (newValue === '') {
                         newValue = null;
-                    } else if ((schema.type === 'number' || schema.type === 'integer') && schema.unit === '%') {
-                        newValue /= 100;
                     }
                 }
                 onDataChanged(pointer, newValue);
@@ -213,6 +219,5 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             container.appendChild(label);
             container.appendChild(input);
         }
-
     }
 }

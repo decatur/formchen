@@ -10,16 +10,15 @@
             background-color: aliceblue;
         }
 
-        controller {
+        .controller {
             width:100%;
-
         }
 
-        controller,  label {
+        .controller,  label {
             margin-right: 2em;
         }
 
-        controller,  textarea {
+        .controller,  textarea {
             margin-right: 2em;
             width: 100%;
             height: 15em;
@@ -28,11 +27,11 @@
 
         .form-chen.fields {
             display: grid;
-            grid-template-columns: 300px 200px;
+            grid-template-columns: 300px 200px 300px 200px;
         }
 
         .form-chen.grid-label, .form-chen.grid-chen, .form-chen.sub-form {
-            grid-area: span 1 / span 2;
+            grid-area: span 1 / span 4;
         }
 
         .form-chen.unit {
@@ -84,10 +83,10 @@
 
     const radios = document.querySelectorAll('input[type="radio"]');
     Array.from(radios).forEach(function (input) {
-        input.onchange = () => bar(input.value);
+        input.onchange = () => importExample(input.value);
     });
 
-    function bar(moduleName) {
+    function importExample(moduleName) {
         document.querySelector('.schema').value = '';
         import(moduleName)
             .then((module) => {
