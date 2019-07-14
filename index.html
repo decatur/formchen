@@ -87,7 +87,7 @@
     });
 
     function importExample(moduleName) {
-        document.querySelector('.schema').value = '';
+        document.querySelector('.patch').value = '';
         import(moduleName)
             .then((module) => {
                 document.querySelector('.schema').value = JSON.stringify(module.schema, null, 2);
@@ -100,12 +100,10 @@
             });
     }
 
-    let patchesByPath;
     document.querySelector('.schema').oninput = rebind;
     document.querySelector('.data').oninput = rebind;
 
     function rebind() {
-        patchesByPath = {};
         const containerElement = document.getElementById('myFormChen');
         let schema;
 
@@ -128,14 +126,12 @@
         }
 
         containerElement.textContent = '';
-        createFormChen(schema, data, containerElement, changeHandler);
-    }
+        function changeHandler(pointer, newValue) {
+            console.log(`${pointer} -> ${newValue}`);
+            document.querySelector('.patch').value = JSON.stringify(fc.getPatches(), null, 2);
+        }
 
-    function changeHandler(pointer, newValue) {
-        const path = '/' + pointer.join('/');
-        patchesByPath[path] = newValue;
-        const patch = Object.entries(patchesByPath).map(([path, value]) => ({op: 'replace', path: path, value: value}));
-        document.querySelector('.patch').value = JSON.stringify(patch, null, 2);
+        const fc = createFormChen(schema, data, containerElement, changeHandler);
     }
 
     radios[1].click()

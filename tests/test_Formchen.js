@@ -2,25 +2,20 @@ import {test, assert} from './utils.js'
 import {createFormChen} from '../modules/FormChen.js'
 import {schema, data} from '../demos/sample2.mjs'
 
-const patchesByPath = {};
-
-function changeHandler(pointer, newValue) {
-    const path = '/' + pointer.join('/');
-    patchesByPath[path] = newValue;
-}
-
-
 test('FormChen', () => {
-    createFormChen(schema, data, document.body, changeHandler);
+    const fc = createFormChen(schema, data, document.body);
 
     const expected = [];
 
-    const inputs = Array.from(document.getElementsByTagName('input'));
+
     const selects = Array.from(document.getElementsByTagName('select'));
-    let inputCount = 0;
-    function nextInput() {
-        return inputs[inputCount++]
+
+    function *inputGenerator() {
+        const inputs = Array.from(document.getElementsByTagName('input'));
+        for (const input of inputs) yield input;
     }
+    const inputs = inputGenerator();
+    const nextInput = () => inputs.next().value;
 
     let input;
     input = nextInput();
@@ -76,7 +71,21 @@ test('FormChen', () => {
     input.onchange(null);
     expected.push({"op": "replace", "path": "/somePercentValue", "value": 0.6});
 
-    const actual = Object.entries(patchesByPath).map(([path, value]) => ({op: 'replace', path: path, value: value}));
-    assert.equal(expected, actual);
+    function dispatchKey(gc, eventInitDict) {
+        // Note that the active element will change from the grid to the input and back.
+        gc.shadowRoot.activeElement.dispatchEvent(new KeyboardEvent('keydown', eventInitDict));
+    }
+
+    const gc = document.querySelector('grid-chen');
+    (/**@type{HTMLElement}*/ gc.shadowRoot.firstElementChild).focus();
+    //dispatchMouseDown(gc);
+    dispatchKey(gc, {key:" "});
+    gc.shadowRoot.activeElement.value = '1900';
+    dispatchKey(gc, {code: 'Enter'});
+    expected.push({"op":"replace","path":"/someMatrix","value":
+            [["1900-01-01T00:00:00.000Z",0,0],["2019-03-01T23:00:00.000Z",1,2],["2019-03-02T23:00:00.000Z",2,4]]
+    });
+
+    assert.equal(expected, fc.getPatches());
 }).finally();
 

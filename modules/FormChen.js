@@ -57,6 +57,13 @@ function getValueByPointer(obj, pointer) {
  */
 export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
+    const patchesByPath = {};
+    function onDataChangedWrapper(pointer, newValue) {
+        const path = '/' + pointer.join('/');
+        patchesByPath[path] = newValue;
+        if (onDataChanged) onDataChanged(pointer, newValue);
+    }
+
     bindObject(topSchema, topObj, [], topContainer);
 
     /**
@@ -121,7 +128,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             container.appendChild(label);
             container.appendChild(grid);
             grid.setEventListener('dataChanged', function () {
-                onDataChanged(pointer, value);
+                onDataChangedWrapper(pointer, value);
             });
         } else if (schema.type === 'object') {
             bindObject(schema, value, pointer, container);
@@ -198,7 +205,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                         newValue = null;
                     }
                 }
-                onDataChanged(pointer, newValue);
+                onDataChangedWrapper(pointer, newValue);
             };
 
             label.textContent = title;
@@ -220,4 +227,16 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             container.appendChild(input);
         }
     }
+
+    class FormChen {
+        constructor() {
+
+        }
+
+        getPatches() {
+            return Object.entries(patchesByPath).map(([path, value]) => ({op: 'replace', path: path, value: value}));
+        }
+    }
+
+    return new FormChen();
 }
