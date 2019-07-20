@@ -1,12 +1,12 @@
-import "./GridChen.js"
-import {createColumnSchemas} from "./DataViews.js";
+import "../gridchen/GridChen.js"
+import {createColumnSchemas} from "../gridchen/DataViews.js";
 import {
     NumberStringConverter,
     DateTimeStringConverter,
     DateStringConverter,
     DateTimeLocalStringConverter,
     StringStringConverter
-} from "./converter.js";
+} from "../gridchen/converter.js";
 
 /**
  * @param {number} duration in seconds
@@ -64,21 +64,24 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         if (onDataChanged) onDataChanged(pointer, newValue);
     }
 
-    bindObject(topSchema, topObj, [], topContainer);
+    bindObject(topSchema.title, topSchema, topObj, [], topContainer);
 
     /**
+     * @param {string} title
      * @param {{properties: Array<>, title: String}} schema
      * @param {Object} obj
      * @param {Array<String>} pointer
      * @param {Element} containerElement
      */
-    function bindObject(schema, obj, pointer, containerElement) {
-        containerElement.className = 'form-chen fields';
+    function bindObject(title, schema, obj, pointer, containerElement) {
+        if (!containerElement.className.includes('form-chen')) {
+            containerElement.className += ' form-chen fields';
+        }
 
         const properties = schema.properties || [];
         const fieldset = createElement('div');
         fieldset.className += ' sub-form';
-        fieldset.textContent = schema.title;
+        fieldset.textContent = title;
         containerElement.appendChild(fieldset);
 
         for (let key in properties) {
@@ -116,6 +119,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         const isPercent = schema.unit === '[%]';
 
         if (!(columnSchemas instanceof Error)) {
+            columnSchemas.title = title;
+            value = columnSchemas.validate(value);
             const view = columnSchemas.viewCreator(columnSchemas, value);
             const label = createElement('label');
             label.className += ' grid-label';
@@ -131,7 +136,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 onDataChangedWrapper(pointer, value);
             });
         } else if (schema.type === 'object') {
-            bindObject(schema, value, pointer, container);
+            bindObject(title, schema, value, pointer, container);
         } else {
             const label = createElement('label');
             let input;
@@ -183,6 +188,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                         schema.converter = new StringStringConverter();
                     }
                     input.style.textAlign = 'left';
+                    input.setAttribute('list', 'enum')
                     input.value = schema.converter.toEditable(value);
                 } else {
                     createError(title, 'Invalid schema at ' + pointer);
