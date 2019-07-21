@@ -64,16 +64,15 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         if (onDataChanged) onDataChanged(pointer, newValue);
     }
 
-    bindObject(topSchema.title, topSchema, topObj, [], topContainer);
+    bindObject(topSchema, topObj, [], topContainer);
 
     /**
-     * @param {string} title
      * @param {{properties: Array<>, title: String}} schema
      * @param {Object} obj
      * @param {Array<String>} pointer
      * @param {Element} containerElement
      */
-    function bindObject(title, schema, obj, pointer, containerElement) {
+    function bindObject(schema, obj, pointer, containerElement) {
         if (!containerElement.className.includes('form-chen')) {
             containerElement.className += ' form-chen fields';
         }
@@ -81,7 +80,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         const properties = schema.properties || [];
         const fieldset = createElement('div');
         fieldset.className += ' sub-form';
-        fieldset.textContent = title;
+        fieldset.textContent = schema.title;
         containerElement.appendChild(fieldset);
 
         for (let key in properties) {
@@ -101,11 +100,10 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         }
 
         console.log('bind: ' + key);
-        // TODO: Clone schema.
         let title = schema.title || key;
 
         if ('$ref' in schema) {
-            // Resolve reference.
+            // Resolve reference. Note that we do not use the title of the referenced schema.
             const refSchema = getValueByPointer(topSchema, schema['$ref']);
             if (!refSchema) {
                 createError(title, 'Undefined $ref at ' + pointer);
@@ -136,7 +134,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 onDataChangedWrapper(pointer, value);
             });
         } else if (schema.type === 'object') {
-            bindObject(title, schema, value, pointer, container);
+            schema = Object.assign({}, schema, {title: title});
+            bindObject(schema, value, pointer, container);
         } else {
             const label = createElement('label');
             let input;

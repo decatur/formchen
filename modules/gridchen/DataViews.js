@@ -129,7 +129,14 @@ export function createColumnSchemas(schema) {
     const invalidError = new Error('Invalid schema: ' + schema.title);
 
     if (schema.items && Array.isArray(schema.items.items)) {
-        return {title: schema.title, columnSchemas: schema.items.items, viewCreator: createRowMatrixView}
+        return {
+            title: schema.title,
+            columnSchemas: schema.items.items,
+            viewCreator: createRowMatrixView,
+            validate: function(data) {
+                return data || []
+            }
+        }
     }
 
     if (schema.items && schema.items.type === 'object') {
@@ -137,9 +144,15 @@ export function createColumnSchemas(schema) {
 
         return {
             title: schema.title,
-            columnSchemas: entries.map(e => e[1]),
+            columnSchemas: entries.map(function(e) {
+                e[1].title = e[1].title || e[0];
+                return e[1]
+            }),
             ids: entries.map(e => e[0]),
-            viewCreator: createRowObjectsView
+            viewCreator: createRowObjectsView,
+            validate: function(data) {
+                return data || []
+            }
         }
     }
 
@@ -147,7 +160,10 @@ export function createColumnSchemas(schema) {
         return {
             title: schema.title,
             columnSchemas: schema.items.map(item => item.items),
-            viewCreator: createColumnMatrixView
+            viewCreator: createColumnMatrixView,
+            validate: function(data) {
+                return data || []
+            }
         }
     }
 
@@ -160,13 +176,28 @@ export function createColumnSchemas(schema) {
 
             columnSchemas: [],
             ids: entries.map(e => e[0]),
-            viewCreator: createColumnMatrixView
+            viewCreator: function(schema, colObject) {
+                const columns = [];
+                for (let id of colSchemas.ids) {
+                    let column = colObject[id];
+                    if (!column) {
+                        column = [];
+                        colObject[id] = column;
+                    }
+                    columns.push(column);
+                }
+                return createColumnMatrixView(schema, columns);
+            },
+            validate: function(data) {
+                return data || {}
+            }
         };
 
         for (const entry of entries) {
             const property = entry[1];
             const colSchema = property.items;
-            if (typeof colSchema !== 'object') {
+            if (typeof colSchema !== 'object' || colSchema.type === 'object') {
+                // TODO: Be much more strict!
                 return invalidError
             }
             if (!colSchema.title) colSchema.title = property.title;
@@ -177,7 +208,7 @@ export function createColumnSchemas(schema) {
 
         // Normalize missing columnCount (ragged columnCount are allowed).
         // TODO: Must use matrix!
-        // const columns = colSchemas.ids.map(id => matrix[id] || Array());
+
         return colSchemas
     }
 
@@ -194,7 +225,9 @@ export function createRowMatrixView(schema, rows) {
     updateSchema(schemas);
 
     if (!rows) {
-        return new Error('createView() received undefined data with schema title ' + schema.title);
+        const e = new Error('createView() received undefined data with schema title ' + schema.title);
+        console.error(e);
+        return e
     }
 
     // Normalize missing rowCount (ragged rowCount are allowed).
@@ -295,7 +328,9 @@ export function createRowObjectsView(schema, rows) {
     updateSchema(schemas);
 
     if (!rows) {
-        return new Error('createView() received undefined data with schema title ' + schema.title);
+        const e = new Error('createView() received undefined data with schema title ' + schema.title);
+        console.error(e);
+        return e
     }
 
     // Normalize missing rowCount (ragged rowCount are allowed).
@@ -385,7 +420,9 @@ export function createColumnMatrixView(schema, columns) {
     updateSchema(schemas);
 
     if (!columns) {
-        return new Error('createView() received undefined data with schema title ' + schema.title);
+        const e = new Error('createView() received undefined data with schema title ' + schema.title);
+        console.error(e);
+        return e
     }
 
     // Normalize missing columnCount (ragged columnCount are allowed).
@@ -482,4 +519,3 @@ export function createColumnMatrixView(schema, columns) {
 
     return new ColumnMatrixView();
 }
-

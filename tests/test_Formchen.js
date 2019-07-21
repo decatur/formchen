@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {createFormChen} from '../modules/FormChen.js'
+import {createFormChen} from '../modules/formchen/FormChen.js'
 import {schema, data} from '../demos/sample2.mjs'
 
 test('FormChen', () => {

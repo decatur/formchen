@@ -34,44 +34,6 @@ const console = {
     }
 };
 
-export class Rectangle {
-    /**
-     * @param {IInterval} row
-     * @param {IInterval} col
-     */
-    constructor(row, col) {
-        this.row = row;
-        this.col = col;
-    }
-
-    /**
-     * TODO: Implement on Range.
-     * Intersect this rectangle with another rectangle.
-     * @param {Rectangle} other
-     * @returns {Rectangle}
-     */
-    intersect(other) {
-        const row = intersectInterval(this.row, other.row);
-        const col = intersectInterval(this.col, other.col);
-        if (col === undefined || row === undefined) {
-            return undefined;
-        }
-        return new Rectangle(row, col)
-    }
-
-    /**
-     * Copy this reactangle to a shifted position.
-     * @param {number} rowOffset
-     * @param {number} colOffset
-     * @returns {Rectangle}
-     */
-    shift(rowOffset, colOffset) {
-        return new Rectangle(
-            {min: this.row.min + rowOffset, sup: this.row.sup + rowOffset},
-            {min: this.col.min + colOffset, sup: this.col.sup + colOffset});
-    }
-}
-
 /**
  * @param {IInterval} i1
  * @param {IInterval} i2
@@ -211,59 +173,118 @@ function pos(row, col) {
     return {row: row, col: col}
 }
 
-class Selection extends Rectangle {
+class Range {
+    constructor(rowIndex, columnIndex, rowCount, columnCount) {
+        this.rowIndex = rowIndex;
+        this.columnIndex = columnIndex;
+        this.rowCount = rowCount;
+        this.columnCount = columnCount;
+    }
+
+    toString() {
+        return `Range(${this.rowIndex}, ${this.columnIndex}, ${this.rowCount}, ${this.columnCount})`
+    }
+
+    /**
+     * TODO: Implement on Range.
+     * Intersect this range with another range.
+     * @param {Range} other
+     * @returns {Range}
+     */
+    intersect(other) {
+        const row = intersectInterval(
+            {min: this.rowIndex, sup: this.rowIndex + this.rowCount},
+            {min: other.rowIndex, sup: other.rowIndex + other.rowCount});
+        const col = intersectInterval(
+            {min: this.columnIndex, sup: this.columnIndex + this.columnCount},
+            {min: other.columnIndex, sup: other.columnIndex + other.columnCount});
+        if (col === undefined || row === undefined) {
+            return undefined;
+        }
+        return new Range(row.min, col.min, row.sup - row.min, col.sup - col.min)
+    }
+
+    /**
+     * Copy this range to an offset position.
+     * @param {number} rowOffset
+     * @param {number} colOffset
+     * @returns {Range}
+     */
+    offset(rowOffset, colOffset) {
+        return new Range(
+            this.rowIndex + rowOffset, this.columnIndex + colOffset,
+            this.rowCount, this.columnCount)
+    }
+}
+
+class Selection extends Range {
     constructor(repainter, eventListeners) {
         super({min: 0, sup: 1}, {min: 0, sup: 1});
         this.initial = pos(0, 0);
         this.head = pos(0, 0); // Cell opposite the initial.
         this.repainter = repainter;
         this.eventListeners = eventListeners;
+        /** @type{Array<Range>} */
+        this.areas = [];
     }
 
     /**
      */
     show() {
-        this.repainter('LightBlue', this);
+        for (const r of this.areas) {
+            console.log('show: ' + r.toString());
+            this.repainter('LightBlue', r);
+        }
     }
 
     hide() {
-        this.repainter(undefined, this);
+        for (const r of this.areas) {
+            this.repainter(undefined, r);
+        }
     }
 
     /**
      * @param {number} rowIndex
-     * @param {number} colIndex
+     * @param {number} columnIndex
      */
-    set(rowIndex, colIndex) {
+    set(rowIndex, columnIndex) {
         console.log('Selection.set');
         this.hide(); // TODO: Why?
-        this.initial = {row: rowIndex, col: colIndex};
-        this.head = {row: rowIndex, col: colIndex};
-        this.row = {min: rowIndex, sup: 1 + rowIndex};
-        this.col = {min: colIndex, sup: 1 + colIndex};
+        this.initial = {row: rowIndex, col: columnIndex};
+        this.head = {row: rowIndex, col: columnIndex};
+        this.areas = [];
+        this.add(rowIndex, columnIndex);
         this.eventListeners['selectionChanged'](this);
     }
 
     /**
      * @param {number} rowIndex
-     * @param {number} colIndex
+     * @param {number} columnIndex
      */
-    expand(rowIndex, colIndex) {
+    expand(rowIndex, columnIndex) {
         console.log('Selection.expand');
         this.hide();
 
-        this.head = {row: rowIndex, col: colIndex};
-        this.row = {
-            min: Math.min(this.initial.row, rowIndex),
-            sup: 1 + Math.max(this.initial.row, rowIndex)
-        };
-
-        this.col = {
-            min: Math.min(this.initial.col, colIndex),
-            sup: 1 + Math.max(this.initial.col, colIndex)
-        };
+        this.head = {row: rowIndex, col: columnIndex};
+        const r = this.areas.pop();
+        r.rowIndex = Math.min(this.initial.row, rowIndex);
+        r.columnIndex = Math.min(this.initial.col, columnIndex);
+        r.rowCount = 1 + Math.max(this.initial.row, rowIndex) - r.rowIndex;
+        r.columnCount = 1 + Math.max(this.initial.col, columnIndex) - r.columnIndex;
+        this.areas.push(r);
 
         this.show();
+        this.eventListeners['selectionChanged'](this);
+    }
+
+    /**
+     * @param {number} rowIndex
+     * @param {number} columnIndex
+     */
+    add(rowIndex, columnIndex) {
+        console.log('Selection.add');
+        this.hide(); // TODO: Why?
+        this.areas.push(new Range(rowIndex, columnIndex, 1, 1));
         this.eventListeners['selectionChanged'](this);
     }
 }
@@ -325,6 +346,24 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     refreshHeaders();
+    makeDataLists();
+
+    /**
+     * For each enum restricted column with index columnIndex,
+     * generate a datalist element with id enum<columnIndex>.
+     */
+    function makeDataLists() {
+        // Note we have to loop over all columns to retain the column index.
+        for (const [columnIndex, schema] of schemas.entries()) {
+            if (!schema.enum) continue;
+            const datalist = document.createElement('datalist');
+            datalist.id = 'enum' + columnIndex;
+            for (const item of schema.enum) {
+                datalist.appendChild(document.createElement('option')).value = item;
+            }
+            container.appendChild(datalist)
+        }
+    }
 
     function refreshHeaders() {
         headerRow.textContent = '';
@@ -364,43 +403,6 @@ function Grid(container, viewModel, eventListeners) {
     body.style.height = (totalHeight - 20) + 'px';
     container.appendChild(body);
 
-    /*let rowMenu = document.createElement('div');
-    rowMenu.style.position = 'absolute';
-    rowMenu.style.display = 'none';
-
-    let insertRowButton = document.createElement('button');
-    insertRowButton.type = 'button';
-    insertRowButton.style.position = 'absolute';
-    insertRowButton.style.top = '-20px';
-    insertRowButton.style.padding = '0';
-    insertRowButton.title = "Insert Row Above";
-    insertRowButton.textContent = '+';
-    insertRowButton.onclick = function () {
-        refresh(viewModel.insertRowBefore(activeCell.row - 1));
-        //inputList[previousFocus.row][0].select()
-    };
-    rowMenu.appendChild(insertRowButton);
-
-    let deleteRowButton = document.createElement('button');
-    deleteRowButton.id = 'delete';
-    deleteRowButton.type = 'button';
-    deleteRowButton.style.position = 'absolute';
-    deleteRowButton.style.padding = '0';
-    deleteRowButton.type = 'button';
-    deleteRowButton.title = "Delete Selected Rows";
-    deleteRowButton.textContent = '-';
-    deleteRowButton.onclick = function () {
-        let rowCount = 0;
-        range(selection.row.sup - selection.row.min).forEach(function() {
-            rowCount = viewModel.deleteRow(selection.row.min);
-        });
-        refresh(rowCount);
-    };
-    rowMenu.appendChild(deleteRowButton);
-    body.appendChild(rowMenu);
-*/
-
-    // TODO: Why is sometdeleteRowButtonimes clientHeight not set?
     let viewPortHeight = totalHeight - 20;
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
     cellParent.className = "GRID";
@@ -410,17 +412,174 @@ function Grid(container, viewModel, eventListeners) {
     cellParent.style.height = viewPortHeight + 'px';
     container.tabIndex = 0;
 
-    /** @type{HTMLTextAreaElement} */
-    const editor = /** @type{HTMLTextAreaElement} */ document.createElement('textarea');
-    editor.id = 'editor';
-    editor.style.position = 'absolute';
-    editor.style.display = 'none';
-    editor.style.height = innerHeight;
-    editor.style.padding = cellPadding + 'px';
+    class Editor {
+
+        constructor(container) {
+            /** @type{HTMLInputElement} */
+            this.input = document.createElement('input');
+            this.input.id = 'editor';
+            this.input.style.position = 'absolute';
+            this.input.style.display = 'none';
+            this.input.style.height = innerHeight;
+            this.input.style.padding = cellPadding + 'px';
+
+            /** @type{HTMLTextAreaElement} */
+            this.textarea = document.createElement('textarea');
+            this.textarea.id = 'textarea';
+            this.textarea.style.position = 'absolute';
+            this.textarea.style.display = 'none';
+            this.textarea.style.height = innerHeight;
+            this.textarea.style.padding = cellPadding + 'px';
+
+            function foo(evt) {
+                // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
+                evt.stopPropagation();
+            }
+
+            this.input.addEventListener('keydown', this.keydownHandler);
+            this.textarea.addEventListener('keydown', this.keydownHandler);
+
+            this.input.addEventListener('mousedown', foo);
+            this.textarea.addEventListener('mousedown', foo);
+
+            container.appendChild(this.input);
+            container.appendChild(this.textarea);
+        }
+
+        /**
+         * @param {KeyboardEvent} evt
+         */
+        keydownHandler(evt) {
+            console.log('editor.onkeydown: ' + evt.code);
+            // Clicking editor should invoke default: move caret. It should not delegate to containers action.
+            evt.stopPropagation();
+
+            if (evt.code === 'F2') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                // Toggle between input and edit mode
+                activeCell.mode = (activeCell.mode === 'input' ? 'edit' : input);
+            } else if (evt.code === 'ArrowLeft' && activeCell.mode === 'input') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                navigateCell(evt, 0, -1);
+            } else if (evt.code === 'ArrowRight' && activeCell.mode === 'input') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                navigateCell(evt, 0, 1);
+            } else if (false && evt.code === 'Enter' && evt.altKey) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                //editor.dispatchEvent(new KeyboardEvent('keydown', {code: 'Enter'}));
+                editor.setRangeText('\n', editor.selectionStart, editor.selectionEnd, 'end');
+            } else if (evt.code === 'Enter' && evt.altKey) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                if (ee.input.style.display !== 'none') {
+                    ee.showTextArea();
+                } else {
+                    ee.textarea.setRangeText('\n', ee.textarea.selectionStart, ee.textarea.selectionEnd, 'end');
+                }
+            } else if (evt.code === 'Enter') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                commit();
+                navigateCell(evt, evt.shiftKey ? -1 : 1, 0);
+            } else if (evt.code === 'Tab') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                commit();
+                navigateCell(evt, 0, evt.shiftKey ? -1 : 1);
+            } else if (evt.code === 'Escape') {
+                // Leave edit mode.
+                evt.preventDefault();
+                evt.stopPropagation();
+                commit();
+            }
+        }
+
+        blurHandler(evt) {
+            console.log('editor.onblur');
+            commit();
+
+            if (!container.contains(evt.relatedTarget)) {
+                container.blur();
+                activeCell.hide();
+                selection.hide();
+            }
+        }
+
+        hide() {
+            this.setValue('');
+            if (this.input.style.display !== 'none') {
+                this.input.style.display = 'none';
+            } else {
+                this.textarea.style.display = 'none';
+            }
+        }
+
+        showInput(top, left, width) {
+            const style = this.input.style;
+            style.top = top;
+            style.left = left;
+            style.width = (parseInt(width) + 20) + 'px';  // Account for the resize handle, which is about 20px
+            //style.height = innerHeight;
+            if (schemas[activeCell.col].enum) {
+                this.input.setAttribute('list', 'enum' + activeCell.col);
+            }
+
+            style.display = 'inline-block';
+            // focus on input element, which will then receive this keyboard event.
+            // Note: focus after display!
+            // Note: It is ok to scroll on focus here.
+            this.input.focus();
+            this.input.addEventListener('blur', this.blurHandler);
+        }
+
+        showTextArea() {
+            const style = this.input.style;
+            style.display = 'none';
+            this.input.removeEventListener('blur', this.blurHandler);
+            this.textarea.style.left = style.left;
+            this.textarea.style.top = style.top;
+            this.textarea.style.display = 'inline-block';
+            this.textarea.value = this.input.value;
+            this.textarea.focus();
+            //window.setTimeout(()=>textarea.focus(), 10);
+            this.textarea.addEventListener('blur', this.blurHandler);
+        }
+
+        /**
+         * @param {string} value
+         */
+        setValue(value) {
+            if (this.input.style.display !== 'none') {
+                this.input.value = value;
+                if (value.includes('\n')) {
+                    this.showTextArea();
+                    this.textarea.value = value;
+                }
+            } else {
+                this.textarea.value = value;
+            }
+        }
+
+        getValue() {
+            if (this.input.style.display !== 'none') {
+                return this.input.value;
+            } else {
+                return this.textarea.value;
+            }
+        }
+    }
+
+
     /** @type {{span?:{HTMLSpanElement}, editor:{HTMLInputElement}, row:number, col:number, mode:string}} */
     const activeCell = {
         span: undefined,
-        editor: editor, row: 0, col: 0, mode: 'display',
+        row: 0,
+        col: 0,
+        mode: 'display',
         hide: function () {
             if (this.span) this.span.style.backgroundColor = 'white';
             headerRow.style.backgroundColor = 'khaki';//removeProperty('background-color');
@@ -449,17 +608,7 @@ function Grid(container, viewModel, eventListeners) {
 
             const spanStyle = this.span.style;
             spanStyle.display = 'none';
-            const style = this.editor.style;
-            style.top = spanStyle.top;
-            style.left = spanStyle.left;
-            style.width = (parseInt(spanStyle.width) + 20) + 'px';  // Account for the resize handle, which is about 20px
-            editor.style.height = innerHeight;
-            style.display = 'inline-block';
-
-            // focus on input element, which will then receive this keyboard event.
-            // Note: focus after display!
-            // Note: It is ok to scroll on focus here.
-            this.editor.focus();
+            ee.showInput(spanStyle.top, spanStyle.left, spanStyle.width);
         },
         enterInputMode: function () {
             this.mode = 'input';
@@ -474,21 +623,21 @@ function Grid(container, viewModel, eventListeners) {
             } else {
                 value = schemas[this.col].converter.toEditable(value);
             }
-            editor.value = value;
+            ee.setValue(value);
         }
     };
 
     /**
      *
      * @param {string?} backgroundColor
-     * @param {Rectangle} rectangle
+     * @param {Range} range
      */
-    function repaintRectangle(backgroundColor, rectangle) {
-        let r = rectangle.shift(-firstRow, 0);
-        let rr = r.intersect(new Rectangle({min: 0, sup: viewPortRowCount}, {min: 0, sup: colCount}));
+    function repaintRange(backgroundColor, range) {
+        let r = range.offset(-firstRow, 0);
+        let rr = r.intersect(new Range(0, 0, viewPortRowCount, colCount));
         if (!rr) return;
-        for (let row = rr.row.min; row < rr.row.sup; row++) {
-            for (let col = rr.col.min; col < rr.col.sup; col++) {
+        for (let row = rr.rowIndex; row < rr.rowIndex + rr.rowCount; row++) {
+            for (let col = rr.columnIndex; col < rr.columnIndex + rr.columnCount; col++) {
                 const span = spanMatrix[row][col];
                 const style = span.style;
                 if (spanMatrix[row][col] === activeCell.span) {
@@ -533,6 +682,9 @@ function Grid(container, viewModel, eventListeners) {
 
         if (evt.shiftKey) {
             selection.expand(rowIndex, colIndex);
+        } else if (evt.ctrlKey) {
+            selection.add(rowIndex, colIndex);
+            selection.show();
         } else {
             navigateCell(evt, rowIndex - activeCell.row, colIndex - activeCell.col);
             selection.set(rowIndex, colIndex);
@@ -599,18 +751,28 @@ function Grid(container, viewModel, eventListeners) {
     };
 
     function deleteSelection() {
-        let emptyRow = Array(selection.col.sup - selection.col.min);
-        emptyRow.fill(undefined);
-        let emptyMatrix = Array(selection.row.sup - selection.row.min);
-        emptyMatrix.fill(emptyRow);
-        refresh(paste(emptyMatrix));
+        for (const r of selection.areas) {
+            let rowIndex = r.rowIndex;
+            let endRowIndex = rowIndex + r.rowCount;
+            let endColIndex = r.columnIndex + r.columnCount;
+
+            for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
+                let colIndex = r.columnIndex;
+                for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
+                    viewModel.setCell(rowIndex, colIndex, undefined);
+                }
+            }
+        }
+        refresh(viewModel.rowCount());
     }
 
     function deleteRows() {
-        let rowCount = 1;
-        range(selection.row.sup - selection.row.min).forEach(function () {
-            rowCount = viewModel.deleteRow(selection.row.min);
-        });
+        let rowCount = undefined;
+        for (const r of selection.areas) {
+            range(r.rowCount).forEach(function () {
+                rowCount = viewModel.deleteRow(r.rowIndex);
+            });
+        }
         refresh(rowCount);
     }
 
@@ -618,49 +780,8 @@ function Grid(container, viewModel, eventListeners) {
         refresh(viewModel.insertRowBefore(activeCell.row - 1));
     }
 
-    /*
-    function showContextMenu() {
-        let dialog = document.getElementById('gridchenDialog');
-        if (!dialog) {
-            dialog = document.createElement('dialog');
-            dialog.id = 'gridchenDialog';
-            dialog.style.width = '20em';
-            dialog.style.height = '60px';
-            dialog.style.backgroundColor = 'transparent';
-            const form = document.createElement('div');
-            const actions = [
-                ['Cut', () => copySelection(true)],
-                ['Copy', () => copySelection(false)],
-                ['Paste', () => alert('Not Implemented')],
-                ['Insert Row', insertRow],
-                ['Delete Rows', deleteRows],
-                ['Delete Contents', deleteSelection]
-            ];
-            for (const action of actions) {
-                const button = form.appendChild(document.createElement('button'));
-                button.textContent = action[0];
-                button.onclick = action[1];
-            }
-
-            dialog.appendChild(form);
-            const graphElement = document.createElement('div');
-            dialog.appendChild(graphElement);
-            document.body.appendChild(dialog);
-            styleSheet.textContent = `
-                #gridchenDialog div { position:absolute;display: inline-block;background-color: bisque; }
-                #gridchenDialog button { display: block; }
-            `;
-            document.body.appendChild(styleSheet);
-            // Note that this event is caught even if the dialog is not directly clicked.
-            dialog.onclick = () => dialog.close();
-        }
-        dialog.style.left = (activeCell.col * 100) + 'px';
-        dialog.style.top = (activeCell.row * rowHeight) + 'px';
-        dialog.showModal();
-    }*/
-
     function copySelection(doCut, withHeaders) {
-        window.navigator.clipboard.writeText(selectionToTSV('\t', withHeaders))
+        window.navigator.clipboard.writeText(rangeToTSV(selection.areas[0], '\t', withHeaders))
             .then(() => {
                 console.log('Text copied to clipboard');
                 if (doCut) {
@@ -709,8 +830,8 @@ function Grid(container, viewModel, eventListeners) {
             // This is reverted on the next onblur event.
             evt.preventDefault();  // Do not select the inputs content.
             evt.stopPropagation();
-            if (selection.row.min === 0 && selection.col.min === 0
-                && selection.row.sup === rowCount && selection.col.sup === colCount) {
+            if (selection.rowIndex === 0 && selection.columnIndex === 0
+                && selection.rowCount === rowCount && selection.columnCount === colCount) {
                 // Already all data cells selected.
                 headerRow.style.backgroundColor = 'red';
             } else {
@@ -720,6 +841,10 @@ function Grid(container, viewModel, eventListeners) {
         } else if ((evt.code === 'KeyC' || evt.code === 'KeyX') && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent text is copied from container.
+            if (selection.areas.length > 1) {
+                alert('This action is not possible with multi-selections.');
+                return
+            }
             copySelection(evt.code === 'KeyX', headerRow.style.backgroundColor === 'red');
         } else if (evt.code === 'KeyV' && evt.ctrlKey) {
             evt.preventDefault();
@@ -867,9 +992,8 @@ function Grid(container, viewModel, eventListeners) {
         if (activeCell.mode !== 'display') {
             const rowIndex = activeCell.row;
             const colIndex = activeCell.col;
-            let value = editor.value.trim();
-            editor.value = '';
-            editor.style.display = 'none';
+            let value = ee.getValue().trim();
+            ee.hide();
             // activeCell.span.textContent = value;
             if (value === '') {
                 value = undefined;
@@ -886,65 +1010,7 @@ function Grid(container, viewModel, eventListeners) {
         container.focus({preventScroll: true});
     }
 
-    editor.addEventListener('blur', function (evt) {
-        console.log('editor.onblur');
-        commit();
 
-        if (!container.contains(evt.relatedTarget)) {
-            container.blur();
-            activeCell.hide();
-            selection.hide();
-        }
-    });
-
-    /**
-     * @param {KeyboardEvent} evt
-     */
-    editor.addEventListener('keydown', function (evt) {
-        console.log('editor.onkeydown: ' + evt);
-        // Clicking editor should invoke default: move caret. It should not delegate to containers action.
-        evt.stopPropagation();
-
-        if (evt.code === 'F2') {
-            evt.preventDefault();
-            evt.stopPropagation();
-            // Toggle between input and edit mode
-            activeCell.mode = (activeCell.mode === 'input' ? 'edit' : input);
-        } else if (evt.code === 'ArrowLeft' && activeCell.mode === 'input') {
-            evt.preventDefault();
-            evt.stopPropagation();
-            navigateCell(evt, 0, -1);
-        } else if (evt.code === 'ArrowRight' && activeCell.mode === 'input') {
-            evt.preventDefault();
-            evt.stopPropagation();
-            navigateCell(evt, 0, 1);
-        } else if (evt.code === 'Enter' && evt.altKey) {
-            evt.preventDefault();
-            evt.stopPropagation();
-            //editor.dispatchEvent(new KeyboardEvent('keydown', {code: 'Enter'}));
-            editor.setRangeText('\n', editor.selectionStart, editor.selectionEnd, 'end');
-        } else if (evt.code === 'Enter') {
-            evt.preventDefault();
-            evt.stopPropagation();
-            commit();
-            navigateCell(evt, evt.shiftKey ? -1 : 1, 0);
-        } else if (evt.code === 'Tab') {
-            evt.preventDefault();
-            evt.stopPropagation();
-            commit();
-            navigateCell(evt, 0, evt.shiftKey ? -1 : 1);
-        } else if (evt.code === 'Escape') {
-            // Leave edit mode.
-            evt.preventDefault();
-            evt.stopPropagation();
-            commit();
-        }
-    });
-
-    editor.addEventListener('mousedown', function (evt) {
-        // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
-        evt.stopPropagation();
-    });
 
 
     let viewPortRowCount = Math.floor(viewPortHeight / rowHeight);
@@ -972,7 +1038,7 @@ function Grid(container, viewModel, eventListeners) {
         }
 
         updateViewportRows(getSelection(
-            new Rectangle({min: firstRow, sup: firstRow + viewPortRowCount}, {min: 0, sup: colCount})));
+            new Range(firstRow, 0, viewPortRowCount, colCount)));
         activeCell.move(activeCell.row, activeCell.col);
         selection.show();
     }
@@ -1011,12 +1077,17 @@ function Grid(container, viewModel, eventListeners) {
         cellParent.appendChild(elem);
     }
 
+    /**
+     * TODO: Rename to getData
+     * @param {Range} selection
+     * @returns {Array<Array<?>>}
+     */
     function getSelection(selection) {
-        let matrix = Array(selection.row.sup - selection.row.min);
-        for (let i = 0, rowIndex = selection.row.min; rowIndex < selection.row.sup; i++, rowIndex++) {
-            matrix[i] = Array(selection.col.sup - selection.col.min);
+        let matrix = Array(selection.rowCount);
+        for (let i = 0, rowIndex = selection.rowIndex; rowIndex < selection.rowIndex + selection.rowCount; i++, rowIndex++) {
+            matrix[i] = Array(selection.columnCount);
             if (rowIndex >= rowCount) continue;
-            for (let j = 0, colIndex = selection.col.min; colIndex < selection.col.sup; colIndex++, j++) {
+            for (let j = 0, colIndex = selection.columnIndex; colIndex < selection.columnIndex + selection.columnCount; colIndex++, j++) {
                 matrix[i][j] = viewModel.getCell(rowIndex, colIndex);
             }
         }
@@ -1024,16 +1095,17 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     /**
+     * @param {Range} r
      * @param {string} sep
      * @param {boolean} withHeaders
      * @returns {string}
      */
-    function selectionToTSV(sep, withHeaders) {
-        const rowMatrix = getSelection(selection);
+    function rangeToTSV(r, sep, withHeaders) {
+        const rowMatrix = getSelection(r);
         let tsvRows = Array(rowMatrix.length);
         for (const [i, row] of rowMatrix.entries()) {
             tsvRows[i] = row.map(function (value, j) {
-                let schema = schemas[selection.col.min + j];
+                let schema = schemas[r.columnIndex + j];
                 if (value === undefined || value === null) {
                     return undefined;
                 }
@@ -1057,7 +1129,6 @@ function Grid(container, viewModel, eventListeners) {
      * @returns {number}
      */
     function pasteSingle(topRowIndex, topColIndex, matrix) {
-
         let rowIndex = topRowIndex;
         let endRowIndex = rowIndex + matrix.length;
         let endColIndex = Math.min(schemas.length, topColIndex + matrix[0].length);
@@ -1079,21 +1150,28 @@ function Grid(container, viewModel, eventListeners) {
      * @@param {Array<Array<string>>} matrix
      */
     function paste(matrix) {
+        if (selection.areas.length > 1) {
+            alert('This action is not possible with multi-selections.');
+            return
+        }
+
+        const r = selection.areas[0];
+
         if (!matrix[0].length) {
             alert('You have nothing to paste')
         }
         const sourceRows = matrix.length;
         const sourceColumns = matrix[0].length;
-        const targetRows = selection.row.sup - selection.row.min;
-        const targetColumns = selection.col.sup - selection.col.min;
+        const targetRows = r.rowCount;
+        const targetColumns = r.columnCount;
         if (targetRows % sourceRows || targetColumns % sourceColumns) {
-            pasteSingle(selection.row.min, selection.col.min, matrix);
+            pasteSingle(r.rowIndex, r.columnIndex, matrix);
             // TODO: Reshape selection
         } else {
             // Tile target with source.
             for (let i = 0; i < Math.trunc(targetRows / sourceRows); i++) {
                 for (let j = 0; j < Math.trunc(targetColumns / sourceColumns); j++) {
-                    pasteSingle(selection.row.min + i * sourceRows, selection.col.min + j * sourceColumns, matrix);
+                    pasteSingle(r.rowIndex + i * sourceRows, r.columnIndex + j * sourceColumns, matrix);
                 }
             }
         }
@@ -1130,10 +1208,10 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-    cellParent.appendChild(editor);
+    const ee = new Editor(cellParent);
 
     /** @type {Selection} */
-    let selection = new Selection(repaintRectangle, eventListeners);
+    let selection = new Selection(repaintRange, eventListeners);
     //selection.set(0, 0);
 
     firstRow = 0;
@@ -1142,12 +1220,9 @@ function Grid(container, viewModel, eventListeners) {
     activeCell.hide();
     selection.hide();
 
-    class Range {
+    class Range1 extends Range {
         constructor(rowIndex, columnIndex, rowCount, columnCount) {
-            this.rowIndex = rowIndex;
-            this.columnIndex = columnIndex;
-            this.rowCount = rowCount;
-            this.columnCount = columnCount;
+            super(rowIndex, columnIndex, rowCount, columnCount);
         }
 
         select() {
@@ -1159,17 +1234,17 @@ function Grid(container, viewModel, eventListeners) {
 
     return {
         /**
-         * @returns {Range}
+         * @returns {Range1}
          */
         getActiveCell() {
-            return new Range(activeCell.row, activeCell.col, 1, 1);
+            return new Range1(activeCell.row, activeCell.col, 1, 1);
         },
         /**
-         * @returns {Range}
+         * @returns {Range1}
          */
         getSelection() {
-            return new Range(selection.row.min, selection.col.min,
-                selection.row.sup - selection.row.min, selection.col.sup - selection.col.min);
+            return new Range1(selection.rowIndex, selection.columnIndex,
+                selection.rowCount, selection.columnCount);
         },
         /**
          * @param {number} rowIndex
@@ -1179,7 +1254,7 @@ function Grid(container, viewModel, eventListeners) {
          * @returns {Range}
          */
         getRange(rowIndex, columnIndex, rowCount, columnCount) {
-            return new Range(rowIndex, columnIndex, rowCount, columnCount);
+            return new Range1(rowIndex, columnIndex, rowCount, columnCount);
         }
     };
 }
