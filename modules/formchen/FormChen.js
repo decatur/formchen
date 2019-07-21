@@ -187,7 +187,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                         schema.converter = new StringStringConverter();
                     }
                     input.style.textAlign = 'left';
-                    input.setAttribute('list', 'enum')
+                    // input.setAttribute('list', 'enum')
                     input.value = schema.converter.toEditable(value);
                 } else {
                     createError(title, 'Invalid schema at ' + pointer);
