@@ -56,6 +56,7 @@ function getValueByPointer(obj, pointer) {
  * @param onDataChanged
  */
 export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
+    // topContainer.textContent = '';
 
     const patchesByPath = {};
     function onDataChangedWrapper(pointer, newValue) {
@@ -238,8 +239,13 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
         }
 
+        /** @type{Array<object>} */
         getPatches() {
             return Object.entries(patchesByPath).map(([path, value]) => ({op: 'replace', path: path, value: value}));
+        }
+    
+        clearPatches() {
+            Object.keys(patchesByPath).forEach(function(key) { delete patchesByPath[key] });
         }
     }
 
