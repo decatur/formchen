@@ -1,11 +1,11 @@
 import "../gridchen/GridChen.js"
 import {createColumnSchemas} from "../gridchen/DataViews.js";
 import {
-    NumberStringConverter,
+    NumberConverter,
     DateTimeStringConverter,
-    DateStringConverter,
-    DateTimeLocalStringConverter,
-    StringStringConverter
+    FullDateStringConverter,
+    DatePartialTimeStringConverter,
+    StringConverter
 } from "../gridchen/converter.js";
 
 /**
@@ -158,34 +158,34 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
                 if (schema.type === 'integer') {
                     if (!schema.converter) {
-                        schema.converter = new NumberStringConverter(0);
+                        schema.converter = new NumberConverter(0);
                         schema.converter.isPercent = isPercent;
                     }
                     input.value = schema.converter.toEditable(value);
                 } else if (schema.type === 'number') {
                     if (!schema.converter) {
-                        schema.converter = new NumberStringConverter(schema.fractionDigits || 2);
+                        schema.converter = new NumberConverter(schema.fractionDigits || 2);
                         schema.converter.isPercent = isPercent;
                     }
                     input.value = schema.converter.toEditable(value);
-                } else if (schema.format === 'datetime') {
+                } else if (schema.format === 'date-time') {
                     if (!schema.converter) {
                         schema.converter = new DateTimeStringConverter();
                     }
                     input.value = schema.converter.toEditable(value);
-                } else if (schema.format === 'datetimelocal') {
+                } else if (schema.format === 'date-partial-time') {
                     if (!schema.converter) {
-                        schema.converter = new DateTimeLocalStringConverter();
+                        schema.converter = new DatePartialTimeStringConverter();
                     }
                     input.value = schema.converter.toEditable(value);
-                } else if (schema.format === 'date') {
+                } else if (schema.format === 'full-date') {
                     if (!schema.converter) {
-                        schema.converter = new DateStringConverter();
+                        schema.converter = new FullDateStringConverter();
                     }
                     input.value = schema.converter.toEditable(value);
                 } else if (schema.type === 'string') {
                     if (!schema.converter) {
-                        schema.converter = new StringStringConverter();
+                        schema.converter = new StringConverter();
                     }
                     input.style.textAlign = 'left';
                     // input.setAttribute('list', 'enum')

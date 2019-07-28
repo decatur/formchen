@@ -6,7 +6,7 @@ export let schema = {
             items: {
                 type: 'object',
                 items: [  // tuple schema
-                    {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
+                    {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
                     {title: 'Age [d]', width: 100, type: 'number'},
                     {title: 'Weight [g]', width: 100, type: 'number'}
                 ]
@@ -39,12 +39,12 @@ export let schema = {
         someDateTime: {
             title: 'Some DateTime',
             type: 'string',
-            format: 'datetime'
+            format: 'date-time'
         },
-        someDateTimeLocal: {
-            title: 'Some DateTimeLocal',
+        someDatePartialTime: {
+            title: 'Some DatePartialTime',
             type: 'string',
-            format: 'datetimelocal'
+            format: 'date-partial-time'
         },
         someBoolean: {
             title: 'Some Boolean',
@@ -100,7 +100,7 @@ export let data = {
     someEnum: 'Frida Krum',
     someDate: '2019-01-01',
     someDateTime: '2019-01-01T00:00Z',
-    someDateTimeLocal: '2019-01-01T00:00',
+    someDatePartialTime: '2019-01-01T00:00',
     somePercentValue: 0.5,
     someBoolean: true,
     someInteger: 7,

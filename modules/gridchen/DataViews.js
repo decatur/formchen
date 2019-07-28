@@ -4,12 +4,15 @@
  */
 
 import {
-    DateStringConverter,
-    DateTimeLocalStringConverter,
+    FullDateConverter,
+    FullDateStringConverter,
+    DatePartialTimeConverter,
+    DatePartialTimeStringConverter,
+    DateTimeConverter,
     DateTimeStringConverter,
-    NumberStringConverter,
+    NumberConverter,
     BooleanStringConverter,
-    StringStringConverter
+    StringConverter
 } from "./converter.js";
 
 const numeric = new Set(['number', 'integer']);
@@ -70,18 +73,24 @@ function updateSchema(schemas) {
             } else if (schema.type === 'integer') {
                 fractionDigits = 0;
             }
-            schema.converter = new NumberStringConverter(fractionDigits);
-        } else if (schema.format === 'datetime') {
+            schema.converter = new NumberConverter(fractionDigits);
+        } else if (schema.type === 'string' && schema.format === 'full-date') {
+            schema.converter = new FullDateStringConverter();
+        } else if (schema.type === 'FullDate') {
+            schema.converter = new FullDateConverter();
+        } else if (schema.type === 'string' && schema.format === 'date-partial-time') {
+            schema.converter = new DatePartialTimeStringConverter();
+        } else if (schema.type === 'DatePartialTime') {
+            schema.converter = new DatePartialTimeConverter(schema.frequency || 'T1M');
+        } else if (schema.type === 'string' && schema.format === 'date-time') {
             schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
-        } else if (schema.format === 'datetimelocal') {
-            schema.converter = new DateTimeLocalStringConverter(schema.frequency || 'T1M');
-        } else if (schema.format === 'date') {
-            schema.converter = new DateStringConverter();
+        } else if (schema.type === 'Date') {
+            schema.converter = new DateTimeConverter(schema.frequency || 'T1M');
         } else if (schema.type === 'boolean') {
             schema.converter = new BooleanStringConverter();
         } else {
             // string and others
-            schema.converter = new StringStringConverter();
+            schema.converter = new StringConverter();
         }
     }
 }
@@ -111,10 +120,12 @@ function sortedColumns(properties) {
  */
 export function createView(schema, matrix) {
     const columnSchemas = createColumnSchemas(schema);
-    if (schema instanceof Error) {
-        return new Error('createView() received undefined schema')
+    if (columnSchemas instanceof Error) {
+        const err =  new Error('createView() received undefined schema');
+        console.error(err);
+        return err
     }
-    return columnSchemas.viewCreator(columnSchemas, matrix);
+    return columnSchemas.viewCreator(columnSchemas, columnSchemas.validate(matrix));
 }
 
 /**
@@ -200,7 +211,7 @@ export function createColumnSchemas(schema) {
                 // TODO: Be much more strict!
                 return invalidError
             }
-            if (!colSchema.title) colSchema.title = property.title;
+            if (!colSchema.title) colSchema.title = property.title || entry[0];
             if (!colSchema.width) colSchema.width = property.width;
 
             colSchemas.columnSchemas.push(colSchema);
@@ -212,7 +223,45 @@ export function createColumnSchemas(schema) {
         return colSchemas
     }
 
+    if (schema.items && schema.items.constructor === Object) {
+        return {
+            title: schema.title,
+            columnSchemas: [schema.items],
+            viewCreator: createColumnMatrixView,
+            validate: function(data) {
+                return [data] || []
+            }
+        }
+    }
+
     return invalidError
+}
+
+class MatrixView {
+
+    /**
+     * @returns {number}
+     */
+    rowCount() {
+        throw new Error('Abstract method');
+    }
+
+    /**
+     * @param {number} rowIndex
+     * @param {number} colIndex
+     * @returns {*}
+     */
+    getCell(rowIndex, colIndex) {
+        throw new Error('Abstract method');
+    }
+
+    /**
+     * @param {number} columnIndex
+     * @returns {*[]}
+     */
+    getColumn(columnIndex) {
+        return range(this.rowCount()).map(rowIndex =>this.getCell(rowIndex, columnIndex));
+    }
 }
 
 /**
@@ -238,8 +287,9 @@ export function createRowMatrixView(schema, rows) {
     /**
      * @implements {GridChen.DataView}
      */
-    class RowMatrixView {
+    class RowMatrixView extends MatrixView {
         constructor() {
+            super();
             this.schema = schema;
         }
 
@@ -308,10 +358,6 @@ export function createRowMatrixView(schema, rows) {
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
             return rows.length;
         }
-
-        plot() {
-            renderPlot(schema, rows);
-        }
     }
 
     return new RowMatrixView();
@@ -341,8 +387,9 @@ export function createRowObjectsView(schema, rows) {
     /**
      * @implements {GridChen.DataView}
      */
-    class RowObjectsView {
+    class RowObjectsView extends MatrixView {
         constructor() {
+            super();
             this.schema = schema;
         }
 
@@ -402,10 +449,6 @@ export function createRowObjectsView(schema, rows) {
             rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
             return rows.length;
         }
-
-        plot() {
-            renderPlot(schema, rows);
-        }
     }
 
     return new RowObjectsView();
@@ -437,8 +480,9 @@ export function createColumnMatrixView(schema, columns) {
     /**
      * @extends {GridChen.DataView}
      */
-    class ColumnMatrixView {
+    class ColumnMatrixView extends MatrixView {
         constructor() {
+            super();
             this.schema = schema;
         }
 
@@ -510,10 +554,6 @@ export function createColumnMatrixView(schema, columns) {
             });
 
             return getRowCount();
-        }
-
-        plot() {
-            renderPlot(schema, columns);
         }
     }
 

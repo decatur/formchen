@@ -49,7 +49,7 @@ test('FormChen', () => {
     input = nextInput();
     input.value = '2020-01-01T00:00';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someDateTimeLocal", "value": new Date('2020-01-01')});
+    expected.push({"op": "replace", "path": "/someDatePartialTime", "value": new Date('2020-01-01')});
 
     input = nextInput();
     input.checked = false;

@@ -56,7 +56,8 @@ export class GridChen extends HTMLElement {
             'dataChanged': () => null,
             'activeCellChanged': () => null,
             'selectionChanged': () => null,
-            'paste': () => null
+            'paste': () => null,
+            'plot': undefined
         };
     }
 
@@ -231,7 +232,7 @@ class Selection extends Range {
     /**
      */
     show() {
-        for (const r of this.areas) {
+        for (const /** @type{Range} */ r of this.areas) {
             console.log('show: ' + r.toString());
             this.repainter('LightBlue', r);
         }
@@ -526,7 +527,9 @@ function Grid(container, viewModel, eventListeners) {
             //style.height = innerHeight;
             if (schemas[activeCell.col].enum) {
                 this.input.setAttribute('list', 'enum' + activeCell.col);
-            }
+            } else {
+				this.input.removeAttribute('list');
+			}
 
             style.display = 'inline-block';
             // focus on input element, which will then receive this keyboard event.
@@ -618,7 +621,7 @@ function Grid(container, viewModel, eventListeners) {
             this.mode = 'edit';
             this.enterMode();
             let value = viewModel.getCell(this.row, this.col);
-            if (value === undefined) {
+            if (value === undefined || value === null) {
                 value = '';
             } else {
                 value = schemas[this.col].converter.toEditable(value);
@@ -717,6 +720,8 @@ function Grid(container, viewModel, eventListeners) {
 
     cellParent.onmousewheel = function (_evt) {
         console.log('onmousewheel');
+
+        if (container.parentNode.activeElement !== container) return;
 
         let evt = /** @type {WheelEvent} */ _evt;
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
@@ -870,10 +875,11 @@ function Grid(container, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             deleteSelection();
-        } else if (evt.code === 'KeyQ' && evt.ctrlKey) {
+        } else if (evt.code === 'F1' && evt.altKey) {
+            // Alt + F1 creates a modal chart of the data.
             evt.preventDefault();
             evt.stopPropagation();
-            viewModel.plot();
+            plot();
         } else if (evt.key === '+' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -908,6 +914,48 @@ function Grid(container, viewModel, eventListeners) {
             }
         }
     };
+
+    function plot() {
+        let dialog = document.getElementById('gridchenDialog');
+        if (!dialog) {
+            dialog = document.createElement('dialog');
+            dialog.id = 'gridchenDialog';
+            dialog.style.width = '80%';
+            //dialog.innerHTML = '<form method="dialog"><button type="submit">Hide</button></form>';
+            dialog.appendChild(document.createElement('div'));
+            document.body.appendChild(dialog);
+        }
+
+        dialog.showModal();
+        const graphElement = dialog.lastElementChild;
+
+        if (!eventListeners['plot']) {
+            graphElement.textContent = 'You must set an event listener of type plot.';
+            return
+        }
+
+        /** @type{Array<number>} */
+        const columnIndices = [];
+        for (const /** @type{Range} */ r of selection.areas) {
+            for (let count=0; count<r.columnCount; count++) {
+                columnIndices.push(r.columnIndex + count);
+            }
+        }
+
+        if (columnIndices.length < 2) {
+            graphElement.textContent = `🤮 Please select 2 columns or more, you only selected column ${columnIndices[0]}`;
+            return
+        }
+
+        const columnSchemas = [];
+        const columns = [];
+        for (const columnIndex of columnIndices) {
+            columnSchemas.push(columnIndex);
+            columns.push(viewModel.getColumn(columnIndex));
+        }
+
+        eventListeners['plot'](graphElement, schema.title, columnSchemas, columns);
+    }
 
     function navigateCell(evt, rowOffset, colOffset) {
         console.log('navigateCell');
@@ -1193,9 +1241,17 @@ function Grid(container, viewModel, eventListeners) {
                     value = schemas[colIndex].converter.toString(value);
                 }
 
-                elem.textContent = value;
                 if (elem.tagName === 'A') {
-                    elem.href = value;
+                    // Check for markdown link, i.e. [sdsd](http://sdsd)
+                    const m = value.match(/^\[(.+)\]\((.+)\)$/);
+                    if (m) {
+                        elem.textContent = m[1];
+                        elem.href = m[2];
+                    } else {
+                        elem.href = elem.textContent = value;
+                    }
+                } else {
+                    elem.textContent = value;
                 }
             }
         }

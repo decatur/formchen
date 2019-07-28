@@ -6,7 +6,7 @@ export let schema = {
             items: {
                 type: 'object',
                 items: [  // tuple schema
-                    {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
+                    {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
                     {title: 'Age [d]', width: 100, type: 'number'},
                     {title: 'Weight [g]', width: 100, type: 'number'}
                 ]
@@ -34,7 +34,7 @@ export let schema = {
         start: {
             title: 'Started',
             type: 'string',
-            format: 'datetime'
+            format: 'date-time'
         },
         latitude: {
             title: 'Latitude',
