@@ -33,7 +33,7 @@ let labelCount = 0;
 
 function createElement(tagName) {
     const element = document.createElement(tagName);
-    element.className = 'form-chen';
+    //element.className = 'form-chen';
     return element;
 }
 
@@ -56,9 +56,17 @@ function getValueByPointer(obj, pointer) {
  * @param onDataChanged
  */
 export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
-    // topContainer.textContent = '';
+    const containerByPath = {};
+
+    for (const elem of topContainer.children) {
+        if (elem.dataset.path) {
+            containerByPath[elem.dataset.path] = elem;
+            elem.textContent = '';
+        }
+    }
 
     const patchesByPath = {};
+
     function onDataChangedWrapper(pointer, newValue) {
         const path = '/' + pointer.join('/');
         patchesByPath[path] = newValue;
@@ -74,16 +82,43 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
      * @param {Element} containerElement
      */
     function bindObject(schema, obj, pointer, containerElement) {
-        if (!containerElement.className.includes('form-chen')) {
-            containerElement.className += ' form-chen fields';
+        const path = '/' + pointer.join('/');
+        if (path in containerByPath) {
+            containerElement = containerByPath[path];
+            const fieldset = createElement('div');
+            //fieldset.className += ' sub-form';
+            fieldset.textContent = path + ' -> ' + schema.title;
+            containerElement.appendChild(fieldset);
+        }
+
+        const columnSchemas = createColumnSchemas(schema);
+        if (!(columnSchemas instanceof Error)) {
+            columnSchemas.title = schema.title;
+            obj = columnSchemas.validate(obj);
+            const view = columnSchemas.viewCreator(columnSchemas, obj);
+            const label = createElement('label');
+            //label.className += ' grid-label';
+            label.style.display = 'block';
+            label.textContent = schema.title;
+            containerElement.appendChild(label);
+
+            const grid = createElement('grid-chen');
+            grid.className += ' grid-chen';
+            grid.style.height = '100px';
+            label.appendChild(grid);
+
+            grid.resetFromView(view);
+            grid.setEventListener('dataChanged', function () {
+                onDataChangedWrapper(pointer, obj);
+            });
+            return
+        }
+
+        if (!containerElement.className.includes('fields')) {
+            containerElement.className += ' fields';
         }
 
         const properties = schema.properties || [];
-        const fieldset = createElement('div');
-        fieldset.className += ' sub-form';
-        fieldset.textContent = schema.title;
-        containerElement.appendChild(fieldset);
-
         for (let key in properties) {
             bindProperty(properties[key], key, obj ? obj[key] : undefined, pointer.concat(key), containerElement);
         }
@@ -114,124 +149,108 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         }
 
         // If view cannot be created, schema is not a valid grid schema.
-        const columnSchemas = createColumnSchemas(schema);
+
         const isPercent = schema.unit === '[%]';
 
-        if (!(columnSchemas instanceof Error)) {
-            columnSchemas.title = title;
-            value = columnSchemas.validate(value);
-            const view = columnSchemas.viewCreator(columnSchemas, value);
-            const label = createElement('label');
-            label.className += ' grid-label';
-            //const title = createElement('span');
-            label.textContent = title;
-            const grid = createElement('grid-chen');
-            grid.className += ' grid-chen';
-            grid.style.height = '100px';
-            grid.resetFromView(view);
-            container.appendChild(label);
-            container.appendChild(grid);
-            grid.setEventListener('dataChanged', function () {
-                onDataChangedWrapper(pointer, value);
-            });
-        } else if (schema.type === 'object') {
+        if (schema.type === 'object') {
             schema = Object.assign({}, schema, {title: title});
             bindObject(schema, value, pointer, container);
-        } else {
-            const label = createElement('label');
-            let input;
-
-            if (schema.type === 'boolean') {
-                input = createElement('input');
-                input.type = 'checkbox';
-                input.checked = value === undefined ? false : value;
-            } else if (schema.enum) {
-                input = createElement('select');
-                schema.enum.forEach(function (optionName) {
-                    const option = createElement('option');
-                    option.textContent = optionName;
-                    input.appendChild(option);
-                });
-            } else {
-                input = createElement('input');
-                input.style.textAlign = 'right';
-
-                if (schema.type === 'integer') {
-                    if (!schema.converter) {
-                        schema.converter = new NumberConverter(0);
-                        schema.converter.isPercent = isPercent;
-                    }
-                    input.value = schema.converter.toEditable(value);
-                } else if (schema.type === 'number') {
-                    if (!schema.converter) {
-                        schema.converter = new NumberConverter(schema.fractionDigits || 2);
-                        schema.converter.isPercent = isPercent;
-                    }
-                    input.value = schema.converter.toEditable(value);
-                } else if (schema.format === 'date-time') {
-                    if (!schema.converter) {
-                        schema.converter = new DateTimeStringConverter();
-                    }
-                    input.value = schema.converter.toEditable(value);
-                } else if (schema.format === 'date-partial-time') {
-                    if (!schema.converter) {
-                        schema.converter = new DatePartialTimeStringConverter();
-                    }
-                    input.value = schema.converter.toEditable(value);
-                } else if (schema.format === 'full-date') {
-                    if (!schema.converter) {
-                        schema.converter = new FullDateStringConverter();
-                    }
-                    input.value = schema.converter.toEditable(value);
-                } else if (schema.type === 'string') {
-                    if (!schema.converter) {
-                        schema.converter = new StringConverter();
-                    }
-                    input.style.textAlign = 'left';
-                    // input.setAttribute('list', 'enum')
-                    input.value = schema.converter.toEditable(value);
-                } else {
-                    createError(title, 'Invalid schema at ' + pointer);
-                    return
-                }
-            }
-
-            input.disabled = schema.editable === undefined ? false : !schema.editable;
-            input.style.width = '25ex';
-
-            input.onchange = function () {
-                let newValue;
-                if (schema.type === 'boolean') {
-                    newValue = input.checked;
-                } else if (schema.enum) {
-                    newValue = input.value;
-                } else {
-                    newValue = schema.converter.fromString(input.value.trim());
-                    if (newValue === '') {
-                        newValue = null;
-                    }
-                }
-                onDataChangedWrapper(pointer, newValue);
-            };
-
-            label.textContent = title;
-
-            if (schema.comment || schema.description) {
-                label.title = schema.comment || schema.description;
-            }
-
-            if (schema.unit) {
-                const unit = createElement('span');
-                unit.className += ' unit';
-                unit.textContent = schema.unit;
-                label.appendChild(unit);
-            }
-
-            label.setAttribute('for', 'formchen-' + (labelCount));
-            input.id = 'formchen-' + (labelCount++);
-            container.appendChild(label);
-            container.appendChild(input);
+            return
         }
+
+        const label = createElement('label');
+        let input;
+
+        if (schema.type === 'boolean') {
+            input = createElement('input');
+            input.type = 'checkbox';
+            input.checked = value === undefined ? false : value;
+        } else if (schema.enum) {
+            input = createElement('select');
+            schema.enum.forEach(function (optionName) {
+                const option = createElement('option');
+                option.textContent = optionName;
+                input.appendChild(option);
+            });
+        } else {
+            input = createElement('input');
+            input.style.textAlign = 'right';
+
+            if (schema.type === 'integer') {
+                if (!schema.converter) {
+                    schema.converter = new NumberConverter(0);
+                    schema.converter.isPercent = isPercent;
+                }
+                input.value = schema.converter.toEditable(value);
+            } else if (schema.type === 'number') {
+                if (!schema.converter) {
+                    schema.converter = new NumberConverter(schema.fractionDigits || 2);
+                    schema.converter.isPercent = isPercent;
+                }
+                input.value = schema.converter.toEditable(value);
+            } else if (schema.format === 'date-time') {
+                if (!schema.converter) {
+                    schema.converter = new DateTimeStringConverter();
+                }
+                input.value = schema.converter.toEditable(value);
+            } else if (schema.format === 'date-partial-time') {
+                if (!schema.converter) {
+                    schema.converter = new DatePartialTimeStringConverter();
+                }
+                input.value = schema.converter.toEditable(value);
+            } else if (schema.format === 'full-date') {
+                if (!schema.converter) {
+                    schema.converter = new FullDateStringConverter();
+                }
+                input.value = schema.converter.toEditable(value);
+            } else if (schema.type === 'string') {
+                if (!schema.converter) {
+                    schema.converter = new StringConverter();
+                }
+                input.style.textAlign = 'left';
+                // input.setAttribute('list', 'enum')
+                input.value = schema.converter.toEditable(value);
+            } else {
+                createError(title, 'Invalid schema at ' + pointer);
+                return
+            }
+        }
+
+        input.disabled = schema.editable === undefined ? false : !schema.editable;
+        input.style.width = '25ex';
+
+        input.onchange = function () {
+            let newValue;
+            if (schema.type === 'boolean') {
+                newValue = input.checked;
+            } else if (schema.enum) {
+                newValue = input.value;
+            } else {
+                newValue = schema.converter.fromString(input.value.trim());
+                if (newValue === '') {
+                    newValue = null;
+                }
+            }
+            onDataChangedWrapper(pointer, newValue);
+        };
+
+        label.textContent = title;
+
+        if (schema.comment || schema.description) {
+            label.title = schema.comment || schema.description;
+        }
+
+        if (schema.unit) {
+            const unit = createElement('span');
+            unit.className += ' unit';
+            unit.textContent = schema.unit;
+            label.appendChild(unit);
+        }
+
+        label.setAttribute('for', 'formchen-' + (labelCount));
+        input.id = 'formchen-' + (labelCount++);
+        container.appendChild(label);
+        container.appendChild(input);
     }
 
     class FormChen {
@@ -239,13 +258,19 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
         }
 
-        /** @type{Array<object>} */
+        /**
+         * Return a patch set according to JSON Patch spec RFC 6902
+         * @return {Array<{op:string, path:string, value:*}>}
+         */
         getPatches() {
+            // TODO: We have to use 'add' if path does not exist.
             return Object.entries(patchesByPath).map(([path, value]) => ({op: 'replace', path: path, value: value}));
         }
-    
+
         clearPatches() {
-            Object.keys(patchesByPath).forEach(function(key) { delete patchesByPath[key] });
+            Object.keys(patchesByPath).forEach(function (key) {
+                delete patchesByPath[key]
+            });
         }
     }
 
