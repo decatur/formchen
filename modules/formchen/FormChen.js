@@ -1,5 +1,5 @@
 import "../gridchen/GridChen.js"
-import {createColumnSchemas} from "../gridchen/DataViews.js";
+import {createView} from "/modules/gridchen/DataViews.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
@@ -91,11 +91,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             containerElement.appendChild(fieldset);
         }
 
-        const columnSchemas = createColumnSchemas(schema);
-        if (!(columnSchemas instanceof Error)) {
-            columnSchemas.title = schema.title;
-            obj = columnSchemas.validate(obj);
-            const view = columnSchemas.viewCreator(columnSchemas, obj);
+        if (schema.format === 'grid') {
             const label = createElement('label');
             //label.className += ' grid-label';
             label.style.display = 'block';
@@ -107,7 +103,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             grid.style.height = '100px';
             label.appendChild(grid);
 
-            grid.resetFromView(view);
+            obj = obj || [];
+            grid.resetFromView(createView(schema, obj));
             grid.setEventListener('dataChanged', function () {
                 onDataChangedWrapper(pointer, obj);
             });
@@ -121,6 +118,19 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         const properties = schema.properties || [];
         for (let key in properties) {
             bindProperty(properties[key], key, obj ? obj[key] : undefined, pointer.concat(key), containerElement);
+        }
+    }
+
+    function bindArray(schema, obj, pointer, containerElement) {
+        if (Array.isArray(schema.items)) {
+            for (let [index, item] of Object.entries(schema.items)) {
+                bindProperty(item, 0, obj[index], pointer.concat(index), containerElement);
+            }
+        } else {
+            obj = obj || [];
+            for (let [index, item] of Object.entries(obj)) {
+                bindProperty(schema.items, index, item, pointer.concat(index), containerElement);
+            }
         }
     }
 
@@ -154,7 +164,11 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
         if (schema.type === 'object') {
             schema = Object.assign({}, schema, {title: title});
-            bindObject(schema, value, pointer, container);
+            if (false && schema.items) {
+                bindArray(schema, value, pointer, container);
+            } else {
+                bindObject(schema, value, pointer, container);
+            }
             return
         }
 
