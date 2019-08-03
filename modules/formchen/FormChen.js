@@ -65,12 +65,12 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         }
     }
 
-    const patchesByPath = {};
+    const allPatches = [];
 
-    function onDataChangedWrapper(pointer, newValue) {
-        const path = '/' + pointer.join('/');
-        patchesByPath[path] = newValue;
-        if (onDataChanged) onDataChanged(pointer, newValue);
+    function onDataChangedWrapper(patches) {
+        console.log(patches);
+        allPatches.push(...patches);
+        if (onDataChanged) onDataChanged(patches);
     }
 
     bindObject(topSchema, topObj, [], topContainer);
@@ -105,8 +105,15 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
             obj = obj || [];
             grid.resetFromView(createView(schema, obj));
-            grid.setEventListener('dataChanged', function () {
-                onDataChangedWrapper(pointer, obj);
+            grid.setEventListener('dataChanged', function (patches) {
+                console.log(patches);
+                const pp = [];
+                for (const patch of patches) {
+                    const p = Object.assign({}, patch);
+                    p.path = '/' + pointer.join('/') + p.path;
+                    pp.push(p);
+                }
+                onDataChangedWrapper(pp);
             });
             return
         }
@@ -178,7 +185,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         if (schema.type === 'boolean') {
             input = createElement('input');
             input.type = 'checkbox';
-            input.checked = value === undefined ? false : value;
+            input.checked = value == null ? false : value;
         } else if (schema.enum) {
             input = createElement('select');
             schema.enum.forEach(function (optionName) {
@@ -186,6 +193,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 option.textContent = optionName;
                 input.appendChild(option);
             });
+            // TODO: Set value!!!!
         } else {
             input = createElement('input');
             input.style.textAlign = 'right';
@@ -235,17 +243,21 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
         input.onchange = function () {
             let newValue;
+            let patch = {op: 'replace', path: '/' + pointer.join('/')};
             if (schema.type === 'boolean') {
-                newValue = input.checked;
+                patch.value = input.checked;
             } else if (schema.enum) {
-                newValue = input.value;
+                patch.value = input.value;
             } else {
-                newValue = schema.converter.fromString(input.value.trim());
+                const newValue = schema.converter.fromString(input.value.trim());
                 if (newValue === '') {
-                    newValue = null;
+                    patch.op = 'remove';
+                } else {
+                    patch.value = newValue;
                 }
             }
-            onDataChangedWrapper(pointer, newValue);
+
+            onDataChangedWrapper([patch]);
         };
 
         label.textContent = title;
@@ -277,14 +289,11 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
          * @return {Array<{op:string, path:string, value:*}>}
          */
         getPatches() {
-            // TODO: We have to use 'add' if path does not exist.
-            return Object.entries(patchesByPath).map(([path, value]) => ({op: 'replace', path: path, value: value}));
+            return allPatches;
         }
 
         clearPatches() {
-            Object.keys(patchesByPath).forEach(function (key) {
-                delete patchesByPath[key]
-            });
+            allPatches.length = 0;
         }
     }
 
