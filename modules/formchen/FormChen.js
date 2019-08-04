@@ -49,6 +49,33 @@ function getValueByPointer(obj, pointer) {
     return pointer.substr(2).split('/').reduce((res, prop) => res[prop], obj);
 }
 
+class JSONPatch {
+    constructor(obj) {
+        this.obj = obj;
+        this.patch = [];
+    }
+    push(op) {
+        // Make sure that all parent objects and arrays exists for this path.
+        const pointer = op.path.split('/');
+        let o = {'': this.obj};
+        for (let index=0; index < pointer.length-1; index++) {
+            const key = pointer[index];
+            if (o[key] == null) {
+                const isArray = Number.isInteger(Number(pointer[index+1]));
+                o[key] = isArray?[]:{};
+                this.patch.push({op:'add', path: pointer.slice(0, index+1).join('/'), value: isArray?[]:{}});
+            }
+            o = o[key];
+        }
+
+        if (o[pointer[-1]] === undefined) {
+            op.op = 'add';
+        }
+
+        this.patch.push(op);
+    }
+}
+
 /**
  * @param {{properties: Array<>, title: String}} topSchema
  * @param {object} topObj
@@ -106,14 +133,13 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             obj = obj || [];
             grid.resetFromView(createView(schema, obj));
             grid.setEventListener('dataChanged', function (patches) {
-                console.log(patches);
-                const pp = [];
+                const jp = new JSONPatch(topObj);
                 for (const patch of patches) {
                     const p = Object.assign({}, patch);
                     p.path = '/' + pointer.join('/') + p.path;
-                    pp.push(p);
+                    jp.push(p);
                 }
-                onDataChangedWrapper(pp);
+                onDataChangedWrapper(jp.patch);
             });
             return
         }
@@ -193,10 +219,11 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 option.textContent = optionName;
                 input.appendChild(option);
             });
-            // TODO: Set value!!!!
+            input.value = value;
         } else {
             input = createElement('input');
             input.style.textAlign = 'right';
+            if (schema.readOnly) input.readOnly = true;
 
             if (schema.type === 'integer') {
                 if (!schema.converter) {
@@ -242,8 +269,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         input.style.width = '25ex';
 
         input.onchange = function () {
-            let newValue;
-            let patch = {op: 'replace', path: '/' + pointer.join('/')};
+            const jp = new JSONPatch(topObj);
+            let patch = {op: (value === undefined)?'add':'replace', path: '/' + pointer.join('/')};
             if (schema.type === 'boolean') {
                 patch.value = input.checked;
             } else if (schema.enum) {
@@ -257,7 +284,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 }
             }
 
-            onDataChangedWrapper([patch]);
+            jp.push(patch);
+            onDataChangedWrapper(jp.patch);
         };
 
         label.textContent = title;
