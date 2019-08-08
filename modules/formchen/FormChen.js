@@ -6,7 +6,7 @@ import {
     FullDateStringConverter,
     DatePartialTimeStringConverter,
     StringConverter
-} from "../gridchen/converter.js";
+} from "/modules/gridchen/converter.js";
 
 /**
  * @param {number} duration in seconds
@@ -133,13 +133,13 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             obj = obj || [];
             grid.resetFromView(createView(schema, obj));
             grid.setEventListener('dataChanged', function (patches) {
-                const jp = new JSONPatch(topObj);
+                const pp = [];
                 for (const patch of patches) {
                     const p = Object.assign({}, patch);
                     p.path = '/' + pointer.join('/') + p.path;
-                    jp.push(p);
+                    pp.push(p);
                 }
-                onDataChangedWrapper(jp.patch);
+                onDataChangedWrapper(pp);
             });
             return
         }
