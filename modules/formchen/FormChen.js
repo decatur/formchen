@@ -76,6 +76,19 @@ class JSONPatch {
     }
 }
 
+class MemberNode {
+    parent;
+    schema;
+    pointer;
+    obj;
+
+    constructor(pointer, schema) {
+        this.pointer = pointer;
+        this.schema = schema;
+    }
+
+}
+
 /**
  * @param {{properties: Array<>, title: String}} topSchema
  * @param {object} topObj
@@ -100,15 +113,19 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         if (onDataChanged) onDataChanged(patches);
     }
 
-    bindObject(topSchema, topObj, [], topContainer);
+    const rootNode = new MemberNode([], topSchema);
+    rootNode.obj = topObj;
+
+    bindObject(topSchema, rootNode, topContainer);
 
     /**
      * @param {{properties: Array<>, title: String}} schema
-     * @param {Object} obj
-     * @param {Array<String>} pointer
+     * @param {MemberNode} node
      * @param {Element} containerElement
      */
-    function bindObject(schema, obj, pointer, containerElement) {
+    function bindObject(schema, node, containerElement) {
+        const obj = node.obj;
+        const pointer = node.pointer;
         const path = '/' + pointer.join('/');
         if (path in containerByPath) {
             containerElement = containerByPath[path];
@@ -129,14 +146,21 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             grid.className += ' grid-chen';
             grid.style.height = '100px';
             label.appendChild(grid);
-
-            obj = obj || [];
-            grid.resetFromView(createView(schema, obj));
+            const view = createView(schema, obj);
+            grid.resetFromView(view);
             grid.setEventListener('dataChanged', function (patches) {
                 const pp = [];
+
+                let n = node.parent;
+                while (n && n.obj == null) {
+                    const empty = n.schema.items?[]:{};
+                    pp.unshift({op: 'add', path: '/' + n.pointer.join('/'), value:empty});
+                    n = n.parent;
+                }
+
                 for (const patch of patches) {
                     const p = Object.assign({}, patch);
-                    p.path = '/' + pointer.join('/') + p.path;
+                    p.path = '/' + pointer.join('/') + (p.path === '/'?'':p.path) ;
                     pp.push(p);
                 }
                 onDataChangedWrapper(pp);
@@ -150,7 +174,10 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
         const properties = schema.properties || [];
         for (let key in properties) {
-            bindProperty(properties[key], key, obj ? obj[key] : undefined, pointer.concat(key), containerElement);
+            const childNode = new MemberNode(pointer.concat(key), properties[key]);
+            childNode.parent = node;
+            childNode.obj = obj ? obj[key] : undefined;
+            bindProperty(key, childNode, containerElement);
         }
     }
 
@@ -167,7 +194,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         }
     }
 
-    function bindProperty(schema, key, value, pointer, container) {
+    function bindProperty(key, node, container) {
         function createError(title, text) {
             const label = createElement('label');
             label.textContent = title;
@@ -177,6 +204,10 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             span.textContent = text;
             container.appendChild(span);
         }
+
+        let schema = node.schema;
+        const value = node.obj;
+        const pointer = node.pointer;
 
         console.log('bind: ' + key);
         let title = schema.title || key;
@@ -200,7 +231,11 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             if (false && schema.items) {
                 bindArray(schema, value, pointer, container);
             } else {
-                bindObject(schema, value, pointer, container);
+                /*const childNode = new MemberNode();
+                childNode.parent = node;
+                childNode.pointer = pointer;
+                childNode.obj = value;*/
+                bindObject(schema, node, container);
             }
             return
         }
