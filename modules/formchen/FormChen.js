@@ -32,9 +32,7 @@ import {
 let labelCount = 0;
 
 function createElement(tagName) {
-    const element = document.createElement(tagName);
-    //element.className = 'form-chen';
-    return element;
+    return document.createElement(tagName)
 }
 
 /**
@@ -49,7 +47,7 @@ function getValueByPointer(obj, pointer) {
     return pointer.substr(2).split('/').reduce((res, prop) => res[prop], obj);
 }
 
-class JSONPatch {
+/*class JSONPatch {
     constructor(obj) {
         this.obj = obj;
         this.patch = [];
@@ -74,17 +72,50 @@ class JSONPatch {
 
         this.patch.push(op);
     }
-}
+}*/
 
-class MemberNode {
+class ProxyNode {
+    static root;
+    /** @type {ProxyNode} */
     parent;
+    /** @type {{properties?: Array<>, items?: Array|object, title: String, readOnly: boolean}} */
     schema;
+    /** @type {Array<string>} */
     pointer;
+    /** @type {*} */
     obj;
+    /** @type {string} */
+    title;
 
     constructor(pointer, schema) {
         this.pointer = pointer;
-        this.schema = schema;
+        this.schema = this.resolveSchema(schema);
+    }
+
+     resolveSchema(schema) {
+        if ('$ref' in schema) {
+            // Resolve reference. Note that we do not use the title of the referenced schema.
+            const refSchema = getValueByPointer(ProxyNode.root, schema['$ref']);
+            if (!refSchema) {
+                throw new Error('Undefined $ref at ' + this.pointer);
+            }
+            return  refSchema
+        }
+        return schema
+    }
+
+    /**
+     * @returns {Array}
+     */
+    createParents() {
+        const jsonPath = [];
+        let n = this.parent;
+        while (n && n.obj == null) {
+            const empty = n.schema.items?[]:{};
+            jsonPath.unshift({op: 'add', path: '/' + n.pointer.join('/'), value:empty});
+            n = n.parent;
+        }
+        return jsonPath
     }
 
 }
@@ -96,6 +127,7 @@ class MemberNode {
  * @param onDataChanged
  */
 export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
+    ProxyNode.root = topSchema;
     const containerByPath = {};
 
     for (const elem of topContainer.children) {
@@ -113,88 +145,76 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         if (onDataChanged) onDataChanged(patches);
     }
 
-    const rootNode = new MemberNode([], topSchema);
+    const rootNode = new ProxyNode([], topSchema);
     rootNode.obj = topObj;
 
-    bindObject(topSchema, rootNode, topContainer);
+    bindNode(rootNode, topContainer);
+
 
     /**
-     * @param {{properties: Array<>, title: String}} schema
-     * @param {MemberNode} node
+     * @param {ProxyNode} node
      * @param {Element} containerElement
      */
-    function bindObject(schema, node, containerElement) {
+    function bindObject(node, containerElement) {
         const obj = node.obj;
         const pointer = node.pointer;
-        const path = '/' + pointer.join('/');
-        if (path in containerByPath) {
-            containerElement = containerByPath[path];
-            const fieldset = createElement('div');
-            //fieldset.className += ' sub-form';
-            fieldset.textContent = path + ' -> ' + schema.title;
-            containerElement.appendChild(fieldset);
-        }
-
-        if (schema.format === 'grid') {
-            const label = createElement('label');
-            //label.className += ' grid-label';
-            label.style.display = 'block';
-            label.textContent = schema.title;
-            containerElement.appendChild(label);
-
-            const grid = createElement('grid-chen');
-            grid.className += ' grid-chen';
-            grid.style.height = '100px';
-            label.appendChild(grid);
-            const view = createView(schema, obj);
-            grid.resetFromView(view);
-            grid.setEventListener('dataChanged', function (patches) {
-                const pp = [];
-
-                let n = node.parent;
-                while (n && n.obj == null) {
-                    const empty = n.schema.items?[]:{};
-                    pp.unshift({op: 'add', path: '/' + n.pointer.join('/'), value:empty});
-                    n = n.parent;
-                }
-
-                for (const patch of patches) {
-                    const p = Object.assign({}, patch);
-                    p.path = '/' + pointer.join('/') + (p.path === '/'?'':p.path) ;
-                    pp.push(p);
-                }
-                onDataChangedWrapper(pp);
-            });
-            return
-        }
 
         if (!containerElement.className.includes('fields')) {
             containerElement.className += ' fields';
         }
 
-        const properties = schema.properties || [];
+        const properties = node.schema.properties || [];
         for (let key in properties) {
-            const childNode = new MemberNode(pointer.concat(key), properties[key]);
+            const childNode = new ProxyNode(pointer.concat(key), properties[key]);
             childNode.parent = node;
             childNode.obj = obj ? obj[key] : undefined;
-            bindProperty(key, childNode, containerElement);
+            childNode.title = childNode.schema.title || key;
+            bindNode(childNode, containerElement);
         }
+    }
+
+    /**
+     * @param {ProxyNode} node
+     * @param {Element} containerElement
+     */
+    function bindGrid(node, containerElement) {
+        const label = createElement('label');
+        //label.className += ' grid-label';
+        label.style.display = 'block';
+        label.textContent = node.title;
+        containerElement.appendChild(label);
+
+        const grid = createElement('grid-chen');
+        grid.className += ' grid-chen';
+        grid.style.height = '100px';
+        label.appendChild(grid);
+        const view = createView(node.schema, node.obj);
+        grid.resetFromView(view);
+        grid.setEventListener('dataChanged', function (patches) {
+            const pp = node.createParents();
+            for (const patch of patches) {
+                const p = Object.assign({}, patch);
+                p.path = '/' + node.pointer.join('/') + (p.path === '/'?'':p.path) ;
+                pp.push(p);
+            }
+            onDataChangedWrapper(pp);
+        });
     }
 
     function bindArray(schema, obj, pointer, containerElement) {
         if (Array.isArray(schema.items)) {
             for (let [index, item] of Object.entries(schema.items)) {
-                bindProperty(item, 0, obj[index], pointer.concat(index), containerElement);
+                bindNode(item, 0, obj[index], pointer.concat(index), containerElement);
             }
         } else {
             obj = obj || [];
             for (let [index, item] of Object.entries(obj)) {
-                bindProperty(schema.items, index, item, pointer.concat(index), containerElement);
+                bindNode(schema.items, index, item, pointer.concat(index), containerElement);
             }
         }
     }
 
-    function bindProperty(key, node, container) {
+    function bindNode(node, container) {
         function createError(title, text) {
             const label = createElement('label');
             label.textContent = title;
@@ -205,41 +225,35 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             container.appendChild(span);
         }
 
-        let schema = node.schema;
+        const schema = node.schema;
         const value = node.obj;
         const pointer = node.pointer;
+        const path = '/' + pointer.join('/');
 
-        console.log('bind: ' + key);
-        let title = schema.title || key;
-
-        if ('$ref' in schema) {
-            // Resolve reference. Note that we do not use the title of the referenced schema.
-            const refSchema = getValueByPointer(topSchema, schema['$ref']);
-            if (!refSchema) {
-                createError(title, 'Undefined $ref at ' + pointer);
-                return
-            }
-            schema = refSchema;
+        if (path in containerByPath) {
+            container = containerByPath[path];
+            const fieldset = createElement('div');
+            fieldset.textContent = path + ' -> ' + schema.title;
+            container.appendChild(fieldset);
         }
 
-        // If view cannot be created, schema is not a valid grid schema.
+        console.log('bind: ' + pointer);
 
-        const isPercent = schema.unit === '[%]';
+        if (schema.format === 'grid') {
+            bindGrid(node, container);
+            return
+        }
 
         if (schema.type === 'object') {
-            schema = Object.assign({}, schema, {title: title});
             if (false && schema.items) {
                 bindArray(schema, value, pointer, container);
             } else {
-                /*const childNode = new MemberNode();
-                childNode.parent = node;
-                childNode.pointer = pointer;
-                childNode.obj = value;*/
-                bindObject(schema, node, container);
+                bindObject(node, container);
             }
             return
         }
 
+        const isPercent = schema.unit === '[%]';
         const label = createElement('label');
         let input;
 
@@ -258,7 +272,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         } else {
             input = createElement('input');
             input.style.textAlign = 'right';
-            if (schema.readOnly) input.readOnly = true;
+
 
             if (schema.type === 'integer') {
                 if (!schema.converter) {
@@ -295,16 +309,20 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 // input.setAttribute('list', 'enum')
                 input.value = schema.converter.toEditable(value);
             } else {
-                createError(title, 'Invalid schema at ' + pointer);
+                createError(node.title, 'Invalid schema at ' + pointer);
                 return
             }
         }
 
-        input.disabled = schema.editable === undefined ? false : !schema.editable;
+        if (schema.readOnly && !(value == null)) {
+            //input.readOnly = true;
+            input.disabled = true;
+        }
+
         input.style.width = '25ex';
 
         input.onchange = function () {
-            const jp = new JSONPatch(topObj);
+            const patches = node.createParents();
             let patch = {op: (value === undefined)?'add':'replace', path: '/' + pointer.join('/')};
             if (schema.type === 'boolean') {
                 patch.value = input.checked;
@@ -319,11 +337,11 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 }
             }
 
-            jp.push(patch);
-            onDataChangedWrapper(jp.patch);
+            patches.push(patch);
+            onDataChangedWrapper(patches);
         };
 
-        label.textContent = title;
+        label.textContent = node.title;
 
         if (schema.comment || schema.description) {
             label.title = schema.comment || schema.description;
