@@ -24,7 +24,7 @@
 
     import {getErrorCount} from './utils.js'
 
-    const modules = ['Formchen'];
+    const modules = ['Formchen', 'test_empty_object'];
     const match = window.location.search.match(/module=([^&]+)/);
     loadModule(match ? match[1] : modules[0]);
 

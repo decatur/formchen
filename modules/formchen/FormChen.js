@@ -92,14 +92,14 @@ class ProxyNode {
         this.schema = this.resolveSchema(schema);
     }
 
-     resolveSchema(schema) {
+    resolveSchema(schema) {
         if ('$ref' in schema) {
             // Resolve reference. Note that we do not use the title of the referenced schema.
             const refSchema = getValueByPointer(ProxyNode.root, schema['$ref']);
             if (!refSchema) {
                 throw new Error('Undefined $ref at ' + this.pointer);
             }
-            return  refSchema
+            return refSchema
         }
         return schema
     }
@@ -110,9 +110,16 @@ class ProxyNode {
     createParents() {
         const jsonPath = [];
         let n = this.parent;
+        let child;
         while (n && n.obj == null) {
-            const empty = n.schema.items?[]:{};
-            jsonPath.unshift({op: 'add', path: '/' + n.pointer.join('/'), value:empty});
+            let empty = n.schema.items ? [] : {};
+            jsonPath.unshift({op: 'add', path: '/' + n.pointer.join('/'), value: empty});
+            empty = n.schema.items ? [] : {};
+            n.obj = empty;
+            if (child) {
+                n.obj[child.pointer.slice(-1)[0]] = child.obj;
+            }
+            child = n;
             n = n.parent;
         }
         return jsonPath
@@ -194,7 +201,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             const pp = node.createParents();
             for (const patch of patches) {
                 const p = Object.assign({}, patch);
-                p.path = '/' + node.pointer.join('/') + (p.path === '/'?'':p.path) ;
+                p.path = '/' + node.pointer.join('/') + (p.path === '/' ? '' : p.path);
                 pp.push(p);
             }
             onDataChangedWrapper(pp);
@@ -323,7 +330,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
         input.onchange = function () {
             const patches = node.createParents();
-            let patch = {op: (value === undefined)?'add':'replace', path: '/' + pointer.join('/')};
+
+            let patch = {op: (node.parent.obj[node.pointer.slice(-1)[0]] === undefined) ? 'add' : 'replace', path: '/' + pointer.join('/')};
             if (schema.type === 'boolean') {
                 patch.value = input.checked;
             } else if (schema.enum) {
@@ -338,6 +346,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             }
 
             patches.push(patch);
+            node.parent.obj[node.pointer.slice(-1)[0]] = patch.value;
             onDataChangedWrapper(patches);
         };
 
@@ -363,6 +372,10 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     class FormChen {
         constructor() {
 
+        }
+
+        getValue() {
+            return rootNode.obj
         }
 
         /**
