@@ -74,22 +74,52 @@ function getValueByPointer(obj, pointer) {
     }
 }*/
 
+
+/**
+ProxyNode decorates a nested JavaScript value to make the object graph navigatable from child to parent.
+
+Invariant:
+   node.parent.obj[node.key] = node.obj
+
+Example:
+   node3.parent.obj['bar'] = 'foobar'
+
+                  node1                        node2                    node3
+         ------------------------        ------------------        ---------------
+ obj    | {foo: {bar: 'foobar'}} |      | {bar: 'foobar'}} |      | 'foobar'      |
+ parent | null                   |  <-  | node1            |  <-  | node2         |
+ key    | ''                     |      | 'foo'            |      | 'bar'         |
+         ------------------------        ------------------        ---------------
+ */
+
 class ProxyNode {
     static root;
+    /** @type {*} */
+    obj;
     /** @type {ProxyNode} */
     parent;
+    /** @type {string} */
+    key;
     /** @type {{properties?: Array<>, items?: Array|object, title: String, readOnly: boolean}} */
     schema;
     /** @type {Array<string>} */
     pointer;
-    /** @type {*} */
-    obj;
     /** @type {string} */
     title;
 
-    constructor(pointer, schema) {
-        this.pointer = pointer;
+    constructor(key, schema) {
+        this.key = key;
         this.schema = this.resolveSchema(schema);
+    }
+
+    getPath() {
+        const pointer = [];
+        let n = this;
+        while (n.parent) {
+            pointer.unshift(n.key);
+            n = n.parent;
+        }
+        return '/' + pointer.join('/')
     }
 
     resolveSchema(schema) {
@@ -97,7 +127,7 @@ class ProxyNode {
             // Resolve reference. Note that we do not use the title of the referenced schema.
             const refSchema = getValueByPointer(ProxyNode.root, schema['$ref']);
             if (!refSchema) {
-                throw new Error('Undefined $ref at ' + this.pointer);
+                throw new Error('Undefined $ref at ' + this.getPath());
             }
             return refSchema
         }
@@ -113,11 +143,11 @@ class ProxyNode {
         let child;
         while (n && n.obj == null) {
             let empty = n.schema.items ? [] : {};
-            jsonPath.unshift({op: 'add', path: '/' + n.pointer.join('/'), value: empty});
+            jsonPath.unshift({op: 'add', path: n.getPath(), value: empty});
             empty = n.schema.items ? [] : {};
             n.obj = empty;
             if (child) {
-                n.obj[child.pointer.slice(-1)[0]] = child.obj;
+                n.obj[child.key] = child.obj;
             }
             child = n;
             n = n.parent;
@@ -152,7 +182,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         if (onDataChanged) onDataChanged(patches);
     }
 
-    const rootNode = new ProxyNode([], topSchema);
+    const rootNode = new ProxyNode('', topSchema);
     rootNode.obj = topObj;
 
     bindNode(rootNode, topContainer);
@@ -164,7 +194,6 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
      */
     function bindObject(node, containerElement) {
         const obj = node.obj;
-        const pointer = node.pointer;
 
         if (!containerElement.className.includes('fields')) {
             containerElement.className += ' fields';
@@ -172,7 +201,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
         const properties = node.schema.properties || [];
         for (let key in properties) {
-            const childNode = new ProxyNode(pointer.concat(key), properties[key]);
+            const childNode = new ProxyNode(key, properties[key]);
             childNode.parent = node;
             childNode.obj = obj ? obj[key] : undefined;
             childNode.title = childNode.schema.title || key;
@@ -201,7 +230,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             const pp = node.createParents();
             for (const patch of patches) {
                 const p = Object.assign({}, patch);
-                p.path = '/' + node.pointer.join('/') + (p.path === '/' ? '' : p.path);
+                p.path = node.getPath() + (p.path === '/' ? '' : p.path);
                 pp.push(p);
             }
             onDataChangedWrapper(pp);
@@ -234,8 +263,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
         const schema = node.schema;
         const value = node.obj;
-        const pointer = node.pointer;
-        const path = '/' + pointer.join('/');
+        const path = node.getPath();
 
         if (path in containerByPath) {
             container = containerByPath[path];
@@ -244,7 +272,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             container.appendChild(fieldset);
         }
 
-        console.log('bind: ' + pointer);
+        console.log('bind: ' + path);
 
         if (schema.format === 'grid') {
             bindGrid(node, container);
@@ -316,7 +344,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 // input.setAttribute('list', 'enum')
                 input.value = schema.converter.toEditable(value);
             } else {
-                createError(node.title, 'Invalid schema at ' + pointer);
+                createError(node.title, 'Invalid schema at ' + path);
                 return
             }
         }
@@ -331,7 +359,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         input.onchange = function () {
             const patches = node.createParents();
 
-            let patch = {op: (node.parent.obj[node.pointer.slice(-1)[0]] === undefined) ? 'add' : 'replace', path: '/' + pointer.join('/')};
+            let patch = {op: (node.parent.obj[node.key] === undefined) ? 'add' : 'replace', path: path};
             if (schema.type === 'boolean') {
                 patch.value = input.checked;
             } else if (schema.enum) {
@@ -346,7 +374,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             }
 
             patches.push(patch);
-            node.parent.obj[node.pointer.slice(-1)[0]] = patch.value;
+            node.parent.obj[node.key] = patch.value;
             onDataChangedWrapper(patches);
         };
 
