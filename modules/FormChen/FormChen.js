@@ -1,4 +1,4 @@
-import "../gridchen/GridChen.js"
+import "../GridChen/GridChen.js"
 import {createView} from "../GridChen/DataViews.js";
 import {
     NumberConverter,
@@ -386,8 +386,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             label.appendChild(unit);
         }
 
-        label.setAttribute('for', 'formchen-' + (labelCount));
-        input.id = 'formchen-' + (labelCount++);
+        label.setAttribute('for', 'FormChen-' + (labelCount));
+        input.id = 'FormChen-' + (labelCount++);
         container.appendChild(label);
         container.appendChild(input);
     }

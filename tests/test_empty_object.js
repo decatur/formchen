@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {createFormChen} from '/modules/formchen/FormChen.js'
+import {createFormChen} from '/modules/FormChen/FormChen.js'
 
 test('Empty Object one Level', () => {
     const schema = {
