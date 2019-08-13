@@ -1,12 +1,12 @@
 import "../gridchen/GridChen.js"
-import {createView} from "/modules/gridchen/DataViews.js";
+import {createView} from "../GridChen/DataViews.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
     FullDateStringConverter,
     DatePartialTimeStringConverter,
     StringConverter
-} from "/modules/gridchen/converter.js";
+} from "../GridChen/converter.js";
 
 /**
  * @param {number} duration in seconds
@@ -135,9 +135,11 @@ class ProxyNode {
 export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     ProxyNode.root = topSchema;
     const containerByPath = {};
-
-    for (const elem of topContainer.querySelectorAll('[data-path]')) {
-        if (elem.dataset.path) {
+    const dataPathElements = topContainer.querySelectorAll('[data-path]');
+    // TODO: Require at least root data-path element
+    if (!dataPathElements.length) topContainer.textContent = '';
+    for (const elem of dataPathElements) {
+        if (elem.dataset.pa) {th
             containerByPath[elem.dataset.path] = elem;
             elem.textContent = '';
         }
@@ -238,29 +240,33 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     }
 
     function bindNode(node, container) {
-        function createError(title, text) {
-            const label = createElement('label');
-            label.textContent = title;
-            container.appendChild(label);
-            const span = createElement('span');
-            span.className += ' error';
-            span.textContent = text;
-            container.appendChild(span);
-        }
-
-        const schema = node.schema;
-        const value = node.obj;
         const path = node.getPath();
 
         if (path in containerByPath) {
             // Note: No need to find the best match of path in containerByPath, the recursive call to bindNode() takes
             // care of that.
             container = containerByPath[path];
-            /*const fieldset = createElement('div');
-            fieldset.textContent = path + ' -> ' + schema.title;
-            container.appendChild(fieldset);
-             */
         }
+
+        try {
+            bindNodeFailSafe(node, container)
+        } catch (e) {
+            console.error(e);
+            /*const label = createElement('label');
+            label.textContent = node.title;
+            container.appendChild(label);*/
+            const span = createElement('span');
+            span.className += ' error';
+            span.textContent = String(e);
+            container.appendChild(span);
+        }
+    }
+
+
+    function bindNodeFailSafe(node, container) {
+        const schema = node.schema;
+        const value = node.obj;
+        const path = node.getPath();
 
         console.log('bind: ' + path);
 
@@ -334,8 +340,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 // input.setAttribute('list', 'enum')
                 input.value = schema.converter.toEditable(value);
             } else {
-                createError(node.title, 'Invalid schema at ' + path);
-                return
+                throw Error('Invalid schema at ' + path);
             }
         }
 
