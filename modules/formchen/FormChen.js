@@ -47,34 +47,6 @@ function getValueByPointer(obj, pointer) {
     return pointer.substr(2).split('/').reduce((res, prop) => res[prop], obj);
 }
 
-/*class JSONPatch {
-    constructor(obj) {
-        this.obj = obj;
-        this.patch = [];
-    }
-    push(op) {
-        // Make sure that all parent objects and arrays exists for this path.
-        const pointer = op.path.split('/');
-        let o = {'': this.obj};
-        for (let index=0; index < pointer.length-1; index++) {
-            const key = pointer[index];
-            if (o[key] == null) {
-                const isArray = Number.isInteger(Number(pointer[index+1]));
-                o[key] = isArray?[]:{};
-                this.patch.push({op:'add', path: pointer.slice(0, index+1).join('/'), value: isArray?[]:{}});
-            }
-            o = o[key];
-        }
-
-        if (o[pointer[-1]] === undefined) {
-            op.op = 'add';
-        }
-
-        this.patch.push(op);
-    }
-}*/
-
-
 /**
 ProxyNode decorates a nested JavaScript value to make the object graph navigatable from child to parent.
 
@@ -113,13 +85,10 @@ class ProxyNode {
     }
 
     getPath() {
-        const pointer = [];
-        let n = this;
-        while (n.parent) {
-            pointer.unshift(n.key);
-            n = n.parent;
+        if (this.parent && this.parent.parent) {
+            return this.parent.getPath() + '/' + this.key
         }
-        return '/' + pointer.join('/')
+        return '/' + this.key
     }
 
     resolveSchema(schema) {
@@ -167,7 +136,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     ProxyNode.root = topSchema;
     const containerByPath = {};
 
-    for (const elem of topContainer.children) {
+    for (const elem of topContainer.querySelectorAll('[data-path]')) {
         if (elem.dataset.path) {
             containerByPath[elem.dataset.path] = elem;
             elem.textContent = '';
@@ -193,17 +162,15 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
      * @param {Element} containerElement
      */
     function bindObject(node, containerElement) {
-        const obj = node.obj;
-
         if (!containerElement.className.includes('fields')) {
             containerElement.className += ' fields';
         }
 
         const properties = node.schema.properties || [];
-        for (let key in properties) {
-            const childNode = new ProxyNode(key, properties[key]);
+        for (let [key, childSchema] of Object.entries(properties)) {
+            const childNode = new ProxyNode(key, childSchema);
             childNode.parent = node;
-            childNode.obj = obj ? obj[key] : undefined;
+            childNode.obj = node.obj ? node.obj[key] : undefined;
             childNode.title = childNode.schema.title || key;
             bindNode(childNode, containerElement);
         }
@@ -237,15 +204,35 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         });
     }
 
-    function bindArray(schema, obj, pointer, containerElement) {
-        if (Array.isArray(schema.items)) {
-            for (let [index, item] of Object.entries(schema.items)) {
-                bindNode(item, 0, obj[index], pointer.concat(index), containerElement);
+    function bindArray(node, containerElement) {
+        if (!containerElement.className.includes('fields')) {
+            containerElement.className += ' fields';
+        }
+
+        const properties = node.schema.properties || [];
+        for (let key in properties) {
+            const childNode = new ProxyNode(key, properties[key]);
+            childNode.parent = node;
+            childNode.obj = node.obj ? node.obj[key] : undefined;
+            childNode.title = childNode.schema.title || key;
+            bindNode(childNode, containerElement);
+        }
+
+        if (Array.isArray(node.schema.items)) {
+            for (let [key, childSchema] of Object.entries(node.schema.items)) {
+                const childNode = new ProxyNode(key, childSchema);
+                childNode.parent = node;
+                childNode.obj = node.obj ? node.obj[key] : undefined;
+                childNode.title = childNode.schema.title || key;
+                bindNode(childNode, containerElement);
             }
-        } else {
-            obj = obj || [];
-            for (let [index, item] of Object.entries(obj)) {
-                bindNode(schema.items, index, item, pointer.concat(index), containerElement);
+        } else if (node.obj) {
+            for (let key=0; key < node.obj.length; key++) {
+                const childNode = new ProxyNode(key, node.schema.items);
+                childNode.parent = node;
+                childNode.obj = node.obj[key];
+                childNode.title = childNode.schema.title || key;
+                bindNode(childNode, containerElement);
             }
         }
     }
@@ -266,10 +253,13 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         const path = node.getPath();
 
         if (path in containerByPath) {
+            // Note: No need to find the best match of path in containerByPath, the recursive call to bindNode() takes
+            // care of that.
             container = containerByPath[path];
-            const fieldset = createElement('div');
+            /*const fieldset = createElement('div');
             fieldset.textContent = path + ' -> ' + schema.title;
             container.appendChild(fieldset);
+             */
         }
 
         console.log('bind: ' + path);
@@ -280,8 +270,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         }
 
         if (schema.type === 'object') {
-            if (false && schema.items) {
-                bindArray(schema, value, pointer, container);
+            if (schema.items) {
+                bindArray(node, container);
             } else {
                 bindObject(node, container);
             }
