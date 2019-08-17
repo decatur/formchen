@@ -136,8 +136,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     ProxyNode.root = topSchema;
     const containerByPath = {};
     const dataPathElements = topContainer.querySelectorAll('[data-path]');
-    // TODO: Require at least root data-path element
-    if (!dataPathElements.length) topContainer.textContent = '';
+
     for (const elem of dataPathElements) {
         if (elem.dataset.path) {
             containerByPath[elem.dataset.path] = elem;
@@ -156,7 +155,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     const rootNode = new ProxyNode('', topSchema);
     rootNode.obj = topObj;
 
-    bindNode(rootNode, topContainer);
+    bindNode(rootNode, undefined);
 
 
     /**
@@ -164,9 +163,9 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
      * @param {Element} containerElement
      */
     function bindObject(node, containerElement) {
-        if (!containerElement.className.includes('fields')) {
+        /*if (!containerElement.className.includes('fields')) {
             containerElement.className += ' fields';
-        }
+        }*/
 
         const properties = node.schema.properties || [];
         for (let [key, childSchema] of Object.entries(properties)) {
@@ -252,13 +251,12 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             bindNodeFailSafe(node, container)
         } catch (e) {
             console.error(e);
-            /*const label = createElement('label');
-            label.textContent = node.title;
-            container.appendChild(label);*/
-            const span = createElement('span');
-            span.className += ' error';
-            span.textContent = String(e);
-            container.appendChild(span);
+            if (container) {
+                const span = createElement('span');
+                span.className += ' error';
+                span.textContent = String(e);
+                container.appendChild(span);
+            }
         }
     }
 
@@ -271,7 +269,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         console.log('bind: ' + path);
 
         if (schema.format === 'grid') {
-            bindGrid(node, container);
+            if (container) bindGrid(node, container);
             return
         }
 
@@ -283,6 +281,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             }
             return
         }
+
+        if (!container) return
 
         const isPercent = schema.unit === '[%]';
         const label = createElement('label');
