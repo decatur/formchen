@@ -139,7 +139,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     // TODO: Require at least root data-path element
     if (!dataPathElements.length) topContainer.textContent = '';
     for (const elem of dataPathElements) {
-        if (elem.dataset.pa) {th
+        if (elem.dataset.path) {
             containerByPath[elem.dataset.path] = elem;
             elem.textContent = '';
         }
@@ -304,7 +304,6 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             input = createElement('input');
             input.style.textAlign = 'right';
 
-
             if (schema.type === 'integer') {
                 if (!schema.converter) {
                     schema.converter = new NumberConverter(0);
@@ -336,10 +335,13 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 if (!schema.converter) {
                     schema.converter = new StringConverter();
                 }
+                if (schema.format === 'color') {
+                    input.type = 'color';
+                }
                 input.style.textAlign = 'left';
                 // input.setAttribute('list', 'enum')
                 input.value = schema.converter.toEditable(value);
-            } else {
+            }  else {
                 throw Error('Invalid schema at ' + path);
             }
         }
