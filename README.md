@@ -3,7 +3,7 @@ Uses https://github.com/decatur/grid-chen to produce Excel-like web-components f
 
 # Demos
 
-See https://decatur.github.io/FormChen
+See https://decatur.github.io/form-chen
 
 # CSS Styling
 
