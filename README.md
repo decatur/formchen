@@ -1,5 +1,5 @@
 Generate (and bind to data) HTML forms with the help of JSON-Schema. 
-Uses https://github.com/decatur/GridChen to produce Excel-like web-components for matrix-like data. 
+Uses https://github.com/decatur/grid-chen to produce Excel-like web-components for matrix-like data. 
 
 # Demos
 
@@ -9,7 +9,7 @@ See https://decatur.github.io/FormChen
 
 The generated form is optimized for [CSS Grid Layout](https://developer.mozilla.org/de/docs/Web/CSS/CSS_Grid_Layout). 
 
-Note: Do not confuse CSS Grid Layout with the [GridChen](https://github.com/decatur/GridChen) web component.
+Note: Do not confuse CSS Grid Layout with the [grid-chen](https://github.com/decatur/grid-chen) web component.
 
 The following classes are used.
 
