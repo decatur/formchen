@@ -2,25 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>form-chen</title>
+    <title>form-chen Comprehensive</title>
     <link rel="stylesheet" href="demo.css">
 </head>
 <body>
 
-<h1>form-chen Demo</h1>
+<h1><a href="index.html">form-chen</a> / Comprehensive Demo</h1>
 
-<p>
-    Extreme lightweight web form generator for hierarchical and grid data.
-    See the repository <a href="https://github.com/decatur/form-chen">https://github.com/decatur/form-chen</a> for
-    details.
-</p>
-
-<form class="controller">
-    <div style="display: grid;grid-template-columns: 33% 33% 33%;">
-        <label>Schema <textarea class="schema"></textarea></label>
-        <label>Data <textarea class="data"></textarea></label>
-        <label>Patch <textarea class="patch"></textarea></label>
-    </div>
+<form style="display: grid;grid-template-columns: 33% 33% 33%;">
+    <label>Schema <textarea class="schema"></textarea></label>
+    <label>Data <textarea class="data"></textarea></label>
+    <label>Patch <textarea class="patch"></textarea></label>
 </form>
 
 <div class="form-chen" data-path="/"></div>
@@ -66,7 +58,7 @@
             someDate: {
                 title: 'Some Date',
                 type: 'string',
-                format: 'date'
+                format: 'full-date'
             },
             someDateTime: {
                 title: 'Some DateTime',
@@ -97,6 +89,11 @@
                 type: 'number',
                 unit: '[%]',
                 fractionDigits: 1
+            },
+            someColor: {
+                title: 'Some Color',
+                type: 'string',
+                format: 'color'
             },
             unresolvedRef: {
                 title: 'A Unresolvable Reference',

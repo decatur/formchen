@@ -164,10 +164,6 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
      * @param {Element} containerElement
      */
     function bindObject(node, containerElement) {
-        /*if (!containerElement.className.includes('fields')) {
-            containerElement.className += ' fields';
-        }*/
-
         const properties = node.schema.properties || [];
         for (let [key, childSchema] of Object.entries(properties)) {
             const childNode = new ProxyNode(key, childSchema);
@@ -184,13 +180,10 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
      */
     function bindGrid(node, containerElement) {
         const label = createElement('label');
-        //label.className += ' grid-label';
-        label.style.display = 'block';
         label.textContent = node.title;
         containerElement.appendChild(label);
 
         const grid = createElement('grid-chen');
-        grid.className += ' grid-chen';
         grid.style.height = '100px';
         label.appendChild(grid);
         const view = createView(node.schema, node.obj);
@@ -207,10 +200,6 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     }
 
     function bindArray(node, containerElement) {
-        if (!containerElement.className.includes('fields')) {
-            containerElement.className += ' fields';
-        }
-
         const properties = node.schema.properties || [];
         for (let key in properties) {
             const childNode = new ProxyNode(key, properties[key]);
@@ -253,10 +242,10 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         } catch (e) {
             console.error(e);
             if (container) {
-                const span = createElement('span');
-                span.className += ' error';
-                span.textContent = String(e);
-                container.appendChild(span);
+                const label = createElement('label');
+                label.className += ' error';
+                label.textContent = String(e);
+                container.appendChild(label);
             }
         }
     }
@@ -303,7 +292,6 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             input.value = value;
         } else {
             input = createElement('input');
-            input.style.textAlign = 'right';
 
             if (schema.type === 'integer') {
                 if (!schema.converter) {
@@ -338,8 +326,9 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 }
                 if (schema.format === 'color') {
                     input.type = 'color';
+                } else {
+                    input.type = 'string';
                 }
-                input.style.textAlign = 'left';
                 // input.setAttribute('list', 'enum')
                 input.value = schema.converter.toEditable(value);
             }  else {
@@ -351,8 +340,6 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             //input.readOnly = true;
             input.disabled = true;
         }
-
-        input.style.width = '25ex';
 
         input.onchange = function () {
             const patches = node.createParents();

@@ -5,16 +5,22 @@ Uses https://github.com/decatur/grid-chen to produce Excel-like web-components f
 
 See https://decatur.github.io/form-chen
 
-# CSS Styling
+# Box Model and CSS Styling
 
-The generated form is optimized for [CSS Grid Layout](https://developer.mozilla.org/de/docs/Web/CSS/CSS_Grid_Layout). 
+The form is generated as a flat list of paired elements 
 
-Note: Do not confuse CSS Grid Layout with the [grid-chen](https://github.com/decatur/grid-chen) web component.
 
-The following classes are used.
-
-className       | Element
+Pairs           | Semantic
 ----------------|-----------
-.fieldContainer | The parent of an object
-.gridLabel      | The label for a grid-chen property
-.unit           | The unit of a property
+&lt;label/&gt; &lt;input&gt;     | For all scalar fields
+&lt;label/&gt; &lt;select&gt;    | For all scalar fields having an enum type
+&lt;label/&gt; &lt;checkbox&gt;  | For all scalar boolean fields
+&lt;label/&gt; &lt;grid-chen/&gt; | For all grid fields
+&lt;label class=error/&gt;                   | For errors
+
+In case a field has a unit, then the label will have a nested &lt;span class=unit/&gt; element.
+
+No element style is applied with the exception to &lt;grid-chen/&gt;: The height is set to 100px;
+
+Based on this box model, the layout can be optimized using CSS Column Layout, CSS Grid Layout or CSS Flex Layout.
+See the demos for examples.

@@ -4,12 +4,12 @@ body {
     background-color: aliceblue;
 }
 
-.controller {
+form {
     width: 100%;
 }
 
-.controller, label {
-    margin-right: 2em;
+form label {
+    margin: 1em;
 }
 
 .controller, textarea {
@@ -25,22 +25,39 @@ body {
     padding: 1ex;
 }
 
-.error {
+.form-chen input {
+    width: 25ex;
+    text-align: right;
+}
+
+.form-chen input[type=string] {
+    width: 25ex;
+    text-align: left;
+}
+
+.form-chen select {
+    width: 25ex;
+}
+
+.form-chen .error {
     margin-top: 1ex;
     border: 1px crimson dashed;
 }
 
-label {
+.form-chen label {
     display: inline-block;
     width: 300px;
     break-inside: avoid;
 }
 
-.unit {
+.form-chen .unit {
     float: right;
     padding-right: 1ex;
 }
 
+.form-chen grid-chen {
+    display: block;
+}
 
 /*
 .form-chen.fields {
