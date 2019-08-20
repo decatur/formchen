@@ -1,12 +1,12 @@
-import "../GridChen/GridChen.js"
-import {createView} from "../GridChen/DataViews.js";
+import "/grid-chen/grid-chen/GridChen.js"
+import {createView} from "/grid-chen/grid-chen/DataViews.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
     FullDateStringConverter,
     DatePartialTimeStringConverter,
     StringConverter
-} from "../GridChen/converter.js";
+} from "/grid-chen/grid-chen/converter.js";
 
 /**
  * @param {number} duration in seconds
