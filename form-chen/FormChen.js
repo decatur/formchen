@@ -82,6 +82,7 @@ class ProxyNode {
     constructor(key, schema) {
         this.key = key;
         this.schema = this.resolveSchema(schema);
+        this.title = schema.title || this.schema.title || key;
     }
 
     getPath() {
@@ -93,7 +94,6 @@ class ProxyNode {
 
     resolveSchema(schema) {
         if ('$ref' in schema) {
-            // Resolve reference. Note that we do not use the title of the referenced schema.
             const refSchema = getValueByPointer(ProxyNode.root, schema['$ref']);
             if (!refSchema) {
                 throw new Error('Undefined $ref at ' + this.getPath());
@@ -135,10 +135,8 @@ class ProxyNode {
 export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     ProxyNode.root = topSchema;
     const containerByPath = {};
-    const dataPathElements = Array.from(topContainer.querySelectorAll('[data-path]'));
-    if (topContainer.dataset.path) dataPathElements.push(topContainer);
 
-    for (const elem of dataPathElements) {
+    for (const elem of topContainer.querySelectorAll('[data-path]')) {
         if (elem.dataset.path) {
             containerByPath[elem.dataset.path] = elem;
             elem.textContent = '';
@@ -169,7 +167,6 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             const childNode = new ProxyNode(key, childSchema);
             childNode.parent = node;
             childNode.obj = node.obj ? node.obj[key] : undefined;
-            childNode.title = childNode.schema.title || key;
             bindNode(childNode, containerElement);
         }
     }
@@ -184,7 +181,6 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         containerElement.appendChild(label);
 
         const grid = createElement('grid-chen');
-        grid.style.height = '100px';
         label.appendChild(grid);
         const view = createView(node.schema, node.obj);
         grid.resetFromView(view);
@@ -200,21 +196,11 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     }
 
     function bindArray(node, containerElement) {
-        const properties = node.schema.properties || [];
-        for (let key in properties) {
-            const childNode = new ProxyNode(key, properties[key]);
-            childNode.parent = node;
-            childNode.obj = node.obj ? node.obj[key] : undefined;
-            childNode.title = childNode.schema.title || key;
-            bindNode(childNode, containerElement);
-        }
-
         if (Array.isArray(node.schema.items)) {
             for (let [key, childSchema] of Object.entries(node.schema.items)) {
                 const childNode = new ProxyNode(key, childSchema);
                 childNode.parent = node;
                 childNode.obj = node.obj ? node.obj[key] : undefined;
-                childNode.title = childNode.schema.title || key;
                 bindNode(childNode, containerElement);
             }
         } else if (node.obj) {
@@ -222,7 +208,6 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
                 const childNode = new ProxyNode(key, node.schema.items);
                 childNode.parent = node;
                 childNode.obj = node.obj[key];
-                childNode.title = childNode.schema.title || key;
                 bindNode(childNode, containerElement);
             }
         }
@@ -272,7 +257,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             return
         }
 
-        if (!container) return
+        if (!container) return;
 
         const isPercent = schema.unit === '[%]';
         const label = createElement('label');
@@ -376,8 +361,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
             label.appendChild(unit);
         }
 
-        label.setAttribute('for', 'FormChen-' + (labelCount));
-        input.id = 'FormChen-' + (labelCount++);
+        label.setAttribute('for', 'form-chen-' + (labelCount));
+        input.id = 'form-chen-' + (labelCount++);
         container.appendChild(label);
         container.appendChild(input);
     }

@@ -57,27 +57,5 @@ form label {
 
 .form-chen grid-chen {
     display: block;
+    height: 150px;
 }
-
-/*
-.form-chen.fields {
-    display: grid;
-    grid-template-columns: 300px 200px 300px 200px;
-}
-
-.form-chen.grid-label, .form-chen.grid-chen, .form-chen.sub-form {
-    grid-area: span 1 / span 4;
-}
-
-.form-chen.unit {
-    float: right;
-    padding-right: 1ex;
-}
-.form-chen.sub-form {
-    margin-top: 1ex;
-    background-color: bisque;
-}
-.form-chen.error {
-    margin-top: 1ex;
-    border: 1px crimson dashed;
-}*/

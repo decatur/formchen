@@ -20,7 +20,7 @@ Pairs           | Semantic
 
 In case a field has a unit, then the label will have a nested &lt;span class=unit/&gt; element.
 
-No element style is applied with the exception to &lt;grid-chen/&gt;: The height is set to 100px;
+No direct element style is applied.
 
 Based on this box model, the layout can be optimized using CSS Column Layout, CSS Grid Layout or CSS Flex Layout.
 See the demos for examples.
