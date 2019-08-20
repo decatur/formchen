@@ -9,73 +9,11 @@
             margin: 2em;
             background-color: aliceblue;
         }
-
-        .controller {
-            width:100%;
-        }
-
-        .controller,  label {
-            margin-right: 2em;
-        }
-
-        .controller,  textarea {
-            margin-right: 2em;
-            width: 100%;
-            height: 15em;
-            display: block;
-        }
-
-        .form-chen {
-            column-width: 500px;
-            column-rule: 1pt solid crimson;
-            padding: 1ex;
-        }
-
-        .error {
-            margin-top: 1ex;
-            border: 1px crimson dashed;
-        }
-
-        label {
-            display: inline-block;
-            width: 300px;
-            break-inside: avoid;
-        }
-
-        .unit {
-            float: right;
-            padding-right: 1ex;
-        }
-
-
-
-        /*
-        .form-chen.fields {
-            display: grid;
-            grid-template-columns: 300px 200px 300px 200px;
-        }
-
-        .form-chen.grid-label, .form-chen.grid-chen, .form-chen.sub-form {
-            grid-area: span 1 / span 4;
-        }
-
-        .form-chen.unit {
-            float: right;
-            padding-right: 1ex;
-        }
-        .form-chen.sub-form {
-            margin-top: 1ex;
-            background-color: bisque;
-        }
-        .form-chen.error {
-            margin-top: 1ex;
-            border: 1px crimson dashed;
-        }*/
     </style>
 </head>
 <body>
 
-<h1>form-chen Demo</h1>
+<h1>form-chen</h1>
 
 <p>
     Extreme lightweight web form generator for hierarchical and grid data.
@@ -83,83 +21,10 @@
     details.
 </p>
 
-<form class="controller">
-    <div>
-        <label>sample1
-            <input type="radio" name="data" value="./demos/sample1.mjs">
-        </label>
-        <label>sample2
-            <input type="radio" name="data" value="./demos/sample2.mjs">
-        </label>
-    </div>
-    <div style="display: grid;grid-template-columns: 33% 33% 33%;">
-        <label>Schema <textarea class="schema"></textarea></label>
-        <label>Data <textarea class="data"></textarea></label>
-        <label>Patch <textarea class="patch"></textarea></label>
-    </div>
-</form>
-
-<div id="myFormChen" class="form-chen">
-    <div data-path="/"></div>
-</div>
+<ul>
+    <li><a href="basic-demo.html">Basic Demo</a></li>
+    <li><a href="comprehensive-demo.html">Comprehensive Demo</a></li>
+</ul>
 
 </body>
-<script nomodule>alert('Your browser is not supported')</script>
-<script type="module">
-    import {createFormChen} from "./form-chen/FormChen.js"
-
-    const radios = document.querySelectorAll('input[type="radio"]');
-    Array.from(radios).forEach(function (input) {
-        input.onchange = () => importExample(input.value);
-    });
-
-    function importExample(moduleName) {
-        document.querySelector('.patch').value = '';
-        import(moduleName)
-            .then((module) => {
-                document.querySelector('.schema').value = JSON.stringify(module.schema, null, 2);
-                document.querySelector('.data').value = JSON.stringify(module.data, null, 2);
-                rebind();
-            })
-            .catch(function(e) {
-                console.error(e);
-                alert(e);
-            });
-    }
-
-    document.querySelector('.schema').oninput = rebind;
-    document.querySelector('.data').oninput = rebind;
-
-    function rebind() {
-        const containerElement = document.getElementById('myFormChen');
-        let schema;
-
-        try {
-            schema = JSON.parse(document.querySelector('.schema').value);
-        } catch (e) {
-            containerElement.textContent = String(e);
-            return;
-        }
-
-        let data;
-
-        try {
-            data = JSON.parse(document.querySelector('.data').value);
-        } catch (e) {
-            containerElement.textContent = String(e);
-            return;
-        }
-
-        function changeHandler(pointer, newValue) {
-            console.log(`${pointer} -> ${newValue}`);
-            document.querySelector('.patch').value = JSON.stringify(fc.getPatches(), null, 2);
-            document.querySelector('.data').value = JSON.stringify(fc.getValue(), null, 2);
-        }
-
-        const fc = createFormChen(schema, data, containerElement, changeHandler);
-    }
-
-    radios[0].click()
-
-</script>
 </html>

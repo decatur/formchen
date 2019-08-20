@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>form-chen</title>
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+
+<h1>form-chen Demo</h1>
+
+<p>
+    Extreme lightweight web form generator for hierarchical and grid data.
+    See the repository <a href="https://github.com/decatur/form-chen">https://github.com/decatur/form-chen</a> for
+    details.
+</p>
+
+<form class="controller">
+    <div style="display: grid;grid-template-columns: 33% 33% 33%;">
+        <label>Schema <textarea class="schema"></textarea></label>
+        <label>Data <textarea class="data"></textarea></label>
+        <label>Patch <textarea class="patch"></textarea></label>
+    </div>
+</form>
+
+<div class="form-chen" data-path="/"></div>
+
+</body>
+<script nomodule>alert('Your browser is not supported')</script>
+<script type="module">
+    import * as demo from "./demo.js"
+
+    const schema = {
+        definitions: {
+            "refSchema": {
+                title: 'Measurements',
+                type: 'object',
+                items: {
+                    type: 'object',
+                    items: [  // tuple schema
+                        {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
+                        {title: 'Age [d]', width: 100, type: 'number'},
+                        {title: 'Weight [g]', width: 100, type: 'number'}
+                    ]
+                }
+            }
+        },
+
+        title: 'FieldObservation',
+        type: 'object',
+        properties: {
+            someString: {
+                title: 'Some String',
+                type: 'string'
+            },
+            someURI: {
+                title: 'Some URI',
+                type: 'string',
+                format: 'uri'
+            },
+            someEnum: {
+                title: 'Some Enum',
+                type: 'string',
+                enum: ['Frida Krum', 'Tilda Swift']
+            },
+            someDate: {
+                title: 'Some Date',
+                type: 'string',
+                format: 'date'
+            },
+            someDateTime: {
+                title: 'Some DateTime',
+                type: 'string',
+                format: 'date-time'
+            },
+            someDatePartialTime: {
+                title: 'Some DatePartialTime',
+                type: 'string',
+                format: 'date-partial-time'
+            },
+            someBoolean: {
+                title: 'Some Boolean',
+                type: 'boolean'
+            },
+            someInteger: {
+                title: 'Some Integer',
+                type: 'integer'
+            },
+            someFloat: {
+                title: 'Some Float',
+                type: 'number',
+                unit: '[DD]',
+                fractionDigits: 2
+            },
+            somePercentValue: {
+                title: 'Some Percent Value',
+                type: 'number',
+                unit: '[%]',
+                fractionDigits: 1
+            },
+            unresolvedRef: {
+                title: 'A Unresolvable Reference',
+                $ref: '#/definitions/foobar'
+            },
+            someMatrix: {
+                title: 'Some Matrix',
+                $ref: '#/definitions/refSchema'
+            },
+            anObject: {
+                title: 'An Object',
+                type: 'object',
+                properties: {
+                    someOtherString: {
+                        type: 'string'
+                    }
+                }
+            },
+            anEmptyMatrix: {
+                title: 'An Undefined Matrix',
+                $ref: '#/definitions/refSchema'
+            },
+            invalidSchema: {
+                title: 'Invalid Schema',
+                type: 'Date'
+            }
+        }
+    };
+
+    const data = {
+        someString: 'Rubus idaeus',
+        someURI: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
+        someEnum: 'Frida Krum',
+        someDate: '2019-01-01',
+        someDateTime: '2019-01-01T00:00Z',
+        someDatePartialTime: '2019-01-01T00:00',
+        somePercentValue: 0.5,
+        someBoolean: true,
+        someInteger: 7,
+        someFloat: 3.14,
+        someMatrix: [
+            [new Date(2019, 2, 1), 0, 0],
+            [new Date(2019, 2, 2), 1, 2],
+            [new Date(2019, 2, 3), 2, 4]
+        ],
+        invalidSchema: new Date()
+    };
+
+
+    demo.init(schema, data);
+
+</script>
+</html>
