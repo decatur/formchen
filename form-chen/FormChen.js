@@ -86,10 +86,10 @@ class ProxyNode {
     }
 
     getPath() {
-        if (this.parent && this.parent.parent) {
+        if (this.parent) {
             return this.parent.getPath() + '/' + this.key
         }
-        return '/' + this.key
+        return ''
     }
 
     resolveSchema(schema) {
@@ -109,7 +109,7 @@ class ProxyNode {
     createParents() {
         const jsonPath = [];
         let n = this.parent;
-        let child;
+        let child = this;
         while (n && n.obj == null) {
             let empty = n.schema.items ? [] : {};
             jsonPath.unshift({op: 'add', path: n.getPath(), value: empty});
@@ -137,10 +137,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
     const containerByPath = {};
 
     for (const elem of topContainer.querySelectorAll('[data-path]')) {
-        if (elem.dataset.path) {
-            containerByPath[elem.dataset.path] = elem;
-            elem.textContent = '';
-        }
+        containerByPath[elem.dataset.path.trim()] = elem;
+        elem.textContent = '';
     }
 
     const allPatches = [];
@@ -185,6 +183,7 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         const view = createView(node.schema, node.obj);
         grid.resetFromView(view);
         grid.setEventListener('dataChanged', function (patches) {
+            node.obj = view.getModel();
             const pp = node.createParents();
             for (const patch of patches) {
                 const p = Object.assign({}, patch);

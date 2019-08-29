@@ -14,22 +14,28 @@ export function init(schema, data) {
 function rebind() {
     patchElement.value = '';
     const containerElement = document.querySelector('.form-chen');
+    const rootElement = document.querySelector('[data-path=""]');
     let schema;
 
     try {
         schema = JSON.parse(schemaElement.value);
     } catch (e) {
-        containerElement.textContent = String(e);
+        rootElement.textContent = String(e);
         return;
     }
 
+    const dataString = dataElement.value.trim();
     let data;
 
-    try {
-        data = JSON.parse(dataElement.value);
-    } catch (e) {
-        containerElement.textContent = String(e);
-        return;
+    if (dataString === '') {
+        data = null;
+    } else {
+        try {
+            data = JSON.parse(dataElement.value);
+        } catch (e) {
+            rootElement.textContent = String(e);
+            return;
+        }
     }
 
     function changeHandler(pointer, newValue) {
