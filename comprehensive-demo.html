@@ -121,6 +121,42 @@
                 title: 'Invalid Schema',
                 type: 'Date'
             },
+            arrayOfTimeSeries: {
+                type: 'object',
+                title: 'arrayOfTimeSeries',
+                items: {
+                    type: 'object',
+                    properties: {
+                        country: { title: 'Country', type: 'string' },
+                        prices: {
+                            title: 'Prices',
+                            format: 'grid',
+                            items: {
+                                type: 'object',
+                                items: [
+                                    {
+                                        title: 'From',
+                                        type: 'string',
+                                        format: 'date-time-full',
+                                        width: 100
+                                    },
+                                    {
+                                        title: 'Till',
+                                        type: 'string',
+                                        format: 'date-time-full',
+                                        width: 100
+                                    },
+                                    {
+                                        title: 'Price [€]',
+                                        type: 'number',
+                                        width: 70
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
             unresolvedRef: {
                 title: 'A Unresolvable Reference',
                 $ref: '#/definitions/foobar'
@@ -143,6 +179,10 @@
             [new Date(2019, 2, 1), 0, 0],
             [new Date(2019, 2, 2), 1, 2],
             [new Date(2019, 2, 3), 2, 4]
+        ],
+        arrayOfTimeSeries: [
+            { country: 'Germany', prices: [['2019-01-01', '2019-02-01', 33]]},
+            { country: 'France', prices: [['2019-02-01', '2019-03-01', 42]]}
         ],
         invalidSchema: new Date()
     };

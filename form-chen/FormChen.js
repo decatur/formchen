@@ -1,12 +1,13 @@
-import "/grid-chen/grid-chen/GridChen.js"
-import {createView} from "/grid-chen/grid-chen/DataViews.js";
+import "/grid-chen/GridChen.js"
+import {createView} from "/grid-chen/DataViews.js";
 import {
+
     NumberConverter,
     DateTimeStringConverter,
     FullDateStringConverter,
     DatePartialTimeStringConverter,
     StringConverter
-} from "/grid-chen/grid-chen/converter.js";
+} from "/grid-chen/converter.js";
 
 /**
  * @param {number} duration in seconds
@@ -15,7 +16,6 @@ import {
 
 /*function formatDuration(duration) {
     const units = [['seconds', 60], ['minutes', 60], ['hours', 24], ['days', 100000000]];
-
     for (let i = 0; i < units.length; i++) {
         let unit = units[i];
         let nextUnit = units[i];
@@ -82,7 +82,11 @@ class ProxyNode {
     constructor(key, schema) {
         this.key = key;
         this.schema = this.resolveSchema(schema);
-        this.title = schema.title || this.schema.title || key;
+        if (schema.title == null) {
+            this.title = this.schema.title || key;
+        } else {
+            this.title = schema.title;
+        }
     }
 
     getPath() {
