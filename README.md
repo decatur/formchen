@@ -1,5 +1,54 @@
-Generate (and bind to data) HTML forms with the help of JSON-Schema. 
-Uses https://github.com/decatur/grid-chen to produce Excel-like web-components for matrix-like data. 
+Generate HTML forms and bind hierarchical data with the help of [JSON Schema](https://json-schema.org). 
+
+Uses [grid-chen](https://github.com/decatur/grid-chen) to produce Excel-like web-components for matrix-like data. 
+
+Object attributes can be specified by [JSON Pointers](https://tools.ietf.org/html/rfc6901) to be bound to given HTML-elements.
+
+The diff between the edited and the original object can be retrieved as a [JSON Patch](https://tools.ietf.org/html/rfc6902).
+
+# Usage
+
+Also see usage.html.
+
+![usage](usage.png)
+
+```html
+<div class="form-chen">
+    <div data-path=""></div>
+    <span style="background-color: crimson" data-path="/vip"></span>
+</div>
+```
+
+```javascript
+    import {createFormChen} from "./form-chen/FormChen.js"
+
+    const schema = {
+        title: 'Person',
+        type: 'object',
+        properties: {
+            name: {
+                title: 'Full Name of Person',
+                type: 'string'
+            },
+            dateOfBirth: {
+                title: 'Date of Birth',
+                type: 'string',
+                format: 'full-date'
+            },
+            vip: {
+                type: 'boolean'
+            }
+        }
+    };
+
+    const data = {
+        name: 'Frida Krum',
+        dateOfBirth: '2019-01-01T00:00Z',
+        vip: true
+    };
+
+    const formChen = createFormChen(schema, data, document.querySelector('.form-chen'));
+```
 
 # Demos
 
@@ -8,7 +57,6 @@ See https://decatur.github.io/form-chen
 # Box Model and CSS Styling
 
 The form is generated as a flat list of paired elements 
-
 
 Pairs           | Semantic
 ----------------|-----------
@@ -24,3 +72,33 @@ No direct element style is applied.
 
 Based on this box model, the layout can be optimized using CSS Column Layout, CSS Grid Layout or CSS Flex Layout.
 See the demos for examples.
+
+# API
+
+```javascript
+   class FormChen {
+        constructor() {
+
+        }
+
+        /**
+         * Returns the current value of the bound object.
+         * @returns {*}
+         */
+        getValue() {
+            return rootNode.obj
+        }
+
+        /**
+         * Returns a patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
+         * @returns {Array<{op:string, path:string, value:*}>}
+         */
+        getPatches() {
+            return allPatches;
+        }
+
+        clearPatches() {
+            allPatches.length = 0;
+        }
+    }
+```

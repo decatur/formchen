@@ -1,13 +1,12 @@
-import "/grid-chen/GridChen.js"
-import {createView} from "/grid-chen/DataViews.js";
+import "../grid-chen/GridChen.js"
+import {createView} from "../grid-chen/DataViews.js";
 import {
-
     NumberConverter,
     DateTimeStringConverter,
     FullDateStringConverter,
     DatePartialTimeStringConverter,
     StringConverter
-} from "/grid-chen/converter.js";
+} from "../grid-chen/converter.js";
 
 /**
  * @param {number} duration in seconds
@@ -16,6 +15,7 @@ import {
 
 /*function formatDuration(duration) {
     const units = [['seconds', 60], ['minutes', 60], ['hours', 24], ['days', 100000000]];
+
     for (let i = 0; i < units.length; i++) {
         let unit = units[i];
         let nextUnit = units[i];
@@ -183,6 +183,9 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
         containerElement.appendChild(label);
 
         const grid = createElement('grid-chen');
+        if (node.schema.height) {
+            grid.style.height = node.schema.height + 'px';
+        }
         label.appendChild(grid);
         const view = createView(node.schema, node.obj);
         grid.resetFromView(view);
@@ -353,8 +356,8 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
         label.textContent = node.title;
 
-        if (schema.comment || schema.description) {
-            label.title = schema.comment || schema.description;
+        if (schema.description) {
+            label.title = schema.description;
         }
 
         if (schema.unit) {
@@ -375,13 +378,17 @@ export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
 
         }
 
+        /**
+         * Returns the current value of the bound object.
+         * @returns {*}
+         */
         getValue() {
             return rootNode.obj
         }
 
         /**
-         * Return a patch set according to JSON Patch spec RFC 6902
-         * @return {Array<{op:string, path:string, value:*}>}
+         * Returns a patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
+         * @returns {Array<{op:string, path:string, value:*}>}
          */
         getPatches() {
             return allPatches;
