@@ -8,11 +8,11 @@
 
 <h1><a href="index.html">form-chen</a> / Usage</h1>
 
-<div class="form-chen">
+<div>
     <!-- JSON Path to root element -->
-    <div data-path=""></div>
+    <div data-path="person"></div>
     <!-- JSON Path to root vip property -->
-    <span style="background-color: crimson" data-path="/vip"></span>
+    <span style="background-color: crimson" data-path="person/vip"></span>
 </div>
 
 <script type="module">
@@ -43,7 +43,7 @@
         vip: true
     };
 
-    const formChen = createFormChen(schema, data, document.querySelector('.form-chen'));
+    const formChen = createFormChen(schema, data, 'person');
 
 </script>
 </body>

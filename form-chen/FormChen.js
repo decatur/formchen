@@ -133,16 +133,20 @@ class ProxyNode {
 /**
  * @param {{properties: Array<>, title: String}} topSchema
  * @param {object} topObj
- * @param {HTMLElement} topContainer
+ * @param {string} id
  * @param onDataChanged
  */
-export function createFormChen(topSchema, topObj, topContainer, onDataChanged) {
+export function createFormChen(topSchema, topObj, id, onDataChanged) {
     ProxyNode.root = topSchema;
     const containerByPath = {};
 
-    for (const elem of topContainer.querySelectorAll('[data-path]')) {
-        containerByPath[elem.dataset.path.trim()] = elem;
-        elem.textContent = '';
+    for (const elem of document.body.querySelectorAll('[data-path]')) {
+        const prefixedJsonPath = elem.dataset.path.trim();
+        if (prefixedJsonPath === id || prefixedJsonPath.startsWith(id + '/')) {
+            const jsonPath = prefixedJsonPath.substr(id.length);
+            containerByPath[jsonPath] = elem;
+            elem.textContent = '';
+        }
     }
 
     const allPatches = [];

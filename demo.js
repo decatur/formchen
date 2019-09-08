@@ -13,7 +13,6 @@ export function init(schema, data) {
 
 function rebind() {
     patchElement.value = '';
-    const containerElement = document.querySelector('.form-chen');
     const rootElement = document.querySelector('[data-path=""]');
     let schema;
 
@@ -44,5 +43,5 @@ function rebind() {
         dataElement.value = JSON.stringify(fc.getValue(), null, 2);
     }
 
-    const fc = createFormChen(schema, data, containerElement, changeHandler);
+    const fc = createFormChen(schema, data, 'theObject', changeHandler);
 }

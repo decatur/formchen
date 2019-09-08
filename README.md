@@ -13,9 +13,9 @@ Also see usage.html.
 ![usage](usage.png)
 
 ```html
-<div class="form-chen">
-    <div data-path=""></div>
-    <span style="background-color: crimson" data-path="/vip"></span>
+<div>
+    <div data-path="person"></div>
+    <span style="background-color: crimson" data-path="person/vip"></span>
 </div>
 ```
 
@@ -47,7 +47,7 @@ Also see usage.html.
         vip: true
     };
 
-    const formChen = createFormChen(schema, data, document.querySelector('.form-chen'));
+    const formChen = createFormChen(schema, data, 'person');
 ```
 
 # Demos
