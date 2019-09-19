@@ -2,9 +2,9 @@ export let schema = {
     definitions: {
         "refSchema": {
             title: 'Measurements',
-            type: 'object',
+            type: 'array',
             items: {
-                type: 'object',
+                type: 'array',
                 items: [  // tuple schema
                     {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
                     {title: 'Age [d]', width: 100, type: 'number'},

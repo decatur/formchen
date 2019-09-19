@@ -29,10 +29,10 @@
         definitions: {
             "measurements": {
                 title: 'Measurements',
-                type: 'object',
+                type: 'array',
                 format: 'grid',
                 items: {
-                    type: 'object',
+                    type: 'array',
                     items: [  // tuple schema
                         {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
                         {title: 'Age [d]', width: 100, type: 'number'},
@@ -122,7 +122,7 @@
                 type: 'Date'
             },
             arrayOfTimeSeries: {
-                type: 'object',
+                type: 'array',
                 title: 'arrayOfTimeSeries',
                 items: {
                     type: 'object',
@@ -130,9 +130,10 @@
                         country: { title: 'Country', type: 'string' },
                         prices: {
                             title: 'Prices',
+                            type: 'array',
                             format: 'grid',
                             items: {
-                                type: 'object',
+                                type: 'array',
                                 items: [
                                     {
                                         title: 'From',

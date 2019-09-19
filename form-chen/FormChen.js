@@ -48,7 +48,7 @@ function getValueByPointer(obj, pointer) {
 }
 
 /**
-ProxyNode decorates a nested JavaScript value to make the object graph navigatable from child to parent.
+ProxyNode decorates a nested JavaScript value to make the object graph navigable from child to parent.
 
 Invariant:
    node.parent.obj[node.key] = node.obj
@@ -78,9 +78,23 @@ class ProxyNode {
     pointer;
     /** @type {string} */
     title;
+    /** @type {boolean} */
+    readOnly = false;
 
-    constructor(key, schema) {
+    /**
+     * @param {string} key
+     * @param schema
+     * @param {ProxyNode} parent
+     */
+    constructor(key, schema, parent) {
         this.key = key;
+        this.parent = parent;
+        if (typeof schema.readOnly === 'boolean') {
+            this.readOnly = schema.readOnly
+        } else if (parent) {
+            // Inherit read only.
+            this.readOnly = parent.readOnly;
+        }
         this.schema = this.resolveSchema(schema);
         if (schema.title == null) {
             this.title = this.schema.title || key;
@@ -157,7 +171,7 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
         if (onDataChanged) onDataChanged(patches);
     }
 
-    const rootNode = new ProxyNode('', topSchema);
+    const rootNode = new ProxyNode('', topSchema, null);
     rootNode.obj = topObj;
 
     bindNode(rootNode, undefined);
@@ -170,8 +184,7 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
     function bindObject(node, containerElement) {
         const properties = node.schema.properties || [];
         for (let [key, childSchema] of Object.entries(properties)) {
-            const childNode = new ProxyNode(key, childSchema);
-            childNode.parent = node;
+            const childNode = new ProxyNode(key, childSchema, node);
             childNode.obj = node.obj ? node.obj[key] : undefined;
             bindNode(childNode, containerElement);
         }
@@ -183,6 +196,7 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
      */
     function bindGrid(node, containerElement) {
         const label = createElement('label');
+        label.className = 'grid-label';
         label.textContent = node.title;
         containerElement.appendChild(label);
 
@@ -191,6 +205,7 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
             grid.style.height = node.schema.height + 'px';
         }
         label.appendChild(grid);
+        node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
         const view = createView(node.schema, node.obj);
         grid.resetFromView(view);
         grid.setEventListener('dataChanged', function (patches) {
@@ -208,15 +223,13 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
     function bindArray(node, containerElement) {
         if (Array.isArray(node.schema.items)) {
             for (let [key, childSchema] of Object.entries(node.schema.items)) {
-                const childNode = new ProxyNode(key, childSchema);
-                childNode.parent = node;
+                const childNode = new ProxyNode(key, childSchema, node);
                 childNode.obj = node.obj ? node.obj[key] : undefined;
                 bindNode(childNode, containerElement);
             }
         } else if (node.obj) {
             for (let key=0; key < node.obj.length; key++) {
-                const childNode = new ProxyNode(key, node.schema.items);
-                childNode.parent = node;
+                const childNode = new ProxyNode(key, node.schema.items, node);
                 childNode.obj = node.obj[key];
                 bindNode(childNode, containerElement);
             }
@@ -331,7 +344,7 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
             }
         }
 
-        if (schema.readOnly && !(value == null)) {
+        if (node.readOnly && !(value == null)) {
             //input.readOnly = true;
             input.disabled = true;
         }

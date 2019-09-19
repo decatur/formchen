@@ -2,10 +2,10 @@ export let schema = {
     definitions: {
         "measurements": {
             title: 'Measurements',
-            type: 'object',
+            type: 'array',
             format: 'grid',
             items: {
-                type: 'object',
+                type: 'array',
                 items: [  // tuple schema
                     {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
                     {title: 'Age [d]', width: 100, type: 'number'},

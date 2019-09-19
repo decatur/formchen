@@ -54,6 +54,11 @@ Also see usage.html.
 
 See https://decatur.github.io/form-chen
 
+# Read Only
+
+At any level, the schema can be marked `readOnly:true|false`, the default value being `false`.
+The `readOnly` property is inherited by sub-schemas. 
+
 # Box Model and CSS Styling
 
 The form is generated as a flat list of paired elements 
@@ -63,14 +68,14 @@ Pairs           | Semantic
 &lt;label/&gt; &lt;input&gt;     | For all scalar fields
 &lt;label/&gt; &lt;select&gt;    | For all scalar fields having an enum type
 &lt;label/&gt; &lt;checkbox&gt;  | For all scalar boolean fields
-&lt;label/&gt; &lt;grid-chen/&gt; | For all grid fields
+&lt;label&gt; &lt;grid-chen/&gt; &lt;/label&gt;| For all grid fields
 &lt;label class=error/&gt;                   | For errors
 
 In case a field has a unit, then the label will have a nested &lt;span class=unit/&gt; element.
 
 No direct element style is applied.
 
-Based on this box model, the layout can be optimized using CSS Column Layout, CSS Grid Layout or CSS Flex Layout.
+Based on this box model, the layout can be tweaked using CSS Column Layout, CSS Grid Layout or CSS Flex Layout.
 See the demos for examples.
 
 # API

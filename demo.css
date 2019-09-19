@@ -50,6 +50,10 @@ form label {
     break-inside: avoid;
 }
 
+.form-chen .grid-label {
+    width: unset;
+}
+
 .form-chen .unit {
     float: right;
     padding-right: 1ex;
