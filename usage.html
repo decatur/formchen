@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Usage</title>
+    <link rel="stylesheet" href="demo.css">
+    <script src="./theme.js"></script>
 </head>
 <body>
 
 <h1><a href="index.html">form-chen</a> / Usage</h1>
 
-<div>
+<div class="form-chen">
     <!-- JSON Path to root element -->
     <div data-path="person"></div>
     <!-- JSON Path to root vip property -->
-    <span style="background-color: crimson" data-path="person/vip"></span>
+    <span style="background-color: indianred" data-path="person/vip"></span>
 </div>
+</body>
 
 <script type="module">
     import {createFormChen} from "./form-chen/FormChen.js"
@@ -43,8 +46,8 @@
         vip: true
     };
 
-    const formChen = createFormChen(schema, data, 'person');
+    createFormChen(schema, data, 'person');
 
 </script>
-</body>
+
 </html>

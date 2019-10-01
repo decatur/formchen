@@ -16,6 +16,41 @@ let IInterval;
 
 window.console.log('Executing GridChen ...');
 
+let selectionBackgroundColor;
+let activeCellBackgroundColor;
+let headerRowBackgroundColor;
+let headerRowSelectedBackgroundColor;
+
+
+/**
+ * Returns a numerical vector from a CSS color of the form rgb(1,2,3).
+ * @param {string} color
+ * @returns {number[]}
+ */
+function colorVector(color) {
+    return color.substr(4).split(',').map(part=>parseInt(part))
+}
+
+// We use document.body style for theming.
+// TODO: Maybe use CSS custom properties https://developers.google.com/web/fundamentals/web-components/shadowdom#stylehooks
+const bodyStyle = window.getComputedStyle(document.body);
+const inputColor = bodyStyle.color;
+const inputBackgroundColor = bodyStyle.backgroundColor;
+const cellBorderStyle = '1px solid ' + inputColor;
+const intensity = colorVector(bodyStyle.backgroundColor).reduce((a,b) => a + b, 0) / 3;
+
+if (intensity < 10) {
+    selectionBackgroundColor = 'slategrey';
+    activeCellBackgroundColor = 'dimgrey';
+    headerRowBackgroundColor = 'dimgrey';
+    headerRowSelectedBackgroundColor = 'slategrey';
+} else {
+    selectionBackgroundColor = 'LightBlue';
+    activeCellBackgroundColor = 'mistyrose';
+    headerRowBackgroundColor = 'khaki';
+    headerRowSelectedBackgroundColor = 'red';
+}
+
 //const numeric = new Set(['number', 'integer']);
 
 function range(count) {
@@ -48,6 +83,44 @@ function intersectInterval(i1, i2) {
     return {min, sup};
 }
 
+function openDialog() {
+    let dialog = document.getElementById('gridchenDialog');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'gridchenDialog';
+        document.body.appendChild(dialog);
+    }
+    dialog.textContent = '';
+    dialog.showModal();
+    return dialog;
+}
+
+/**
+ * Creates the display for an anchor cell mimicking MS-Excel. It supports entering edit mode via slow click and
+ * cursor management.
+ * @returns {HTMLAnchorElement}
+ */
+function createAnchorElement() {
+    const elem = document.createElement('a');
+    elem.target = '_blank';
+    elem.onmousedown = function (evt) {
+        window.setTimeout(function () {
+            elem.style.cursor = 'cell';
+            // Note the transient event handler style.
+            elem.onclick = function (evt) {
+                evt.preventDefault();
+                elem.onclick = undefined;
+            };
+            elem.onmouseup = elem.onmouseout = function () {
+                elem.onmouseup = elem.onmouseout = undefined;
+                elem.style.cursor = 'pointer';
+            };
+        }, 500);
+    };
+
+    return elem
+}
+
 // We export for testability.
 export class GridChen extends HTMLElement {
     constructor() {
@@ -73,6 +146,7 @@ export class GridChen extends HTMLElement {
         }
         let totalHeight = this.clientHeight || 100;  // Default value needed for unit testing.
         const container = document.createElement('div');
+        container.style.position = 'relative';
         container.style.height = totalHeight + 'px';
         this.shadowRoot.appendChild(container);
         if (viewModel instanceof Error) {
@@ -245,7 +319,7 @@ class Selection extends Range {
     show() {
         for (const /** @type{Range} */ r of this.areas) {
             console.log('show: ' + r.toString());
-            this.repainter('LightBlue', r);
+            this.repainter(selectionBackgroundColor, r);
         }
     }
 
@@ -332,7 +406,15 @@ function Grid(container, viewModel, eventListeners) {
         .GRID textarea {
             background-color: white; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
         }
-        .GRID .non_string { text-align: right; }
+        .GRID .non_string {
+            text-align: right;
+        }
+        #headerRow {
+            position: absolute;
+            text-align: center;
+            font-weight: normal;
+            background-color: ${headerRowBackgroundColor};
+        }
     `;
     container.appendChild(styleSheet);
 
@@ -354,14 +436,25 @@ function Grid(container, viewModel, eventListeners) {
     });
 
     const headerRow = document.createElement('div');
+    headerRow.id = 'headerRow';
     let style = headerRow.style;
-    style.position = 'relative';
     style.width = columnEnds[columnEnds.length - 1] + 'px';
     style.height = rowHeight + 'px';
-    style.textAlign = 'center';
-    style.fontWeight = 'bold';
-    style.backgroundColor = 'khaki';
     container.appendChild(headerRow);
+
+    const info = document.createElement('button');
+    info.innerText = '🛈';
+    style = info.style;
+    style.padding = '2px';
+    //style.height = '22px';
+    //style.border = 'none';
+    style.left = columnEnds[columnEnds.length - 1] + 'px';
+    style.position = 'absolute';
+    style.fontWeight = 'bold';
+    style.cursor = 'help';
+    //style.fontSize = 'large';
+    info.onclick = showInfo;
+    container.appendChild(info);
 
     function refresh(_rowCount) {
         rowCount = _rowCount;
@@ -399,7 +492,7 @@ function Grid(container, viewModel, eventListeners) {
             style.width = schema.width + 'px';
             style.height = innerHeight;
             style.padding = cellPadding + 'px';
-            style.border = '1px solid black';
+            style.border = cellBorderStyle;
             style.overflow = 'hidden';
             header.textContent = schema.title;
             header.title = schema.title;
@@ -422,7 +515,8 @@ function Grid(container, viewModel, eventListeners) {
     container.style.width = totalWidth + 'px';
 
     const body = document.createElement('div');
-    body.style.position = 'relative';
+    body.style.position = 'absolute';
+    body.style.top = '23px';
     body.style.width = '100%';
     body.style.height = (totalHeight - 20) + 'px';
     container.appendChild(body);
@@ -443,6 +537,8 @@ function Grid(container, viewModel, eventListeners) {
             /** @type{HTMLInputElement} */
             this.input = document.createElement('input');
             this.input.id = 'editor';
+            this.input.style.color = inputColor;
+            this.input.style.backgroundColor = inputBackgroundColor;
             this.input.style.position = 'absolute';
             this.input.style.display = 'none';
             this.input.style.height = innerHeight;
@@ -451,6 +547,8 @@ function Grid(container, viewModel, eventListeners) {
             /** @type{HTMLTextAreaElement} */
             this.textarea = document.createElement('textarea');
             this.textarea.id = 'textarea';
+            this.textarea.style.color = inputColor;
+            this.textarea.style.backgroundColor = inputBackgroundColor;
             this.textarea.style.position = 'absolute';
             this.textarea.style.display = 'none';
             this.textarea.style.height = innerHeight;
@@ -497,6 +595,7 @@ function Grid(container, viewModel, eventListeners) {
                 evt.stopPropagation();
                 if (ee.input.style.display !== 'none') {
                     ee.showTextArea();
+                    ee.textarea.value += '\n';
                 } else {
                     ee.textarea.setRangeText('\n', ee.textarea.selectionStart, ee.textarea.selectionEnd, 'end');
                 }
@@ -600,22 +699,17 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-
-    /** @type {{span?:{HTMLSpanElement}, editor:{HTMLInputElement}, row:number, col:number, mode:string}} */
     const activeCell = {
         span: undefined,
         row: 0,
         col: 0,
         mode: 'display',
         hide: function () {
-            if (this.span) this.span.style.backgroundColor = 'white';
-            headerRow.style.backgroundColor = 'khaki';//removeProperty('background-color');
-            //rowMenu.style.display = 'none';
+            if (this.span) this.span.style.removeProperty('background-color');
+            headerRow.style.removeProperty('background-color');
         },
         show: function () {
-            if (this.span) this.span.style.backgroundColor = 'mistyrose';
-            //rowMenu.style.top = this.span.offsetTop + 'px';
-            //rowMenu.style.display = 'block';
+            if (this.span) this.span.style.backgroundColor = activeCellBackgroundColor;
         },
         move: function (rowIndex, colIndex) {
             this.hide();
@@ -653,7 +747,7 @@ function Grid(container, viewModel, eventListeners) {
             }
             ee.setValue(value);
         },
-        isReadOnly: function() {
+        isReadOnly: function () {
             return isColumnReadOnly(this.col)
         }
     };
@@ -674,7 +768,7 @@ function Grid(container, viewModel, eventListeners) {
                 if (spanMatrix[row][col] === activeCell.span) {
                     // Do not change color of active cell.
                 } else if (backgroundColor === undefined) {
-                    style.backgroundColor = 'white'; //removeProperty('background-color');
+                    style.removeProperty('background-color');
                 } else {
                     style.backgroundColor = backgroundColor;
                 }
@@ -748,8 +842,7 @@ function Grid(container, viewModel, eventListeners) {
 
     cellParent.onmousewheel = function (_evt) {
         console.log('onmousewheel');
-
-        if (container.parentNode.activeElement !== container) return;
+        if ((/** @type {DocumentOrShadowRoot} */container.parentNode).activeElement !== container) return;
 
         let evt = /** @type {WheelEvent} */ _evt;
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
@@ -784,8 +877,8 @@ function Grid(container, viewModel, eventListeners) {
     };
 
     function isColumnReadOnly(columnIndex) {
-        const readOnly = schemas[columnIndex].readOnly
-        return readOnly === undefined?schema.readOnly:readOnly;
+        const readOnly = schemas[columnIndex].readOnly;
+        return readOnly === undefined ? schema.readOnly : readOnly;
     }
 
     function isSelectionReadOnly() {
@@ -817,13 +910,6 @@ function Grid(container, viewModel, eventListeners) {
             }
         }
 
-        /*for (const rowIndex of Array.from(modifiedRows).sort().reverse()) {
-            const row = viewModel.getRow(rowIndex);
-            if (row.every(item => item == null)) {
-                patches.push(...viewModel.deleteRow(rowIndex));
-            }
-        }*/
-
         let rowIndex = viewModel.rowCount() - 1;
         while (rowIndex >= 0) {
             const row = viewModel.getRow(rowIndex);
@@ -843,9 +929,13 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     function deleteRows() {
+        if (schema.readOnly) {
+            alert('This grid is locked!');
+            return
+        }
         const patches = [];
         for (const r of selection.areas) {
-            range(r.rowCount).forEach(function (i) {
+            range(r.rowCount).forEach(function () {
                 patches.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
@@ -855,11 +945,10 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     function insertRow() {
-        /* TODO: Should we restrict?
-        if (isSelectionReadOnly()) {
-            alert('Parts of the cells are locked!');
+        if (schema.readOnly) {
+            alert('This grid is locked!');
             return
-        }*/
+        }
         const patches = viewModel.splice(activeCell.row);
         eventListeners['dataChanged'](patches);
         refresh(viewModel.rowCount());
@@ -918,7 +1007,7 @@ function Grid(container, viewModel, eventListeners) {
             if (selection.rowIndex === 0 && selection.columnIndex === 0
                 && selection.rowCount === rowCount && selection.columnCount === colCount) {
                 // Already all data cells selected.
-                headerRow.style.backgroundColor = 'red';
+                headerRow.style.backgroundColor = headerRowSelectedBackgroundColor;
             } else {
                 selection.set(0, 0);
                 selection.expand(rowCount - 1, colCount - 1);
@@ -930,7 +1019,7 @@ function Grid(container, viewModel, eventListeners) {
                 alert('This action is not possible with multi-selections.');
                 return
             }
-            copySelection(evt.code === 'KeyX', headerRow.style.backgroundColor === 'red');
+            copySelection(evt.code === 'KeyX', headerRow.style.backgroundColor === headerRowSelectedBackgroundColor);
         } else if (evt.code === 'KeyV' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent that text is pasted into editable container.
@@ -1005,18 +1094,57 @@ function Grid(container, viewModel, eventListeners) {
         }
     };
 
-    function plot() {
-        let dialog = document.getElementById('gridchenDialog');
-        if (!dialog) {
-            dialog = document.createElement('dialog');
-            dialog.id = 'gridchenDialog';
-            dialog.style.width = '80%';
-            //dialog.innerHTML = '<form method="dialog"><button type="submit">Hide</button></form>';
-
-            document.body.appendChild(dialog);
+    function showInfo() {
+        let dialog = openDialog();
+        const div = document.createElement('div');
+        const actions = [
+            ['Key', 'Action'],
+            ['Arrows', 'Move active cell up/down/left/right (not in edit mode)'],
+            ['Tab', 'Move active cell right (non-rolling)'],
+            ['Enter', 'Move active cell down (non-rolling)'],
+            ['Shift + Enter', 'Move active cell up (non-rolling)'],
+            ['Shift + Tab', 'Move active cell left (non-rolling)'],
+            ['SHIFT + Arrows', 'Select a range of cells'],
+            ['Ctrl + Space', 'Select entire column'],
+            ['Shift + Space', 'Select entire row'],
+            ['Shift + MouseClick', 'Expand selection'],
+            ['Ctrl + MouseClick', 'Multi-select cells'],
+            ['Ctrl + "-"', 'Delete selected row'],
+            ['Ctrl + "+"', 'Insert row before selection'],
+            ['Alt + Enter', 'In edit mode, insert newline'],
+            ['Page Down', 'Move one page down'],
+            ['Page Up', 'Move one page up'],
+            ['Ctrl + A', 'Select all grid cells (same as Ctrl+A in a Excel List Object)'],
+            ['Ctrl + A Ctrl+A', 'Select the entire grid including header (same as Ctrl+A Ctrl+A in a Excel List Object)'],
+            ['ESC', 'Cancel edit or input mode'],
+            ['Delete', 'Remove selected cells contents'],
+            ['Ctrl + C', 'Copy selected cells to clipboard'],
+            ['Ctrl + V', 'Paste clipboard into selected cells'],
+            ['Ctrl + X', 'Cut'],
+            ['F2', 'Enter edit mode; In input or edit mode, toggle between input and edit.'],
+            ['Alt + F1', 'Open a modal chart of the selection.'],
+            ['Backspace', 'In input or edit mode, deletes one character to the left'],
+            ['Delete', 'In input or edit mode, deletes one character to the right'],
+            ['End', 'In input or edit mode, move to the end of the text'],
+            ['Home', 'In input or edit mode, move to the beginning of the text']];
+        for (const action of actions) {
+            const key = document.createElement('span');
+            key.textContent = action[0];
+            div.appendChild(key);
+            const desc = document.createElement('span');
+            desc.textContent = action[1];
+            div.appendChild(desc);
         }
 
-        dialog.showModal();
+        div.style.display = 'grid';
+        div.style.gridTemplateColumns = 'auto auto';
+        div.style.columnGap = '5px';
+        dialog.appendChild(div);
+    }
+
+    function plot() {
+        let dialog = openDialog();
+        dialog.style.width = '80%';
 
         if (!eventListeners['plot']) {
             dialog.textContent = 'You must set an event listener of type plot.';
@@ -1190,10 +1318,10 @@ function Grid(container, viewModel, eventListeners) {
         /** @type {HTMLElement} */
         let elem;
         if (schema.format === 'uri') {
-            elem = document.createElement('a');
-            elem.target = '_blank';
+            elem = createAnchorElement();
         } else {
             elem = document.createElement('span');
+            elem.style.cursor = 'cell';
         }
 
         let style = elem.style;
@@ -1207,9 +1335,9 @@ function Grid(container, viewModel, eventListeners) {
         style.whiteSpace = 'nowrap';
         style.overflow = 'hidden';
         style.textOverflow = 'ellipsis';
-        style.border = '1px solid black';
+        style.border = cellBorderStyle;
         style.padding = cellPadding + 'px';
-        style.backgroundColor = 'white';
+        //style.backgroundColor = 'white';
 
         if (schema.type !== 'string' || schema.format) {
             elem.className = 'non_string'
@@ -1350,7 +1478,13 @@ function Grid(container, viewModel, eventListeners) {
                         elem.textContent = m[1];
                         elem.href = m[2];
                     } else {
-                        elem.href = elem.textContent = value;
+                        if (value === '') {
+                            // This will also remove the pointer cursor.
+                            elem.removeAttribute('href');
+                        } else {
+                            elem.href = value;
+                        }
+                        elem.textContent = value;
                     }
                 } else {
                     elem.textContent = value;
