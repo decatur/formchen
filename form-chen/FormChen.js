@@ -1,5 +1,5 @@
-import "../grid-chen/GridChen.js"
-import {createView} from "../grid-chen/DataViews.js";
+import "../grid-chen/webcomponent.js"
+import {createView} from "../grid-chen/matrixview.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
@@ -7,6 +7,7 @@ import {
     DatePartialTimeStringConverter,
     StringConverter
 } from "../grid-chen/converter.js";
+import {TransactionManager, applyJSONPatch} from "../grid-chen/utils.js";
 
 /**
  * @param {number} duration in seconds
@@ -53,9 +54,6 @@ ProxyNode decorates a nested JavaScript value to make the object graph navigable
 Invariant:
    node.parent.obj[node.key] = node.obj
 
-Example:
-   node3.parent.obj['bar'] = 'foobar'
-
                   node1                        node2                    node3
          ------------------------        ------------------        ---------------
  obj    | {foo: {bar: 'foobar'}} |      | {bar: 'foobar'}} |      | 'foobar'      |
@@ -72,10 +70,8 @@ class ProxyNode {
     parent;
     /** @type {string} */
     key;
-    /** @type {{properties?: Array<>, items?: Array|object, title: String, readOnly: boolean}} */
+    /** @type {GridChen.JSONSchema} */
     schema;
-    /** @type {Array<string>} */
-    pointer;
     /** @type {string} */
     title;
     /** @type {boolean} */
@@ -83,7 +79,7 @@ class ProxyNode {
 
     /**
      * @param {string} key
-     * @param schema
+     * @param {GridChen.JSONSchema} schema
      * @param {ProxyNode} parent
      */
     constructor(key, schema, parent) {
@@ -101,20 +97,25 @@ class ProxyNode {
         } else {
             this.title = schema.title;
         }
+        this._path = (this.parent?this.parent._path + '/' + this.key:'')
     }
 
-    getPath() {
-        if (this.parent) {
-            return this.parent.getPath() + '/' + this.key
-        }
-        return ''
+    /**
+     * @returns {string}
+     */
+    get path() {
+        return this._path
+    }
+
+    getValue() {
+       return this.parent.obj[this.key]
     }
 
     resolveSchema(schema) {
         if ('$ref' in schema) {
             const refSchema = getValueByPointer(ProxyNode.root, schema['$ref']);
             if (!refSchema) {
-                throw new Error('Undefined $ref at ' + this.getPath());
+                throw new Error('Undefined $ref at ' + this.path);
             }
             return refSchema
         }
@@ -122,15 +123,16 @@ class ProxyNode {
     }
 
     /**
-     * @returns {Array}
+     * @returns {GridChen.JSONPatch}
      */
     createParents() {
-        const jsonPath = [];
+        /** @type {GridChen.JSONPatch} */
+        const jsonPatch = [];
         let n = this.parent;
         let child = this;
         while (n && n.obj == null) {
             let empty = n.schema.items ? [] : {};
-            jsonPath.unshift({op: 'add', path: n.getPath(), value: empty});
+            jsonPatch.unshift({op: 'add', path: n.path, value: empty});
             empty = n.schema.items ? [] : {};
             n.obj = empty;
             if (child) {
@@ -139,13 +141,12 @@ class ProxyNode {
             child = n;
             n = n.parent;
         }
-        return jsonPath
+        return jsonPatch
     }
-
 }
 
 /**
- * @param {{properties: Array<>, title: String}} topSchema
+ * @param {GridChen.JSONSchema} topSchema
  * @param {object} topObj
  * @param {string} id
  * @param onDataChanged
@@ -153,6 +154,7 @@ class ProxyNode {
 export function createFormChen(topSchema, topObj, id, onDataChanged) {
     ProxyNode.root = topSchema;
     const containerByPath = {};
+    const nodesByPath = {};
 
     for (const elem of document.body.querySelectorAll('[data-path]')) {
         const prefixedJsonPath = elem.dataset.path.trim();
@@ -171,11 +173,42 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
         if (onDataChanged) onDataChanged(patches);
     }
 
-    const rootNode = new ProxyNode('', topSchema, null);
+        /**
+     * @param {string} key
+     * @param {GridChen.JSONSchema} schema
+     * @param {ProxyNode} parent
+     */
+    function createProxyNode(key, schema, parent) {
+        const node = new ProxyNode(key, schema, parent);
+        nodesByPath[node.path] = node;
+        return node;
+    }
+
+    const rootNode = createProxyNode('', topSchema, null);
     rootNode.obj = topObj;
+
+    const tm = new TransactionManager();
+    const tmListener= {
+        flush(scheduledPatch) {},
+        apply(patch) {
+            rootNode.obj = applyJSONPatch(rootNode.obj, patch);
+            for (let op of patch) {
+                const node = nodesByPath[op.path];
+                if (node.refreshUI) {
+                    node.refreshUI();
+                }
+            }
+        }
+    };
 
     bindNode(rootNode, undefined);
 
+    for (let path of Object.keys(nodesByPath)) {
+        const node = nodesByPath[path];
+        if (node.refreshUI) {
+            node.refreshUI();
+        }
+    }
 
     /**
      * @param {ProxyNode} node
@@ -184,7 +217,7 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
     function bindObject(node, containerElement) {
         const properties = node.schema.properties || [];
         for (let [key, childSchema] of Object.entries(properties)) {
-            const childNode = new ProxyNode(key, childSchema, node);
+            const childNode = createProxyNode(key, childSchema, node);
             childNode.obj = node.obj ? node.obj[key] : undefined;
             bindNode(childNode, containerElement);
         }
@@ -206,30 +239,36 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
         }
         label.appendChild(grid);
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
+        node.schema.pathPrefix = node.path;
         const view = createView(node.schema, node.obj);
-        grid.resetFromView(view);
-        grid.setEventListener('dataChanged', function (patches) {
+        grid.resetFromView(view, tm);
+        grid.addEventListener('datachanged', function (evt) {
             node.obj = view.getModel();
             const pp = node.createParents();
-            for (const patch of patches) {
-                const p = Object.assign({}, patch);
-                p.path = node.getPath() + (p.path === '/' ? '' : p.path);
-                pp.push(p);
+            for (const operation of evt.detail.patch) {
+                const op = Object.assign({}, operation);
+                op.path = node.path + (op.path === '/' ? '' : op.path);
+                pp.push(op);
             }
             onDataChangedWrapper(pp);
         });
     }
 
+    /**
+     *
+     * @param {ProxyNode} node
+     * @param {HTMLElement} containerElement
+     */
     function bindArray(node, containerElement) {
         if (Array.isArray(node.schema.items)) {
             for (let [key, childSchema] of Object.entries(node.schema.items)) {
-                const childNode = new ProxyNode(key, childSchema, node);
+                const childNode = createProxyNode(key, childSchema, node);
                 childNode.obj = node.obj ? node.obj[key] : undefined;
                 bindNode(childNode, containerElement);
             }
         } else if (node.obj) {
             for (let key=0; key < node.obj.length; key++) {
-                const childNode = new ProxyNode(key, node.schema.items, node);
+                const childNode = createProxyNode(String(key), node.schema.items, node);
                 childNode.obj = node.obj[key];
                 bindNode(childNode, containerElement);
             }
@@ -237,7 +276,7 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
     }
 
     function bindNode(node, container) {
-        const path = node.getPath();
+        const path = node.path;
 
         if (path in containerByPath) {
             // Note: No need to find the best match of path in containerByPath, the recursive call to bindNode() takes
@@ -258,11 +297,10 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
         }
     }
 
-
     function bindNodeFailSafe(node, container) {
         const schema = node.schema;
         const value = node.obj;
-        const path = node.getPath();
+        const path = node.path;
 
         console.log('bind: ' + path);
 
@@ -289,7 +327,10 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
         if (schema.type === 'boolean') {
             input = createElement('input');
             input.type = 'checkbox';
-            input.checked = value == null ? false : value;
+            node.refreshUI = function() {
+                const value = this.getValue();
+                input.checked = (value == null ? false : value);
+            };
         } else if (schema.enum) {
             input = createElement('select');
             schema.enum.forEach(function (optionName) {
@@ -297,37 +338,37 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
                 option.textContent = optionName;
                 input.appendChild(option);
             });
-            input.value = value;
+            node.refreshUI = function() {
+                input.value = this.getValue();
+            };
         } else {
             input = createElement('input');
+            node.refreshUI = function() {
+                input.value = this.schema.converter.toEditable(this.getValue());
+            };
 
             if (schema.type === 'integer') {
                 if (!schema.converter) {
                     schema.converter = new NumberConverter(0);
                     schema.converter.isPercent = isPercent;
                 }
-                input.value = schema.converter.toEditable(value);
             } else if (schema.type === 'number') {
                 if (!schema.converter) {
                     schema.converter = new NumberConverter(schema.fractionDigits || 2);
                     schema.converter.isPercent = isPercent;
                 }
-                input.value = schema.converter.toEditable(value);
             } else if (schema.format === 'date-time') {
                 if (!schema.converter) {
                     schema.converter = new DateTimeStringConverter();
                 }
-                input.value = schema.converter.toEditable(value);
             } else if (schema.format === 'date-partial-time') {
                 if (!schema.converter) {
                     schema.converter = new DatePartialTimeStringConverter();
                 }
-                input.value = schema.converter.toEditable(value);
             } else if (schema.format === 'full-date') {
                 if (!schema.converter) {
                     schema.converter = new FullDateStringConverter();
                 }
-                input.value = schema.converter.toEditable(value);
             } else if (schema.type === 'string') {
                 if (!schema.converter) {
                     schema.converter = new StringConverter();
@@ -337,8 +378,6 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
                 } else {
                     input.type = 'string';
                 }
-                // input.setAttribute('list', 'enum')
-                input.value = schema.converter.toEditable(value);
             }  else {
                 throw Error('Invalid schema at ' + path);
             }
@@ -350,25 +389,28 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
         }
 
         input.onchange = function () {
-            const patches = node.createParents();
+            const patch = node.createParents();
 
-            let patch = {op: (node.parent.obj[node.key] === undefined) ? 'add' : 'replace', path: path};
+            let op = {op: (node.parent.obj[node.key] === undefined) ? 'add' : 'replace', path: path};
             if (schema.type === 'boolean') {
-                patch.value = input.checked;
+                op.value = input.checked;
             } else if (schema.enum) {
-                patch.value = input.value;
+                op.value = input.value;
             } else {
-                const newValue = schema.converter.fromString(input.value.trim());
+                const newValue = schema.converter.fromEditable(input.value.trim());
                 if (newValue === '') {
-                    patch.op = 'remove';
+                    op.op = 'remove';
                 } else {
-                    patch.value = newValue;
+                    op.value = newValue;
                 }
             }
 
-            patches.push(patch);
-            node.parent.obj[node.key] = patch.value;
-            onDataChangedWrapper(patches);
+            op.oldValue = node.parent.obj[node.key];
+            patch.push(op);
+            node.parent.obj[node.key] = op.value;
+            tm.schedulePatch(patch);
+            tm.flushScheduledPatches(tmListener);
+            //onDataChangedWrapper(patches);
         };
 
         label.textContent = node.title;
@@ -413,6 +455,10 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
 
         clearPatches() {
             allPatches.length = 0;
+        }
+
+        get transactionManager() {
+            return tm
         }
     }
 

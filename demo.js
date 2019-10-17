@@ -37,11 +37,9 @@ function rebind() {
         }
     }
 
-    function changeHandler(pointer, newValue) {
-        console.log(`${pointer} -> ${newValue}`);
-        patchElement.value = JSON.stringify(fc.getPatches(), null, 2);
+    const fc = createFormChen(schema, data, 'theObject');
+    fc.transactionManager.addEventListener('change', function(patches) {
+        patchElement.value = JSON.stringify(patches, null, 2);
         dataElement.value = JSON.stringify(fc.getValue(), null, 2);
-    }
-
-    const fc = createFormChen(schema, data, 'theObject', changeHandler);
+    });
 }

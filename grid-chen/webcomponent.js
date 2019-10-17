@@ -1,26 +1,37 @@
+import {TransactionManager} from "./utils.js";
+
 /**
  * Author: Wolfgang Kühn 2019
- * https://github.com/decatur/GridChen
+ * Source https://github.com/decatur/grid-chen/grid-chen/component.js
  *
  * See README.md
  */
 
-/** @typedef {{row: number, col:number}} */
-let IPosition;
-
-/**
- * Right open interval.
- * @typedef {{min: number, sup:number}}
- */
-let IInterval;
+//////////////////////
+// Start Configuration
+const DEBUG = (location.hostname === 'localhost');
+const cellPadding = 3;
+const scrollBarBorderWidth = 1;
+const scrollBarThumbWidth = 15;
+const lineHeight = 22;
+const dark = {
+    selectionBackgroundColor: 'slategrey',
+    activeCellBackgroundColor: 'dimgrey',
+    headerRowBackgroundColor: 'dimgrey',
+    headerRowSelectedBackgroundColor: 'slategrey',
+    cellBorderWidth: 0.5
+};
+const light = {
+    selectionBackgroundColor: '#c6c6c6',
+    activeCellBackgroundColor: '#e6e6e6',
+    headerRowBackgroundColor: '#e6e6e6',
+    headerRowSelectedBackgroundColor: '#c6c6c6',
+    cellBorderWidth: 1
+};
+// End Configuration
+//////////////////////
 
 window.console.log('Executing GridChen ...');
-
-let selectionBackgroundColor;
-let activeCellBackgroundColor;
-let headerRowBackgroundColor;
-let headerRowSelectedBackgroundColor;
-
 
 /**
  * Returns a numerical vector from a CSS color of the form rgb(1,2,3).
@@ -28,7 +39,7 @@ let headerRowSelectedBackgroundColor;
  * @returns {number[]}
  */
 function colorVector(color) {
-    return color.substr(4).split(',').map(part=>parseInt(part))
+    return color.substr(4).split(',').map(part => parseInt(part))
 }
 
 // We use document.body style for theming.
@@ -36,43 +47,36 @@ function colorVector(color) {
 const bodyStyle = window.getComputedStyle(document.body);
 const inputColor = bodyStyle.color;
 const inputBackgroundColor = bodyStyle.backgroundColor;
-const cellBorderStyle = '1px solid ' + inputColor;
-const intensity = colorVector(bodyStyle.backgroundColor).reduce((a,b) => a + b, 0) / 3;
+const intensity = colorVector(bodyStyle.backgroundColor).reduce((a, b) => a + b, 0) / 3;
+let {
+    selectionBackgroundColor,
+    activeCellBackgroundColor,
+    headerRowBackgroundColor,
+    headerRowSelectedBackgroundColor,
+    cellBorderWidth
+} = (intensity < 0xff / 2 ? dark : light);
 
-if (intensity < 10) {
-    selectionBackgroundColor = 'slategrey';
-    activeCellBackgroundColor = 'dimgrey';
-    headerRowBackgroundColor = 'dimgrey';
-    headerRowSelectedBackgroundColor = 'slategrey';
-} else {
-    selectionBackgroundColor = 'LightBlue';
-    activeCellBackgroundColor = 'mistyrose';
-    headerRowBackgroundColor = 'khaki';
-    headerRowSelectedBackgroundColor = 'red';
-}
+const cellBorderStyle = `${cellBorderWidth}px solid ` + inputColor;
+const scrollBarWidth = scrollBarThumbWidth + 2 * scrollBarBorderWidth;
 
 //const numeric = new Set(['number', 'integer']);
 
-function range(count) {
+function rangeIterator(count) {
     return Array.from({length: count}, (_, i) => i);
 }
 
 let logCounter = 0;
-// TODO: Rename to logger.
-const console = {
-    assert: window.console.assert,
-    log: function (a, b) {
-        window.console.log(logCounter++ + ': ' + a, b);
-    },
+const logger = {
+    log: (DEBUG ? (a, b) => window.console.log(logCounter++ + ': ' + a, b) : () => undefined),
     error: function (a, b) {
         window.console.error(logCounter++ + ': ' + a, b);
     }
 };
 
 /**
- * @param {IInterval} i1
- * @param {IInterval} i2
- * @returns {IInterval}
+ * @param {GridChen.Interval} i1
+ * @param {GridChen.Interval} i2
+ * @returns {GridChen.Interval}
  */
 function intersectInterval(i1, i2) {
     const min = Math.max(i1.min, i2.min);
@@ -80,9 +84,12 @@ function intersectInterval(i1, i2) {
     if (sup <= min) {
         return undefined;
     }
-    return {min, sup};
+    return /**@type{GridChen.Interval}*/ {min, sup}
 }
 
+/**
+ * @returns {HTMLElement}
+ */
 function openDialog() {
     let dialog = document.getElementById('gridchenDialog');
     if (!dialog) {
@@ -96,54 +103,31 @@ function openDialog() {
 }
 
 /**
- * Creates the display for an anchor cell mimicking MS-Excel. It supports entering edit mode via slow click and
- * cursor management.
- * @returns {HTMLAnchorElement}
+ * We export for testability.
+ * @implements {GridChen.GridChen}
  */
-function createAnchorElement() {
-    const elem = document.createElement('a');
-    elem.target = '_blank';
-    elem.onmousedown = function (evt) {
-        window.setTimeout(function () {
-            elem.style.cursor = 'cell';
-            // Note the transient event handler style.
-            elem.onclick = function (evt) {
-                evt.preventDefault();
-                elem.onclick = undefined;
-            };
-            elem.onmouseup = elem.onmouseout = function () {
-                elem.onmouseup = elem.onmouseout = undefined;
-                elem.style.cursor = 'pointer';
-            };
-        }, 500);
-    };
-
-    return elem
-}
-
-// We export for testability.
 export class GridChen extends HTMLElement {
+    activeRange;
+    patch;
+    selectedRange;
+
     constructor() {
         super();
-        this.eventListeners = {
-            'dataChanged': () => null,
-            'activeCellChanged': () => null,
-            'selectionChanged': () => null,
-            'paste': () => null,
-            'plot': undefined
-        };
     }
 
     /**
      * @param {GridChen.MatrixView} viewModel
+     * @param {TransactionManager} transactionManager
+     * @returns {GridChen}
      */
-    resetFromView(viewModel) {
+    resetFromView(viewModel, transactionManager) {
         if (this.shadowRoot) {
             this.shadowRoot.removeChild(this.shadowRoot.firstChild);
         } else {
             // First initialize creates shadow dom.
             this.attachShadow({mode: 'open'});
         }
+        // TODO: Attention Layout Thrashing; Do not use clientHeight.
         let totalHeight = this.clientHeight || 100;  // Default value needed for unit testing.
         const container = document.createElement('div');
         container.style.position = 'relative';
@@ -151,28 +135,15 @@ export class GridChen extends HTMLElement {
         this.shadowRoot.appendChild(container);
         if (viewModel instanceof Error) {
             container.innerText = String(viewModel);
-            return null
+            return this
         }
-        this.grid = Grid(container, viewModel, this.eventListeners);
-        return this
-    }
-
-    setEventListener(type, listener) {
-        const filteredKeys = Object.keys(this.eventListeners).filter(key => key.toLowerCase() === type.toLowerCase());
-        if (!filteredKeys) {
-            throw new Error('Invalid listener type: ' + type);
-        }
-        this.eventListeners[filteredKeys[0]] = function (_) {
-            try {
-                listener(...arguments);
-            } catch (err) {
-                console.error(err);
-            }
-        };
+        createGrid(container, viewModel, this, transactionManager);
+        this.style.width = container.style.width;
         return this
     }
 
     /**
+     * TODO: Move this to matrixview.js?
      * @param {number} rowIndex
      * @param {number} columnIndex
      * @param {number} rowCount
@@ -180,55 +151,61 @@ export class GridChen extends HTMLElement {
      * @returns {GridChen.Range}
      */
     getRangeByIndexes(rowIndex, columnIndex, rowCount, columnCount) {
-        return this.grid.getRange(rowIndex, columnIndex, rowCount, columnCount);
     }
 
-    /**
-     * @returns {GridChen.Range}
-     */
-    getSelectedRange() {
-        return this.grid.getSelection();
-    }
-
-    /**
-     * @returns {GridChen.Range}
-     */
-    getActiveCell() {
-        return this.grid.getActiveCell();
+    resetTransactions() {
     }
 }
 
 customElements.define('grid-chen', GridChen);
 
-class Slider {
+class ScrollBar {
 
     /**
-     * @param {number} left
-     * @param {number} height
+     * @param {HTMLElement} domParent
+     * @param {number} xOffset the x-offset for the scroll bar.
+     * @param {number} height the height of the vertical scroll bar.
      * @param handler
      */
-    constructor(left, height, handler) {
+    constructor(domParent, xOffset, height, handler) {
+        /*
+            We use a range input element to represent the scroll bar.
+            Styling emulates a scroll bar for element overflow,
+            See http://twiggle-web-design.com/tutorials/Custom-Vertical-Input-Range-CSS3.html
+        */
+        const offset = (height - scrollBarWidth) / 2;
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            #slider {
+                 position: absolute;
+                 cursor: pointer;
+                 width: ${height - 2 * scrollBarBorderWidth}px !important;
+                 transform:translate(${xOffset - offset}px,${offset}px) rotate(-90deg);
+                 -webkit-appearance: unset;
+                 border: ${scrollBarBorderWidth}px solid #888;
+                 margin: unset;
+                 background-color: inherit;
+            }
+    
+            #slider::-webkit-slider-thumb {
+                 -webkit-appearance: none;
+                 width: ${scrollBarThumbWidth}px;
+                 height: ${scrollBarThumbWidth}px;
+                 background-color: #888;
+            }
+        `;
+        domParent.appendChild(styleSheet);
+
         this.handler = handler;
         this.element = document.createElement('input');
+        this.element.id = "slider";
         this.element.type = "range";
-        const style = this.element.style;
-        if (navigator.userAgent.includes('Firefox')) {
-            this.element.setAttribute('orient', 'vertical');
-        } else {
-            // Setting -webkit-appearance will prevent to set any custom styles on it
-            style['-webkit-appearance'] = 'slider-vertical';
-        }
-        style.position = 'absolute';
-        style.display = 'inline-block';
-        //this.element.style.marginLeft = '10px'
-        style.height = height + 'px';
-        style.left = left + 'px';
-        style.width = '20px';
         this.element.min = '0';
+        domParent.appendChild(this.element);
 
         // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
         this.element.oninput = () => {
-            console.log('slider oninput');
+            logger.log('slider oninput');
             this.handler(Math.round(this.element.max - this.element.value));
         };
     }
@@ -237,7 +214,7 @@ class Slider {
      * @param {number} max
      */
     setMax(max) {
-        console.assert(max > 0, `Invalid max slider value: ${max}`);
+        window.console.assert(max > 0, `Invalid max slider value: ${max}`);
         this.element.max = String(max);
     }
 
@@ -249,17 +226,16 @@ class Slider {
     }
 }
 
-
 /**
- * @param {number} row
- * @param {number} col
- * @returns {IPosition}
+ * @implements {GridChen.CellRange}
  */
-function pos(row, col) {
-    return {row: row, col: col}
-}
-
 class Range {
+    /**
+     * @param {number} rowIndex
+     * @param {number} columnIndex
+     * @param {number} rowCount
+     * @param {number} columnCount
+     */
     constructor(rowIndex, columnIndex, rowCount, columnCount) {
         this.rowIndex = rowIndex;
         this.columnIndex = columnIndex;
@@ -279,11 +255,11 @@ class Range {
      */
     intersect(other) {
         const row = intersectInterval(
-            {min: this.rowIndex, sup: this.rowIndex + this.rowCount},
-            {min: other.rowIndex, sup: other.rowIndex + other.rowCount});
+            /**@type{GridChen.Interval}*/{min: this.rowIndex, sup: this.rowIndex + this.rowCount},
+            /**@type{GridChen.Interval}*/{min: other.rowIndex, sup: other.rowIndex + other.rowCount});
         const col = intersectInterval(
-            {min: this.columnIndex, sup: this.columnIndex + this.columnCount},
-            {min: other.columnIndex, sup: other.columnIndex + other.columnCount});
+            /**@type{GridChen.Interval}*/{min: this.columnIndex, sup: this.columnIndex + this.columnCount},
+            /**@type{GridChen.Interval}*/{min: other.columnIndex, sup: other.columnIndex + other.columnCount});
         if (col === undefined || row === undefined) {
             return undefined;
         }
@@ -304,12 +280,12 @@ class Range {
 }
 
 class Selection extends Range {
-    constructor(repainter, eventListeners) {
+    constructor(repainter, eventTarget) {
         super(0, 0, 1, 1);
-        this.initial = pos(0, 0);
-        this.head = pos(0, 0); // Cell opposite the initial.
+        this.initial = {row: 0, col: 0};
+        this.head = {row: 0, col: 0}; // Cell opposite the initial.
         this.repainter = repainter;
-        this.eventListeners = eventListeners;
+        this.eventTarget = eventTarget;
         /** @type{Array<Range>} */
         this.areas = [];
     }
@@ -318,7 +294,7 @@ class Selection extends Range {
      */
     show() {
         for (const /** @type{Range} */ r of this.areas) {
-            console.log('show: ' + r.toString());
+            logger.log('show: ' + r.toString());
             this.repainter(selectionBackgroundColor, r);
         }
     }
@@ -334,13 +310,12 @@ class Selection extends Range {
      * @param {number} columnIndex
      */
     set(rowIndex, columnIndex) {
-        console.log('Selection.set');
+        logger.log('Selection.set');
         this.hide(); // TODO: Why?
         this.initial = {row: rowIndex, col: columnIndex};
         this.head = {row: rowIndex, col: columnIndex};
         this.areas = [];
         this.add(rowIndex, columnIndex);
-        this.eventListeners['selectionChanged'](this);
     }
 
     /**
@@ -348,7 +323,7 @@ class Selection extends Range {
      * @param {number} columnIndex
      */
     expand(rowIndex, columnIndex) {
-        console.log('Selection.expand');
+        logger.log('Selection.expand');
         this.hide();
 
         this.head = {row: rowIndex, col: columnIndex};
@@ -360,7 +335,7 @@ class Selection extends Range {
         this.areas.push(r);
         this.convexHull();
         this.show();
-        this.eventListeners['selectionChanged'](this);
+        this.eventTarget.dispatchEvent(new Event('selectionChanged'));
     }
 
     /**
@@ -368,11 +343,11 @@ class Selection extends Range {
      * @param {number} columnIndex
      */
     add(rowIndex, columnIndex) {
-        console.log('Selection.add');
+        logger.log('Selection.add');
         this.hide(); // TODO: Why?
         this.areas.push(new Range(rowIndex, columnIndex, 1, 1));
         this.convexHull();
-        this.eventListeners['selectionChanged'](this);
+        this.eventTarget.dispatchEvent(new Event('selectionChanged'));
     }
 
     /**
@@ -386,47 +361,90 @@ class Selection extends Range {
     }
 }
 
-
-const cellBorderWidth = 1;
-const cellPadding = 3;
-
-
 /**
  * @param {HTMLElement} container
  * @param {GridChen.MatrixView} viewModel
- * @param {Array<function()>} eventListeners
+ * @param {GridChen} gridchenElement
+ * @param {TransactionManager} tm
  */
-function Grid(container, viewModel, eventListeners) {
+function createGrid(container, viewModel, gridchenElement, tm) {
+    tm = tm || new TransactionManager();
     const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
-    let totalHeight = parseInt(container.style.height);
+    const totalHeight = parseInt(container.style.height);
+    const rowHeight = lineHeight + 2 * cellBorderWidth;
+    const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
 
-    let styleSheet = document.createElement('style');
+    let total = 0;
+    const columnEnds = [];
+    for (const [index, schema] of schemas.entries()) {
+        total += schema.width + cellBorderWidth + 2 * cellPadding;
+        columnEnds[index] = total;
+    }
+
+    let viewPortRowCount = Math.floor((totalHeight) / rowHeight) - 1;
+    const viewPortHeight = rowHeight * viewPortRowCount + cellBorderWidth;
+    const gridWidth = columnEnds[columnEnds.length - 1] + cellBorderWidth;
+    const styleSheet = document.createElement('style');
+
     styleSheet.textContent = `
-        .GRID textarea {
-            background-color: white; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
+        /* Common style to all data cell elements */
+        .GRID span, a {
+            position: absolute;
+            border: ${cellBorderStyle};
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            height: ${innerHeight};
+            padding: ${cellPadding}px;
         }
-        .GRID .non_string {
+        
+        a:link {
+            color: var(--a-link-color);
+        }
+        
+        a:visited {
+            color: var(--a-visited-color); 
+        }
+
+        /* Important: The selectors string, non-string and error are used exclusively! */
+        .GRID .string {
+            text-align: left;
+        }
+        .GRID .non-string {
             text-align: right;
         }
+        .GRID .error {
+            text-align: left;
+            border-color: red;
+            z-index: 1;
+        }
+        
         #headerRow {
             position: absolute;
             text-align: center;
             font-weight: normal;
             background-color: ${headerRowBackgroundColor};
         }
+
+        #info {
+            color: inherit;
+            background-color: inherit;
+            cursor: help;
+            font-size: large;
+        }
+        
+        .GRID input, textarea {
+            color: ${inputColor};
+            background-color: ${inputBackgroundColor};
+            position: absolute;
+            display: none;
+            height: ${innerHeight};
+            padding: ${cellPadding}px;
+            border-width: ${cellBorderWidth}px;
+        }
     `;
     container.appendChild(styleSheet);
-
-    const rowHeight = 22;
-    const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
-
-    let total = 0;
-    const columnEnds = [];
-    for (const [index, schema] of schemas.entries()) {
-        total += schema.width + 2 * cellBorderWidth + 2 * cellPadding;
-        columnEnds[index] = total;
-    }
 
     // Only honour first columns sortDirection.
     schemas
@@ -438,27 +456,30 @@ function Grid(container, viewModel, eventListeners) {
     const headerRow = document.createElement('div');
     headerRow.id = 'headerRow';
     let style = headerRow.style;
-    style.width = columnEnds[columnEnds.length - 1] + 'px';
+    style.width = gridWidth + 'px';
     style.height = rowHeight + 'px';
     container.appendChild(headerRow);
 
-    const info = document.createElement('button');
+    const info = document.createElement('span');
+    info.id = 'info';
     info.innerText = '🛈';
     style = info.style;
-    style.padding = '2px';
-    //style.height = '22px';
-    //style.border = 'none';
-    style.left = columnEnds[columnEnds.length - 1] + 'px';
+    style.left = gridWidth + 'px';
+    //style.top = '-3px';
     style.position = 'absolute';
-    style.fontWeight = 'bold';
-    style.cursor = 'help';
-    //style.fontSize = 'large';
     info.onclick = showInfo;
     container.appendChild(info);
 
-    function refresh(_rowCount) {
-        rowCount = _rowCount;
-        setFirstRow(firstRow)
+    //let lastRefreshMillis = -100;
+
+    function refresh() {
+        rowCount = viewModel.rowCount();
+        setFirstRow(firstRow);
+        /*if (window.performance.now() - lastRefreshMillis < 100) {
+            throw new Error();
+        }
+        lastRefreshMillis = window.performance.now();
+        */
     }
 
     refreshHeaders();
@@ -475,7 +496,7 @@ function Grid(container, viewModel, eventListeners) {
             const datalist = document.createElement('datalist');
             datalist.id = 'enum' + columnIndex;
             for (const item of schema.enum) {
-                datalist.appendChild(document.createElement('option')).value = item;
+                datalist.appendChild(document.createElement('option')).value = String(item);
             }
             container.appendChild(datalist)
         }
@@ -504,30 +525,28 @@ function Grid(container, viewModel, eventListeners) {
             header.onclick = function () {
                 // header.textContent = schema.title + ' ' + (header.textContent.substr(-1)==='↑'?'↓':'↑');
                 viewModel.sort(index);
-                refresh(viewModel.rowCount());
+                refresh();
             };
             headerRow.appendChild(header);
             left = columnEnds[index];
         }
     }
 
-    let totalWidth = columnEnds[columnEnds.length - 1] + 20;
-    container.style.width = totalWidth + 'px';
+    container.style.width = (gridWidth + scrollBarWidth) + 'px';
 
     const body = document.createElement('div');
     body.style.position = 'absolute';
-    body.style.top = '23px';
+    body.style.top = rowHeight + 'px';
     body.style.width = '100%';
-    body.style.height = (totalHeight - 20) + 'px';
+    body.style.height = (viewPortHeight) + 'px';
     container.appendChild(body);
 
-    let viewPortRowCount = Math.floor((totalHeight - 20) / rowHeight);
-    const viewPortHeight = rowHeight * viewPortRowCount;
+
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
-    cellParent.className = "GRID";
+    cellParent.className = 'GRID';
     cellParent.style.position = 'absolute';  // Must be absolute otherwise contentEditable=true produces strange behaviour
-    cellParent.style.display = 'inline-block';
-    cellParent.style.width = columnEnds[columnEnds.length - 1] + 'px';
+    //cellParent.style.display = 'inline-block';
+    cellParent.style.width = gridWidth + 'px';
     cellParent.style.height = viewPortHeight + 'px';
     container.tabIndex = 0;
 
@@ -537,30 +556,18 @@ function Grid(container, viewModel, eventListeners) {
             /** @type{HTMLInputElement} */
             this.input = document.createElement('input');
             this.input.id = 'editor';
-            this.input.style.color = inputColor;
-            this.input.style.backgroundColor = inputBackgroundColor;
-            this.input.style.position = 'absolute';
-            this.input.style.display = 'none';
-            this.input.style.height = innerHeight;
-            this.input.style.padding = cellPadding + 'px';
 
             /** @type{HTMLTextAreaElement} */
             this.textarea = document.createElement('textarea');
             this.textarea.id = 'textarea';
-            this.textarea.style.color = inputColor;
-            this.textarea.style.backgroundColor = inputBackgroundColor;
-            this.textarea.style.position = 'absolute';
-            this.textarea.style.display = 'none';
-            this.textarea.style.height = innerHeight;
-            this.textarea.style.padding = cellPadding + 'px';
 
             function foo(evt) {
                 // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
                 evt.stopPropagation();
             }
 
-            this.input.addEventListener('keydown', this.keydownHandler);
-            this.textarea.addEventListener('keydown', this.keydownHandler);
+            this.input.addEventListener('keydown', Editor.keydownHandler);
+            this.textarea.addEventListener('keydown', Editor.keydownHandler);
 
             this.input.addEventListener('mousedown', foo);
             this.textarea.addEventListener('mousedown', foo);
@@ -572,8 +579,8 @@ function Grid(container, viewModel, eventListeners) {
         /**
          * @param {KeyboardEvent} evt
          */
-        keydownHandler(evt) {
-            console.log('editor.onkeydown: ' + evt.code);
+        static keydownHandler(evt) {
+            logger.log('editor.onkeydown: ' + evt.code);
             // Clicking editor should invoke default: move caret. It should not delegate to containers action.
             evt.stopPropagation();
 
@@ -581,14 +588,16 @@ function Grid(container, viewModel, eventListeners) {
                 evt.preventDefault();
                 evt.stopPropagation();
                 // Toggle between input and edit mode
-                activeCell.mode = (activeCell.mode === 'input' ? 'edit' : input);
+                activeCell.mode = (activeCell.mode === 'input' ? 'edit' : 'input');
             } else if (evt.code === 'ArrowLeft' && activeCell.mode === 'input') {
                 evt.preventDefault();
                 evt.stopPropagation();
+                commit();
                 navigateCell(evt, 0, -1);
             } else if (evt.code === 'ArrowRight' && activeCell.mode === 'input') {
                 evt.preventDefault();
                 evt.stopPropagation();
+                commit();
                 navigateCell(evt, 0, 1);
             } else if (evt.code === 'Enter' && evt.altKey) {
                 evt.preventDefault();
@@ -617,8 +626,8 @@ function Grid(container, viewModel, eventListeners) {
             }
         }
 
-        blurHandler(evt) {
-            console.log('editor.onblur');
+        static blurHandler(evt) {
+            logger.log('editor.onblur');
             commit();
 
             if (!container.contains(evt.relatedTarget)) {
@@ -641,7 +650,7 @@ function Grid(container, viewModel, eventListeners) {
             const style = this.input.style;
             style.top = top;
             style.left = left;
-            style.width = (parseInt(width) + 20) + 'px';  // Account for the resize handle, which is about 20px
+            style.width = (parseInt(width) + lineHeight) + 'px';  // Account for the resize handle, which is about 20px
             //style.height = innerHeight;
             if (schemas[activeCell.col].enum) {
                 this.input.setAttribute('list', 'enum' + activeCell.col);
@@ -656,23 +665,23 @@ function Grid(container, viewModel, eventListeners) {
             // Note: focus after display!
             // Note: It is ok to scroll on focus here.
             this.input.focus();
-            this.input.addEventListener('blur', this.blurHandler);
+            this.input.addEventListener('blur', Editor.blurHandler);
         }
 
         showTextArea() {
             const style = this.input.style;
             style.display = 'none';
-            this.input.removeEventListener('blur', this.blurHandler);
+            this.input.removeEventListener('blur', Editor.blurHandler);
             this.textarea.style.left = style.left;
             this.textarea.style.top = style.top;
+            this.textarea.style.width = style.width;
             this.textarea.style.display = 'inline-block';
 
             this.textarea.readOnly = activeCell.isReadOnly();  // Must not use disabled!
 
             this.textarea.value = this.input.value;
             this.textarea.focus();
-            //window.setTimeout(()=>textarea.focus(), 10);
-            this.textarea.addEventListener('blur', this.blurHandler);
+            this.textarea.addEventListener('blur', Editor.blurHandler);
         }
 
         /**
@@ -715,11 +724,11 @@ function Grid(container, viewModel, eventListeners) {
             this.hide();
             const targetRow = rowIndex - firstRow;
             if (targetRow < 0 || targetRow >= viewPortRowCount) return;
-            this.span = spanMatrix[rowIndex - firstRow][colIndex];
+            this.span = cellMatrix[rowIndex - firstRow][colIndex];
             this.col = colIndex;
             this.row = rowIndex;
             this.show();
-            eventListeners['activeCellChanged'](this);
+            gridchenElement.dispatchEvent(new Event('activeCellChanged'));
         },
         enterMode: function () {
             if (this.row < firstRow) {
@@ -740,7 +749,7 @@ function Grid(container, viewModel, eventListeners) {
             this.mode = 'edit';
             this.enterMode();
             let value = viewModel.getCell(this.row, this.col);
-            if (value === undefined || value === null) {
+            if (value == null) {
                 value = '';
             } else {
                 value = schemas[this.col].converter.toEditable(value);
@@ -763,9 +772,9 @@ function Grid(container, viewModel, eventListeners) {
         if (!rr) return;
         for (let row = rr.rowIndex; row < rr.rowIndex + rr.rowCount; row++) {
             for (let col = rr.columnIndex; col < rr.columnIndex + rr.columnCount; col++) {
-                const span = spanMatrix[row][col];
+                const span = cellMatrix[row][col];
                 const style = span.style;
-                if (spanMatrix[row][col] === activeCell.span) {
+                if (cellMatrix[row][col] === activeCell.span) {
                     // Do not change color of active cell.
                 } else if (backgroundColor === undefined) {
                     style.removeProperty('background-color');
@@ -776,8 +785,10 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
+    cellParent.ondblclick = () => activeCell.enterEditMode();
+
     cellParent.onmousedown = function (evt) {
-        console.log('onmousedown');
+        logger.log('onmousedown');
         // But we do not want it to propagate as we want to avoid side effects.
         evt.stopPropagation();
         // The evt default is (A) to focus container element, and (B) start selecting text.
@@ -792,7 +803,7 @@ function Grid(container, viewModel, eventListeners) {
         function index(evt) {
             const y = evt.clientY - rect.y;
             const x = evt.clientX - rect.x;
-            // console.log(x + ' ' + y);
+            // log.log(x + ' ' + y);
             const grid_y = Math.trunc(y / rowHeight);
             let grid_x = 0;
             for (grid_x; grid_x < colCount; grid_x++) {
@@ -812,7 +823,6 @@ function Grid(container, viewModel, eventListeners) {
             selection.show();
         } else {
             navigateCell(evt, rowIndex - activeCell.row, colIndex - activeCell.col);
-            selection.set(rowIndex, colIndex);
         }
 
         function resetHandlers() {
@@ -821,36 +831,36 @@ function Grid(container, viewModel, eventListeners) {
 
         cellParent.onmousemove = function (evt) {
             let {rowIndex, colIndex} = index(evt);
-            console.log(`onmousemove ${rowIndex} ${colIndex}`);
+            logger.log(`onmousemove ${rowIndex} ${colIndex}`);
 
-            if (rowIndex - firstRow < spanMatrix.length) {
+            if (rowIndex - firstRow < cellMatrix.length) {
                 selection.expand(rowIndex, colIndex);
             }
         };
 
         cellParent.onmouseleave = function () {
-            console.log('onmouseleave');
+            logger.log('onmouseleave');
             resetHandlers();
         };
 
         cellParent.onmouseup = function () {
-            console.log('onmouseup');
+            logger.log('onmouseup');
             resetHandlers();
             cellParent.focus(); // So that we receive keyboard events.
         }
     };
 
-    cellParent.onmousewheel = function (_evt) {
-        console.log('onmousewheel');
+    /** @param {WheelEvent} evt */
+    cellParent.onmousewheel = function (evt) {
+        logger.log('onmousewheel');
         if ((/** @type {DocumentOrShadowRoot} */container.parentNode).activeElement !== container) return;
 
-        let evt = /** @type {WheelEvent} */ _evt;
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
         if (evt.ctrlKey) return;
         evt.stopPropagation();
         evt.preventDefault();  // Prevents scrolling of any surrounding HTML element.
 
-        console.assert(evt.deltaMode === evt.DOM_DELTA_PIXEL);  // We only support Chrome. FireFox will have evt.deltaMode = 1.
+        window.console.assert(evt.deltaMode === evt.DOM_DELTA_PIXEL);  // We only support Chrome. FireFox will have evt.deltaMode = 1.
         // TODO: Chrome seems to always give evt.deltaY +-150 pixels. Why?
         // Excel scrolls about 3 lines per wheel tick.
         let newFirstRow = firstRow + 3 * Math.sign(evt.deltaY);
@@ -860,7 +870,7 @@ function Grid(container, viewModel, eventListeners) {
     };
 
     container.onblur = function (evt) {
-        console.log('container.onblur: ' + evt);
+        logger.log('container.onblur: ' + evt);
         if (!container.contains(/** @type {HTMLElement} */ evt.relatedTarget)) {
             // We are leaving the component.
             activeCell.hide();
@@ -869,7 +879,7 @@ function Grid(container, viewModel, eventListeners) {
     };
 
     container.onfocus = function (evt) {
-        console.log('container.onfocus: ' + evt);
+        logger.log('container.onfocus: ' + evt);
         evt.stopPropagation();
         evt.preventDefault();
         activeCell.show();
@@ -895,7 +905,6 @@ function Grid(container, viewModel, eventListeners) {
             alert('Parts of the cells are locked!');
             return
         }
-        const patches = [];
         // const modifiedRows = new Set();
         for (const r of selection.areas) {
             let rowIndex = r.rowIndex;
@@ -905,7 +914,7 @@ function Grid(container, viewModel, eventListeners) {
             for (; rowIndex < endRowIndex; rowIndex++) {
                 //modifiedRows.add(rowIndex);
                 for (let colIndex = r.columnIndex; colIndex < endColIndex; colIndex++) {
-                    patches.push(...viewModel.setCell(rowIndex, colIndex, undefined));
+                    tm.schedulePatch(viewModel.setCell(rowIndex, colIndex, undefined));
                 }
             }
         }
@@ -916,16 +925,14 @@ function Grid(container, viewModel, eventListeners) {
             if (row.some(item => item != null)) {
                 break
             }
-            patches.push(...viewModel.deleteRow(rowIndex));
+            tm.schedulePatch(viewModel.deleteRow(rowIndex));
             rowIndex--;
         }
 
         if (rowIndex === -1) {
-            patches.push(...viewModel.removeModel())
+            tm.schedulePatch(viewModel.removeModel())
         }
-
-        eventListeners['dataChanged'](patches);
-        refresh(viewModel.rowCount());
+        tm.flushScheduledPatches(tmListener);
     }
 
     function deleteRows() {
@@ -933,15 +940,12 @@ function Grid(container, viewModel, eventListeners) {
             alert('This grid is locked!');
             return
         }
-        const patches = [];
         for (const r of selection.areas) {
-            range(r.rowCount).forEach(function () {
-                patches.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
+            rangeIterator(r.rowCount).forEach(function () {
+                tm.schedulePatch(viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
-
-        eventListeners['dataChanged'](patches);
-        refresh(viewModel.rowCount());
+        tm.flushScheduledPatches(tmListener);
     }
 
     function insertRow() {
@@ -949,27 +953,27 @@ function Grid(container, viewModel, eventListeners) {
             alert('This grid is locked!');
             return
         }
-        const patches = viewModel.splice(activeCell.row);
-        eventListeners['dataChanged'](patches);
-        refresh(viewModel.rowCount());
+        tm.schedulePatch(viewModel.splice(activeCell.row));
+        tm.flushScheduledPatches(tmListener);
     }
 
     function copySelection(doCut, withHeaders) {
         window.navigator.clipboard.writeText(rangeToTSV(selection.areas[0], '\t', withHeaders))
             .then(() => {
-                console.log('Text copied to clipboard');
+                logger.log('Text copied to clipboard');
                 if (doCut) {
                     deleteSelection();
                 }
             })
             .catch(err => {
                 // This can happen if the user denies clipboard permissions:
-                console.error('Could not copy text: ', err);
+                logger.error('Could not copy text: ', err);
             });
     }
 
     container.onkeydown = function (evt) {
-        console.log('container.onkeydown ' + evt.code);
+        logger.log('container.onkeydown ' + evt.code);
+
         //if (activeCell.mode === 'edit') throw Error();
         // Note 1: All handlers call both preventDefault() and stopPropagation().
         //         The reason is documented in the handler code.
@@ -1030,15 +1034,15 @@ function Grid(container, viewModel, eventListeners) {
             }
             window.navigator.clipboard.readText()
                 .then(text => {
-                    //console.log('Pasted content: ', text);
+                    //log.log('Pasted content: ', text);
                     let matrix = tsvToMatrix(text);
                     if (matrix) {
-                        refresh(paste(matrix));
-                        eventListeners['paste']();
+                        paste(matrix);
+                        tm.flushScheduledPatches(tmListener);
                     }
                 })
                 .catch(err => {
-                    console.error('Failed to read clipboard contents: ', err);
+                    logger.error('Failed to read clipboard contents: ', err);
                 })
         } else if (evt.code === 'Escape') {
             // Leave edit mode.
@@ -1092,6 +1096,29 @@ function Grid(container, viewModel, eventListeners) {
                 activeCell.enterInputMode(evt.key);
             }
         }
+        // else if (evt.code === 'KeyY' && evt.ctrlKey) {
+        //     // TODO: Why KeyY and not KeyZ. Is code always us layout?
+        //     evt.preventDefault(); // No evt.stopPropagation() so that parent context can participate in undo.
+        //     tm.undo();
+        // } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
+        //     evt.preventDefault(); // As with undo, no evt.stopPropagation().
+        //     tm.redo();
+        // }
+    };
+
+    const tmListener = {
+        flush (scheduledPatch) {
+            refresh();
+            scheduledPatch.cell = {rowIndex: activeCell.row, columnIndex: activeCell.col};
+            gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: scheduledPatch}}));
+        },
+        apply (patch) {
+            viewModel.applyJSONPatch(patch);
+            activeCell.move(patch.cell.rowIndex, patch.cell.columnIndex);
+            selection.set(patch.cell.rowIndex, patch.cell.columnIndex);
+            refresh();
+            gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: patch}}));
+        }
     };
 
     function showInfo() {
@@ -1099,6 +1126,8 @@ function Grid(container, viewModel, eventListeners) {
         const div = document.createElement('div');
         const actions = [
             ['Key', 'Action'],
+            ['Ctrl+Z', 'Undo last transaction'],
+            ['Ctrl+Y', 'Redo, reverse last undo'],
             ['Arrows', 'Move active cell up/down/left/right (not in edit mode)'],
             ['Tab', 'Move active cell right (non-rolling)'],
             ['Enter', 'Move active cell down (non-rolling)'],
@@ -1146,11 +1175,6 @@ function Grid(container, viewModel, eventListeners) {
         let dialog = openDialog();
         dialog.style.width = '80%';
 
-        if (!eventListeners['plot']) {
-            dialog.textContent = 'You must set an event listener of type plot.';
-            return
-        }
-
         /** @type{Array<number>} */
         const columnIndices = [];
         for (const /** @type{Range} */ r of selection.areas) {
@@ -1164,22 +1188,31 @@ function Grid(container, viewModel, eventListeners) {
             return
         }
 
-        const columnSchemas = [];
+        /** @type{GridChen.ColumnSchema[]}*/
+        let columnSchemas = [];
+        /** @type{number[][]}*/
         const columns = [];
         for (const columnIndex of columnIndices) {
             columnSchemas.push(schemas[columnIndex]);
             columns.push(viewModel.getColumn(columnIndex));
         }
 
-        // Note: We complete erase dialogs content because some frameworks (plotly for example) will cache information
+        // Note: We completely erase dialogs content because some frameworks (plotly for example) will cache information
         // in the HTML element.
         dialog.textContent = '';
         const graphElement = dialog.appendChild(document.createElement('div'));
-        eventListeners['plot'](graphElement, schema.title, columnSchemas, columns);
+        /** @type {GridChen.PlotEventDetail} */
+        let detail = Object.assign({
+            graphElement: graphElement,
+            title: schema.title,
+            schemas: columnSchemas,
+            columns: columns
+        });
+        gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
     }
 
     function navigateCell(evt, rowOffset, colOffset) {
-        console.log('navigateCell');
+        logger.log('navigateCell');
 
         if (activeCell.mode !== 'display') {
             commit();
@@ -1216,7 +1249,7 @@ function Grid(container, viewModel, eventListeners) {
             selection.set(rowIndex, colIndex);
         }
 
-        console.log(`rowIndex ${rowIndex} colIndex ${colIndex}`);
+        logger.log(`rowIndex ${rowIndex} colIndex ${colIndex}`);
 
         const viewRow = rowIndex - firstRow;
 
@@ -1242,10 +1275,10 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-    let slider = new Slider(totalWidth - 20, viewPortHeight, (n) => setFirstRow(n, this));
     // Note that the slider must before the cells (we avoid using z-order)
     // so that the textarea-resize handle is in front of the slider.
-    body.appendChild(slider.element);
+    let scrollBar = new ScrollBar(body, gridWidth, viewPortHeight, (n) => setFirstRow(n, this));
+
     body.appendChild(cellParent);
 
     let colCount = schemas.length;
@@ -1255,7 +1288,7 @@ function Grid(container, viewModel, eventListeners) {
     let rowCount = 0;
 
     function commit() {
-        console.log('commit');
+        logger.log('commit');
         activeCell.span.style.display = 'inline-block';
 
         if (activeCell.mode !== 'display') {
@@ -1270,22 +1303,22 @@ function Grid(container, viewModel, eventListeners) {
                 if (value === '') {
                     value = undefined;
                 } else {
-                    value = schemas[colIndex].converter.fromString(value);
+                    value = schemas[colIndex].converter.fromEditable(value.trim());
                     //value = value.replace(/\\n/g, '\n');
                 }
-                const patches = viewModel.setCell(rowIndex, colIndex, value);
-                refresh(viewModel.rowCount());
-                // Must be called AFTER model is updated.
-                eventListeners['dataChanged'](patches);
+                const patch = viewModel.setCell(rowIndex, colIndex, value);
+                patch.forEach(function(op) {op.path = schema.pathPrefix + op.path});
+                tm.schedulePatch(patch);
             }
         }
 
         activeCell.mode = 'display';
         container.focus({preventScroll: true});
+        tm.flushScheduledPatches(tmListener);
     }
 
     /** @type {Array<Array<HTMLElement>>} */
-    let spanMatrix = Array(viewPortRowCount);
+    let cellMatrix = Array(viewPortRowCount);
     let pageIncrement = Math.max(1, viewPortRowCount);
 
     function setFirstRow(_firstRow, caller) {
@@ -1298,16 +1331,16 @@ function Grid(container, viewModel, eventListeners) {
         //    rowCount = firstRow + viewPortRowCount;
         //}
 
-        if (caller !== slider) {
+        if (caller !== scrollBar) {
             // TODO: remove caller.
-            if (slider.max !== rowCount - viewPortRowCount) {
+            if (scrollBar.max !== rowCount - viewPortRowCount) {
                 // Note that rowCount - viewPortRowCount may be 0.
-                slider.setMax(Math.max(viewPortRowCount, rowCount - viewPortRowCount));
+                scrollBar.setMax(Math.max(viewPortRowCount, rowCount - viewPortRowCount));
             }
-            slider.setValue(firstRow)
+            scrollBar.setValue(firstRow)
         }
 
-        updateViewportRows(getSelection(
+        updateViewportRows(getRangeData(
             new Range(firstRow, 0, viewPortRowCount, colCount)));
         activeCell.move(activeCell.row, activeCell.col);
         selection.show();
@@ -1315,49 +1348,26 @@ function Grid(container, viewModel, eventListeners) {
 
     function createCell(vpRowIndex, colIndex) {
         const schema = schemas[colIndex];
-        /** @type {HTMLElement} */
-        let elem;
-        if (schema.format === 'uri') {
-            elem = createAnchorElement();
-        } else {
-            elem = document.createElement('span');
-            elem.style.cursor = 'cell';
-        }
+        const elem = schema.converter.createElement();
 
+        cellMatrix[vpRowIndex][colIndex] = elem;
         let style = elem.style;
-        spanMatrix[vpRowIndex][colIndex] = elem;
-        style.position = 'absolute';
         style.top = (vpRowIndex * rowHeight) + 'px';
         style.left = (colIndex ? columnEnds[colIndex - 1] : 0) + 'px';
         style.width = schemas[colIndex].width + 'px';
-        style.height = innerHeight;
-        style.overflow = 'hidden';
-        style.whiteSpace = 'nowrap';
-        style.overflow = 'hidden';
-        style.textOverflow = 'ellipsis';
-        style.border = cellBorderStyle;
-        style.padding = cellPadding + 'px';
-        //style.backgroundColor = 'white';
-
-        if (schema.type !== 'string' || schema.format) {
-            elem.className = 'non_string'
-        }
-
-        elem.addEventListener('dblclick', () => activeCell.enterEditMode());
         cellParent.appendChild(elem);
     }
 
     /**
-     * TODO: Rename to getData
-     * @param {Range} selection
+     * @param {Range} range
      * @returns {Array<Array<?>>}
      */
-    function getSelection(selection) {
-        let matrix = Array(selection.rowCount);
-        for (let i = 0, rowIndex = selection.rowIndex; rowIndex < selection.rowIndex + selection.rowCount; i++, rowIndex++) {
-            matrix[i] = Array(selection.columnCount);
+    function getRangeData(range) {
+        let matrix = Array(range.rowCount);
+        for (let i = 0, rowIndex = range.rowIndex; rowIndex < range.rowIndex + range.rowCount; i++, rowIndex++) {
+            matrix[i] = Array(range.columnCount);
             if (rowIndex >= rowCount) continue;
-            for (let j = 0, colIndex = selection.columnIndex; colIndex < selection.columnIndex + selection.columnCount; colIndex++, j++) {
+            for (let j = 0, colIndex = range.columnIndex; colIndex < range.columnIndex + range.columnCount; colIndex++, j++) {
                 matrix[i][j] = viewModel.getCell(rowIndex, colIndex);
             }
         }
@@ -1365,31 +1375,37 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     /**
+     * TODO: Move this to matrixview.js
      * @param {Range} r
      * @param {string} sep
      * @param {boolean} withHeaders
      * @returns {string}
      */
     function rangeToTSV(r, sep, withHeaders) {
-        const rowMatrix = getSelection(r);
+        const rowMatrix = getRangeData(r);
         let tsvRows = Array(rowMatrix.length);
         for (const [i, row] of rowMatrix.entries()) {
             tsvRows[i] = row.map(function (value, j) {
                 let schema = schemas[r.columnIndex + j];
-                if (value === undefined || value === null) {
-                    return undefined;
+                if (value == null) {
+                    return null;
                 }
-                value = schema.converter.toString(value);
+                value = schema.converter.toTSV(value).trim();
                 if (value.includes('\t') || value.includes('\n')) {
                     value = '"' + value + '"';
                 }
                 return value;
-            }).join(sep);  // Note that a=[undefined, 3].join(',') is ',3', which is what we want.
+            }).join(sep);  // Note that a=[null, 3].join(',') is ',3', which is what we want.
         }
         if (withHeaders) {
             tsvRows.unshift(schemas.map(schema => schema.title).join(sep));
         }
         return tsvRows.join('\r\n')
+    }
+
+    function toTSV() {
+        const range = new Range(0, 0, rowCount, colCount);
+        return rangeToTSV(range, '\t', true)
     }
 
     /**
@@ -1408,9 +1424,8 @@ function Grid(container, viewModel, eventListeners) {
 
             for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                 let value = matrix[i][j];
-                if (value !== undefined) value = schemas[colIndex].converter.fromString(value);
-                const patches = viewModel.setCell(rowIndex, colIndex, value);
-                eventListeners['dataChanged'](patches);
+                if (value !== undefined) value = schemas[colIndex].converter.fromEditable(value.trim());
+                tm.schedulePatch(viewModel.setCell(rowIndex, colIndex, value));
             }
         }
     }
@@ -1458,43 +1473,26 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     function updateViewportRows(matrix) {
-        // console.log('setRowData', rowData)
-        for (let index = 0; index < spanMatrix.length; index++) {
-            let elemRow = spanMatrix[index];
+        // log.log('setRowData', rowData)
+        for (let index = 0; index < cellMatrix.length; index++) {
+            let elemRow = cellMatrix[index];
             let row = matrix[index];
             for (let colIndex = 0; colIndex < colCount; colIndex++) {
                 let elem = elemRow[colIndex];
+                elem.removeAttribute('class');
                 let value = (row ? row[colIndex] : undefined);
-                if (value === undefined || value === null) {
-                    value = '';
-                } else {
-                    value = schemas[colIndex].converter.toString(value);
+                if (value == null) { // JavaScript hack: checks also for undefined
+                    elem.textContent = '';
+                    continue;
                 }
 
-                if (elem.tagName === 'A') {
-                    // Check for markdown link, i.e. [sdsd](http://sdsd)
-                    const m = value.match(/^\[(.+)\]\((.+)\)$/);
-                    if (m) {
-                        elem.textContent = m[1];
-                        elem.href = m[2];
-                    } else {
-                        if (value === '') {
-                            // This will also remove the pointer cursor.
-                            elem.removeAttribute('href');
-                        } else {
-                            elem.href = value;
-                        }
-                        elem.textContent = value;
-                    }
-                } else {
-                    elem.textContent = value;
-                }
+                schemas[colIndex].converter.render(elem, value);
             }
         }
     }
 
-    for (let rowIndex = 0; rowIndex < spanMatrix.length; rowIndex++) {
-        spanMatrix[rowIndex] = Array(colCount);
+    for (let rowIndex = 0; rowIndex < cellMatrix.length; rowIndex++) {
+        cellMatrix[rowIndex] = Array(colCount);
         for (let colIndex = 0; colIndex < colCount; colIndex++) {
             createCell(rowIndex, colIndex);
         }
@@ -1503,11 +1501,11 @@ function Grid(container, viewModel, eventListeners) {
     const ee = new Editor(cellParent);
 
     /** @type {Selection} */
-    let selection = new Selection(repaintRange, eventListeners);
+    let selection = new Selection(repaintRange, gridchenElement);
     //selection.set(0, 0);
 
     firstRow = 0;
-    refresh(viewModel.rowCount());
+    refresh();
     // Revoke action by setFirstRow(). TODO: Refactor.
     activeCell.hide();
     selection.hide();
@@ -1524,31 +1522,32 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-    return {
-        /**
-         * @returns {Range1}
-         */
-        getActiveCell() {
-            return new Range1(activeCell.row, activeCell.col, 1, 1);
-        },
-        /**
-         * @returns {Range1}
-         */
-        getSelection() {
-            return new Range1(selection.rowIndex, selection.columnIndex,
-                selection.rowCount, selection.columnCount);
-        },
-        /**
-         * @param {number} rowIndex
-         * @param {number} columnIndex
-         * @param {number} rowCount
-         * @param {number} columnCount
-         * @returns {Range}
-         */
-        getRange(rowIndex, columnIndex, rowCount, columnCount) {
-            return new Range1(rowIndex, columnIndex, rowCount, columnCount);
+    Object.defineProperty(gridchenElement, 'patch',
+        {
+            get: function () {
+                return tm.patch;
+            }
         }
+    );
+
+    gridchenElement.resetTransactions = function () {
+        tm.clear();
     };
+
+    Object.defineProperty(gridchenElement, 'selectedRange',
+        {
+            get: () => new Range1(selection.rowIndex, selection.columnIndex,
+                selection.rowCount, selection.columnCount)
+        }
+    );
+
+    Object.defineProperty(gridchenElement, 'activeRange',
+        {get: () => new Range1(activeCell.row, activeCell.col, 1, 1)}
+    );
+
+    gridchenElement.getRangeByIndexes =
+        (rowIndex, columnIndex, rowCount, columnCount) => new Range1(rowIndex, columnIndex, rowCount, columnCount);
+    gridchenElement['_toTSV'] = toTSV;
 }
 
 /**
