@@ -7,7 +7,7 @@ import {
     DatePartialTimeStringConverter,
     StringConverter
 } from "../grid-chen/converter.js";
-import {TransactionManager, applyJSONPatch} from "../grid-chen/utils.js";
+import {createTransactionManager, applyJSONPatch} from "../grid-chen/utils.js";
 
 /**
  * @param {number} duration in seconds
@@ -149,9 +149,8 @@ class ProxyNode {
  * @param {GridChen.JSONSchema} topSchema
  * @param {object} topObj
  * @param {string} id
- * @param onDataChanged
  */
-export function createFormChen(topSchema, topObj, id, onDataChanged) {
+export function createFormChen(topSchema, topObj, id) {
     ProxyNode.root = topSchema;
     const containerByPath = {};
     const nodesByPath = {};
@@ -163,14 +162,6 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
             containerByPath[jsonPath] = elem;
             elem.textContent = '';
         }
-    }
-
-    const allPatches = [];
-
-    function onDataChangedWrapper(patches) {
-        console.log(patches);
-        allPatches.push(...patches);
-        if (onDataChanged) onDataChanged(patches);
     }
 
         /**
@@ -187,19 +178,16 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
     const rootNode = createProxyNode('', topSchema, null);
     rootNode.obj = topObj;
 
-    const tm = new TransactionManager();
-    const tmListener= {
-        flush(scheduledPatch) {},
-        apply(patch) {
-            rootNode.obj = applyJSONPatch(rootNode.obj, patch);
-            for (let op of patch) {
-                const node = nodesByPath[op.path];
-                if (node.refreshUI) {
-                    node.refreshUI();
-                }
+    const tm = createTransactionManager();
+    function applyTransaction(trans) {
+        rootNode.obj = applyJSONPatch(rootNode.obj, trans.patch);
+        for (let op of trans.patch) {
+            const node = nodesByPath[op.path];
+            if (node.refreshUI) {
+                node.refreshUI();
             }
         }
-    };
+    }
 
     bindNode(rootNode, undefined);
 
@@ -242,16 +230,6 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
         node.schema.pathPrefix = node.path;
         const view = createView(node.schema, node.obj);
         grid.resetFromView(view, tm);
-        grid.addEventListener('datachanged', function (evt) {
-            node.obj = view.getModel();
-            const pp = node.createParents();
-            for (const operation of evt.detail.patch) {
-                const op = Object.assign({}, operation);
-                op.path = node.path + (op.path === '/' ? '' : op.path);
-                pp.push(op);
-            }
-            onDataChangedWrapper(pp);
-        });
     }
 
     /**
@@ -384,7 +362,6 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
         }
 
         if (node.readOnly && !(value == null)) {
-            //input.readOnly = true;
             input.disabled = true;
         }
 
@@ -408,9 +385,9 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
             op.oldValue = node.parent.obj[node.key];
             patch.push(op);
             node.parent.obj[node.key] = op.value;
-            tm.schedulePatch(patch);
-            tm.flushScheduledPatches(tmListener);
-            //onDataChangedWrapper(patches);
+            const trans = tm.createTransaction(applyTransaction);
+            trans.patch = patch;
+            trans.commit();
         };
 
         label.textContent = node.title;
@@ -434,7 +411,6 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
 
     class FormChen {
         constructor() {
-
         }
 
         /**
@@ -443,18 +419,6 @@ export function createFormChen(topSchema, topObj, id, onDataChanged) {
          */
         getValue() {
             return rootNode.obj
-        }
-
-        /**
-         * Returns a patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
-         * @returns {Array<{op:string, path:string, value:*}>}
-         */
-        getPatches() {
-            return allPatches;
-        }
-
-        clearPatches() {
-            allPatches.length = 0;
         }
 
         get transactionManager() {

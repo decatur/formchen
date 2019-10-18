@@ -1,4 +1,4 @@
-import {TransactionManager} from "./utils.js";
+import {createTransactionManager} from "./utils.js";
 
 /**
  * Author: Wolfgang Kühn 2019
@@ -368,7 +368,7 @@ class Selection extends Range {
  * @param {TransactionManager} tm
  */
 function createGrid(container, viewModel, gridchenElement, tm) {
-    tm = tm || new TransactionManager();
+    tm = tm || createTransactionManager();
     const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
     const totalHeight = parseInt(container.style.height);
@@ -1106,20 +1106,14 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         // }
     };
 
-    const tmListener = {
-        flush (scheduledPatch) {
-            refresh();
-            scheduledPatch.cell = {rowIndex: activeCell.row, columnIndex: activeCell.col};
-            gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: scheduledPatch}}));
-        },
-        apply (patch) {
-            viewModel.applyJSONPatch(patch);
-            activeCell.move(patch.cell.rowIndex, patch.cell.columnIndex);
-            selection.set(patch.cell.rowIndex, patch.cell.columnIndex);
-            refresh();
-            gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: patch}}));
-        }
-    };
+    function tmListener(trans) {
+        viewModel.applyJSONPatch(trans.patch);
+        const {rowIndex, columnIndex} = trans.detail;
+        activeCell.move(rowIndex, columnIndex);
+        selection.set(rowIndex, columnIndex);
+        refresh();
+        //gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: patch}}));
+    }
 
     function showInfo() {
         let dialog = openDialog();
@@ -1306,15 +1300,17 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                     value = schemas[colIndex].converter.fromEditable(value.trim());
                     //value = value.replace(/\\n/g, '\n');
                 }
-                const patch = viewModel.setCell(rowIndex, colIndex, value);
-                patch.forEach(function(op) {op.path = schema.pathPrefix + op.path});
-                tm.schedulePatch(patch);
+                const trans = tm.createTransaction(tmListener);
+                trans.patch = viewModel.setCell(rowIndex, colIndex, value);
+                trans.pathPrefix = schema.pathPrefix;
+                trans.detail = {rowIndex: activeCell.row, columnIndex: activeCell.col};
+                trans.commit();
+                refresh();
             }
         }
 
         activeCell.mode = 'display';
         container.focus({preventScroll: true});
-        tm.flushScheduledPatches(tmListener);
     }
 
     /** @type {Array<Array<HTMLElement>>} */

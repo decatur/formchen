@@ -38,8 +38,8 @@ function rebind() {
     }
 
     const fc = createFormChen(schema, data, 'theObject');
-    fc.transactionManager.addEventListener('change', function(patches) {
-        patchElement.value = JSON.stringify(patches, null, 2);
+    fc.transactionManager.addEventListener('change', function() {
+        patchElement.value = JSON.stringify(fc.transactionManager.patch, null, 2);
         dataElement.value = JSON.stringify(fc.getValue(), null, 2);
     });
 }

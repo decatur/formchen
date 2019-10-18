@@ -76,9 +76,9 @@ declare module GridChen {
          */
         resetFromView: (view: MatrixView) => GridChen;
         /**
-         * The accumulated JSON Patch since the last resetFromView() or resetTransactions().
+         * The accumulated JSON Patch since the last resetFromView() or TODO resetTransactions().
          */
-        readonly patch: object[];
+        readonly patch: JSONPatch;
         /**
          * Returns the active cell.
          */
@@ -90,6 +90,7 @@ declare module GridChen {
         readonly selectedRange: CellRange;
         /**
          * Empties the accumulated JSON Patch.
+         * TODO: delete
          */
         resetTransactions: () => void;
     }
@@ -101,7 +102,7 @@ declare module GridChen {
     }
 
     export interface DataChangedEventDetail {
-        patch: Object[];
+        patch: JSONPatch;
     }
 
     interface DataChangedEvent extends CustomEvent<DataChangedEventDetail> {
@@ -124,9 +125,7 @@ declare module GridChen {
         oldValue?: any;
     }
 
-    export interface JSONPatch extends Array<JSONPatchOperation> {
-        //cell: object;
-    }
+    export type JSONPatch = Array<JSONPatchOperation>;
 
     export function createView(schema: JSONSchema, view: any[] | object): MatrixView;
 
@@ -146,5 +145,34 @@ declare module GridChen {
         applyJSONPatch: (patch: JSONPatch) => void;
     }
 
+    export interface Transaction {
+        patch: JSONPatch;
+        apply: (JSONPatch) => void;
+        detail: object;
+        commit: () => void;
+    }
+
+    export interface TransactionManager {
+
+        addEventListener: (type, listener) => void;
+
+        /**
+         * @param {function(GridChen.JSONPatch)} apply
+         */
+        createTransaction: (apply) => Transaction;
+
+        undo: () => void;
+
+        redo: () => void;
+
+        clear: () => void;
+
+        /**
+         * /**
+         * Returns a flat patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
+         * of all performed transactions.
+         */
+        patch: JSONPatch;
+    }
 
 }
