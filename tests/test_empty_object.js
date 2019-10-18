@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {createFormChen} from '/modules/FormChen/FormChen.js'
+import {createFormChen} from '/modules/FormChen/webcomponent.js'
 
 test('Empty Object one Level', () => {
     const schema = {
@@ -31,13 +31,13 @@ test('Empty Object one Level', () => {
         {"op": "add", "path": "/foo", "value": "foo"}
     ];
     assert.equal(expected, fc.getPatches());
-    assert.equal({foo: 'foo'}, fc.getValue());
+    assert.equal({foo: 'foo'}, fc.value);
 
     input.value = 'foobar';
     input.onchange(null);
     expected.push({"op": "replace", "path": "/foo", "value": "foobar"})
     assert.equal(expected, fc.getPatches());
-    assert.equal({foo: 'foobar'}, fc.getValue());
+    assert.equal({foo: 'foobar'}, fc.value);
 }).finally();
 
 test('Empty Object two Levels', () => {

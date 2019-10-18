@@ -1,4 +1,4 @@
-import {createFormChen} from "./form-chen/FormChen.js"
+import {createFormChen} from "./form-chen/webcomponent.js"
 
 const schemaElement = document.querySelector('.schema');
 const dataElement = document.querySelector('.data');
@@ -37,9 +37,16 @@ function rebind() {
         }
     }
 
-    const fc = createFormChen(schema, data, 'theObject');
-    fc.transactionManager.addEventListener('change', function() {
+    let fc;
+    try {
+        fc = createFormChen(schema, data);
+    } catch (e) {
+        console.log(e.errors);
+        alert(e + '; See console');
+    }
+
+    fc.transactionManager.addEventListener('change', function () {
         patchElement.value = JSON.stringify(fc.transactionManager.patch, null, 2);
-        dataElement.value = JSON.stringify(fc.getValue(), null, 2);
+        dataElement.value = JSON.stringify(fc.value, null, 2);
     });
 }

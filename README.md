@@ -13,27 +13,27 @@ Also see usage.html.
 ![usage](usage.png)
 
 ```html
-<div>
+<div class="form-chen">
+    <!-- JSON Path to root element -->
     <div data-path="person"></div>
-    <span style="background-color: crimson" data-path="person/vip"></span>
+    <!-- JSON Path to root vip property -->
+    <span style="font-size: x-large" data-path="person/vip"></span>
 </div>
 ```
 
 ```javascript
-    import {createFormChen} from "./form-chen/FormChen.js"
+    import {createFormChen} from "./webcomponentwebcomponent.js"
 
     const schema = {
         title: 'Person',
+        pathPrefix: 'person',
         type: 'object',
         properties: {
             name: {
-                title: 'Full Name of Person',
-                type: 'string'
+                title: 'Full Name of Person', type: 'string'
             },
             dateOfBirth: {
-                title: 'Date of Birth',
-                type: 'string',
-                format: 'full-date'
+                title: 'Date of Birth', type: 'string', format: 'full-date'
             },
             vip: {
                 type: 'boolean'
@@ -47,7 +47,7 @@ Also see usage.html.
         vip: true
     };
 
-    const formChen = createFormChen(schema, data, 'person');
+    createFormChen(schema, data);
 ```
 
 # Demos
@@ -80,30 +80,3 @@ See the demos for examples.
 
 # API
 
-```javascript
-   class FormChen {
-        constructor() {
-
-        }
-
-        /**
-         * Returns the current value of the bound object.
-         * @returns {*}
-         */
-        getValue() {
-            return rootNode.obj
-        }
-
-        /**
-         * Returns a patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
-         * @returns {Array<{op:string, path:string, value:*}>}
-         */
-        getPatches() {
-            return allPatches;
-        }
-
-        clearPatches() {
-            allPatches.length = 0;
-        }
-    }
-```

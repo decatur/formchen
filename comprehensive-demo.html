@@ -17,8 +17,8 @@
 </form>
 
 <div class="form-chen">
-    <div data-path="theObject"></div>
-    <div data-path="theObject/anEmptyMatrix" style="column-span: all"></div>
+    <div data-path="myPrefix"></div>
+    <div data-path="myPrefix/anEmptyMatrix" style="column-span: all"></div>
 </div>
 
 </body>
@@ -42,7 +42,7 @@
                 }
             }
         },
-
+        pathPrefix: 'myPrefix',
         title: 'FieldObservation',
         type: 'object',
         properties: {
@@ -118,10 +118,6 @@
                 title: 'An Undefined Matrix',
                 $ref: '#/definitions/measurements'
             },
-            /*invalidSchema: {
-                title: 'Invalid Schema',
-                type: 'Date'
-            },*/
             arrayOfTimeSeries: {
                 type: 'array',
                 title: 'arrayOfTimeSeries',
@@ -158,11 +154,7 @@
                         }
                     }
                 }
-            },
-            /*unresolvedRef: {
-                title: 'A Unresolvable Reference',
-                $ref: '#/definitions/foobar'
-            }*/
+            }
         }
     };
 
@@ -186,8 +178,7 @@
         arrayOfTimeSeries: [
             { country: 'Germany', prices: [['2019-01-01', '2019-02-01', 33]]},
             { country: 'France', prices: [['2019-02-01', '2019-03-01', 42]]}
-        ],
-        //invalidSchema: new Date()
+        ]
     };
 
 

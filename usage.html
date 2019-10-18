@@ -14,25 +14,21 @@
     <!-- JSON Path to root element -->
     <div data-path="person"></div>
     <!-- JSON Path to root vip property -->
-    <span style="background-color: indianred" data-path="person/vip"></span>
+    <span style="font-size: x-large" data-path="person/vip"></span>
 </div>
-</body>
-
 <script type="module">
-    import {createFormChen} from "./form-chen/FormChen.js"
+    import {createFormChen} from "./form-chen/webcomponent.js"
 
     const schema = {
         title: 'Person',
+        pathPrefix: 'person',
         type: 'object',
         properties: {
             name: {
-                title: 'Full Name of Person',
-                type: 'string'
+                title: 'Full Name of Person', type: 'string'
             },
             dateOfBirth: {
-                title: 'Date of Birth',
-                type: 'string',
-                format: 'full-date'
+                title: 'Date of Birth', type: 'string', format: 'full-date'
             },
             vip: {
                 type: 'boolean'
@@ -46,8 +42,7 @@
         vip: true
     };
 
-    createFormChen(schema, data, 'person');
-
+    createFormChen(schema, data);
 </script>
-
+</body>
 </html>

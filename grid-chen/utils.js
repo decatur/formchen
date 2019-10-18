@@ -332,7 +332,6 @@ export function createTransactionManager() {
      * @implements {GridChen.TransactionManager}
      */
     class TransactionManager {
-
         constructor() {
             this.clear();
         }
@@ -360,7 +359,7 @@ export function createTransactionManager() {
          * @param {function(GridChen.JSONPatchOperation[])} apply
          * @returns {GridChen.Transaction}
          */
-        createTransaction(apply) {
+        openTransaction(apply) {
             const tm = this;
             const trans = /**@type{GridChen.Transaction}*/ {patch: [], apply: apply, detail: {}};
             trans.commit = function () {
@@ -410,6 +409,7 @@ export function createTransactionManager() {
     }
 
     const tm = new TransactionManager();
+
     document.body.addEventListener('keydown', function (evt) {
         if (evt.code === 'KeyY' && evt.ctrlKey) {
             evt.preventDefault();
