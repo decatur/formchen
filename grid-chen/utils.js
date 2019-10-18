@@ -237,8 +237,8 @@ function reverseOp(op) {
 }
 
 /**
- * @param {GridChen.JSONPatch} patch
- * @returns {GridChen.JSONPatch}
+ * @param {GridChen.JSONPatchOperation[]} patch
+ * @returns {GridChen.JSONPatchOperation[]}
  */
 export function reversePatch(patch) {
     const reversedPatch = [];
@@ -283,7 +283,7 @@ function applyJSONPatchOperation(holder, op) {
 
 /**
  * @param {{'':object}} holder
- * @param {GridChen.JSONPatch} patch
+ * @param {GridChen.JSONPatchOperation[]} patch
  */
 function applyPatch(holder, patch) {
     for (let op of patch) {
@@ -300,7 +300,7 @@ function applyPatch(holder, patch) {
  * It does not do any validation or error handling.
  *
  * @param {object} data
- * @param {GridChen.JSONPatch} patch
+ * @param {GridChen.JSONPatchOperation[]} patch
  * @returns {object|undefined}
  */
 export function applyJSONPatch(data, patch) {
@@ -315,13 +315,24 @@ export function applyJSONPatch(data, patch) {
  */
 export function createTransactionManager() {
     const listenersByType = {change: []};
-    function fireChange(trans) {
-        for (let listener of listenersByType['change']) {
-            listener(trans);
+    const resolves = [];
+
+    function fireChange(transaction) {
+        const type = 'change';
+        for (let listener of listenersByType[type]) {
+            listener({type, transaction});
+        }
+
+        while (resolves.length) {
+            resolves.pop()();
         }
     }
 
+    /**
+     * @implements {GridChen.TransactionManager}
+     */
     class TransactionManager {
+
         constructor() {
             this.clear();
         }
@@ -330,8 +341,23 @@ export function createTransactionManager() {
             listenersByType[type].push(listener);
         }
 
+        removeEventListener(type, listener) {
+            for (let l of listenersByType[type]) {
+                if (l === listener) {
+                    delete listenersByType[type][l];
+                }
+            }
+        }
+
+        async requestTransaction(func) {
+            return new Promise(function(resolve) {
+                resolves.push(resolve);
+                func();
+            });
+        }
+
         /**
-         * @param {function(GridChen.JSONPatch)} apply
+         * @param {function(GridChen.JSONPatchOperation[])} apply
          * @returns {GridChen.Transaction}
          */
         createTransaction(apply) {
@@ -368,10 +394,10 @@ export function createTransactionManager() {
         }
 
         /**
-         * @returns {GridChen.JSONPatch}
+         * @returns {GridChen.JSONPatchOperation[]}
          */
         get patch() {
-            const allPatches = /**{GridChen.JSONPatch}*/ [];
+            const allPatches = [];
             for (let trans of this.transactions) {
                 for (let op of trans.patch) {
                     const clonedOp = Object.assign({}, op);

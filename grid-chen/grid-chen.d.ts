@@ -74,7 +74,7 @@ declare module GridChen {
          * Resets this element based on the specified view.
          * @param view
          */
-        resetFromView: (view: MatrixView) => GridChen;
+        resetFromView: (view: MatrixView, transactionManager: TransactionManager) => GridChen;
         /**
          * The accumulated JSON Patch since the last resetFromView() or TODO resetTransactions().
          */
@@ -101,13 +101,6 @@ declare module GridChen {
     interface SelectionChanged extends Event {
     }
 
-    export interface DataChangedEventDetail {
-        patch: JSONPatch;
-    }
-
-    interface DataChangedEvent extends CustomEvent<DataChangedEventDetail> {
-    }
-
     export interface PlotEventDetail {
         graphElement: HTMLElement;
         title: string;
@@ -125,7 +118,7 @@ declare module GridChen {
         oldValue?: any;
     }
 
-    export type JSONPatch = Array<JSONPatchOperation>;
+    export type JSONPatch = JSONPatchOperation[];
 
     export function createView(schema: JSONSchema, view: any[] | object): MatrixView;
 
@@ -139,7 +132,7 @@ declare module GridChen {
         getCell: (rowIndex: number, colIndex: number) => any;
         getRow: (rowIndex: number) => any;
         getColumn: (colIndex: number) => any;
-        setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatch;
+        setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatchOperation[];
         splice: (rowIndex: number) => GridChen.JSONPatch;
         sort: (colIndex: number) => number;
         applyJSONPatch: (patch: JSONPatch) => void;
@@ -152,9 +145,16 @@ declare module GridChen {
         commit: () => void;
     }
 
+    export interface TransactionEvent {
+        type: string;
+        transaction: Transaction;
+    }
+
     export interface TransactionManager {
 
-        addEventListener: (type, listener) => void;
+        addEventListener: (type: string, listener: (evt: TransactionEvent) => void) => void;
+
+        requestTransaction: (func:() => void) => Promise<void>;
 
         /**
          * @param {function(GridChen.JSONPatch)} apply

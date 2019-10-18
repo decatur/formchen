@@ -118,10 +118,10 @@
                 title: 'An Undefined Matrix',
                 $ref: '#/definitions/measurements'
             },
-            invalidSchema: {
+            /*invalidSchema: {
                 title: 'Invalid Schema',
                 type: 'Date'
-            },
+            },*/
             arrayOfTimeSeries: {
                 type: 'array',
                 title: 'arrayOfTimeSeries',
@@ -159,10 +159,10 @@
                     }
                 }
             },
-            unresolvedRef: {
+            /*unresolvedRef: {
                 title: 'A Unresolvable Reference',
                 $ref: '#/definitions/foobar'
-            }
+            }*/
         }
     };
 
@@ -177,6 +177,7 @@
         someBoolean: true,
         someInteger: 7,
         someFloat: 3.14,
+        someColor: '#ff0000',
         someMatrix: [
             ["2019-01-01T00:00Z", 0, 0],
             ["2019-01-02T00:00Z", 1, 2],
@@ -186,7 +187,7 @@
             { country: 'Germany', prices: [['2019-01-01', '2019-02-01', 33]]},
             { country: 'France', prices: [['2019-02-01', '2019-03-01', 42]]}
         ],
-        invalidSchema: new Date()
+        //invalidSchema: new Date()
     };
 
 

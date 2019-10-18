@@ -117,7 +117,7 @@ export class GridChen extends HTMLElement {
 
     /**
      * @param {GridChen.MatrixView} viewModel
-     * @param {TransactionManager} transactionManager
+     * @param {GridChen.TransactionManager} transactionManager
      * @returns {GridChen}
      */
     resetFromView(viewModel, transactionManager) {
@@ -365,7 +365,7 @@ class Selection extends Range {
  * @param {HTMLElement} container
  * @param {GridChen.MatrixView} viewModel
  * @param {GridChen} gridchenElement
- * @param {TransactionManager} tm
+ * @param {GridChen.TransactionManager} tm
  */
 function createGrid(container, viewModel, gridchenElement, tm) {
     tm = tm || createTransactionManager();
@@ -905,16 +905,17 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             alert('Parts of the cells are locked!');
             return
         }
-        // const modifiedRows = new Set();
+
+        const trans = createTransaction();
+
         for (const r of selection.areas) {
             let rowIndex = r.rowIndex;
             let endRowIndex = Math.min(rowCount, rowIndex + r.rowCount);
             let endColIndex = r.columnIndex + r.columnCount;
 
             for (; rowIndex < endRowIndex; rowIndex++) {
-                //modifiedRows.add(rowIndex);
                 for (let colIndex = r.columnIndex; colIndex < endColIndex; colIndex++) {
-                    tm.schedulePatch(viewModel.setCell(rowIndex, colIndex, undefined));
+                    trans.patch.push(...viewModel.setCell(rowIndex, colIndex, undefined));
                 }
             }
         }
@@ -925,14 +926,15 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             if (row.some(item => item != null)) {
                 break
             }
-            tm.schedulePatch(viewModel.deleteRow(rowIndex));
+            trans.patch.push(...viewModel.deleteRow(rowIndex));
             rowIndex--;
         }
 
         if (rowIndex === -1) {
-            tm.schedulePatch(viewModel.removeModel())
+            trans.patch.push(...viewModel.removeModel());
         }
-        tm.flushScheduledPatches(tmListener);
+        trans.commit();
+        refresh();
     }
 
     function deleteRows() {
@@ -940,12 +942,16 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             alert('This grid is locked!');
             return
         }
+
+        const trans = createTransaction();
+
         for (const r of selection.areas) {
             rangeIterator(r.rowCount).forEach(function () {
-                tm.schedulePatch(viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
+                trans.patch.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
-        tm.flushScheduledPatches(tmListener);
+        trans.commit();
+        refresh();
     }
 
     function insertRow() {
@@ -953,8 +959,10 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             alert('This grid is locked!');
             return
         }
-        tm.schedulePatch(viewModel.splice(activeCell.row));
-        tm.flushScheduledPatches(tmListener);
+        const trans = createTransaction();
+        trans.patch = viewModel.splice(activeCell.row);
+        trans.commit();
+        refresh();
     }
 
     function copySelection(doCut, withHeaders) {
@@ -1038,7 +1046,6 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                     let matrix = tsvToMatrix(text);
                     if (matrix) {
                         paste(matrix);
-                        tm.flushScheduledPatches(tmListener);
                     }
                 })
                 .catch(err => {
@@ -1096,14 +1103,6 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                 activeCell.enterInputMode(evt.key);
             }
         }
-        // else if (evt.code === 'KeyY' && evt.ctrlKey) {
-        //     // TODO: Why KeyY and not KeyZ. Is code always us layout?
-        //     evt.preventDefault(); // No evt.stopPropagation() so that parent context can participate in undo.
-        //     tm.undo();
-        // } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
-        //     evt.preventDefault(); // As with undo, no evt.stopPropagation().
-        //     tm.redo();
-        // }
     };
 
     function tmListener(trans) {
@@ -1112,7 +1111,13 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         activeCell.move(rowIndex, columnIndex);
         selection.set(rowIndex, columnIndex);
         refresh();
-        //gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: patch}}));
+    }
+
+    function createTransaction() {
+        const trans = tm.createTransaction(tmListener);
+        trans.pathPrefix = schema.pathPrefix;
+        trans.detail = {rowIndex: activeCell.row, columnIndex: activeCell.col};
+        return trans;
     }
 
     function showInfo() {
@@ -1300,10 +1305,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                     value = schemas[colIndex].converter.fromEditable(value.trim());
                     //value = value.replace(/\\n/g, '\n');
                 }
-                const trans = tm.createTransaction(tmListener);
+                const trans = createTransaction();
                 trans.patch = viewModel.setCell(rowIndex, colIndex, value);
-                trans.pathPrefix = schema.pathPrefix;
-                trans.detail = {rowIndex: activeCell.row, columnIndex: activeCell.col};
                 trans.commit();
                 refresh();
             }
@@ -1408,12 +1411,14 @@ function createGrid(container, viewModel, gridchenElement, tm) {
      * @param {number} topRowIndex
      * @param {number} topColIndex
      * @param {Array<Array<string|undefined>>} matrix
-     * @returns {number}
+     * @returns {GridChen.JSONPatchOperation[]}
      */
     function pasteSingle(topRowIndex, topColIndex, matrix) {
         let rowIndex = topRowIndex;
         let endRowIndex = rowIndex + matrix.length;
         let endColIndex = Math.min(schemas.length, topColIndex + matrix[0].length);
+        /** @type{GridChen.JSONPatchOperation[]} */
+        let patch = [];
 
         for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
             let colIndex = topColIndex;
@@ -1421,9 +1426,11 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                 let value = matrix[i][j];
                 if (value !== undefined) value = schemas[colIndex].converter.fromEditable(value.trim());
-                tm.schedulePatch(viewModel.setCell(rowIndex, colIndex, value));
+                patch.push(...viewModel.setCell(rowIndex, colIndex, value));
             }
         }
+
+        return patch;
     }
 
     function pastePrecondition() {
@@ -1440,7 +1447,6 @@ function createGrid(container, viewModel, gridchenElement, tm) {
      * If paste target selection is multiple of source row matrix, then tile target with source,
      * otherwise just paste source
      * @param {Array<Array<string>>} matrix
-     * @returns {number}
      */
     function paste(matrix) {
         const r = selection.areas[0];
@@ -1449,23 +1455,26 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             alert('You have nothing to paste')
         }
 
+        const trans = createTransaction();
+
         const sourceRows = matrix.length;
         const sourceColumns = matrix[0].length;
         const targetRows = r.rowCount;
         const targetColumns = r.columnCount;
         if (targetRows % sourceRows || targetColumns % sourceColumns) {
-            pasteSingle(r.rowIndex, r.columnIndex, matrix);
+            trans.patch.push(...pasteSingle(r.rowIndex, r.columnIndex, matrix));
             // TODO: Reshape selection
         } else {
             // Tile target with source.
             for (let i = 0; i < Math.trunc(targetRows / sourceRows); i++) {
                 for (let j = 0; j < Math.trunc(targetColumns / sourceColumns); j++) {
-                    pasteSingle(r.rowIndex + i * sourceRows, r.columnIndex + j * sourceColumns, matrix);
+                    trans.patch.push(...pasteSingle(r.rowIndex + i * sourceRows, r.columnIndex + j * sourceColumns, matrix));
                 }
             }
         }
 
-        return viewModel.rowCount();
+        trans.commit();
+        refresh();
     }
 
     function updateViewportRows(matrix) {

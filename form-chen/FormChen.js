@@ -108,7 +108,10 @@ class ProxyNode {
     }
 
     getValue() {
-       return this.parent.obj[this.key]
+        if (this.parent.obj) {
+            return this.parent.obj[this.key]
+        }
+        return undefined;
     }
 
     resolveSchema(schema) {
@@ -288,11 +291,12 @@ export function createFormChen(topSchema, topObj, id) {
         }
 
         if (schema.type === 'object') {
-            if (schema.items) {
-                bindArray(node, container);
-            } else {
-                bindObject(node, container);
-            }
+            bindObject(node, container);
+            return
+        }
+
+        if (schema.type === 'array') {
+            bindArray(node, container);
             return
         }
 
@@ -322,7 +326,12 @@ export function createFormChen(topSchema, topObj, id) {
         } else {
             input = createElement('input');
             node.refreshUI = function() {
-                input.value = this.schema.converter.toEditable(this.getValue());
+                const value = this.getValue();
+                if (value == null) {
+                    input.value = '';
+                } else {
+                    input.value = this.schema.converter.toEditable(value);
+                }
             };
 
             if (schema.type === 'integer') {
