@@ -80,4 +80,4 @@ See the demos for examples.
 
 # API
 
-Please see the source code of the demos or [form-chen TypeScript Definitions](./grid-chen/grid-chen.d.ts)
+Please see the source code of the demos or [form-chen TypeScript Definitions](./form-chen/formchen.d.ts)
