@@ -293,7 +293,6 @@ export function createFormChen(topSchema, topObj) {
 
         if (!container) return;
 
-        const isPercent = schema.unit === '[%]';
         const label = createElement('label');
         let input;
 
@@ -328,12 +327,10 @@ export function createFormChen(topSchema, topObj) {
             if (schema.type === 'integer') {
                 if (!schema.converter) {
                     schema.converter = new NumberConverter(0);
-                    schema.converter.isPercent = isPercent;
                 }
             } else if (schema.type === 'number') {
                 if (!schema.converter) {
                     schema.converter = new NumberConverter(schema.fractionDigits || 2);
-                    schema.converter.isPercent = isPercent;
                 }
             } else if (schema.format === 'date-time') {
                 if (!schema.converter) {

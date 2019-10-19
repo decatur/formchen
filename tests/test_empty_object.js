@@ -1,5 +1,9 @@
-import {test, assert} from './utils.js'
-import {createFormChen} from '/modules/FormChen/webcomponent.js'
+import {test, assert} from './grid-chen/utils.js'
+import {createFormChen} from '../form-chen/webcomponent.js'
+
+const container = document.createElement('div');
+container.dataset.path = '';
+document.body.appendChild(container);
 
 test('Empty Object one Level', () => {
     const schema = {
@@ -10,8 +14,10 @@ test('Empty Object one Level', () => {
             }
         }
     };
-    const container = document.createElement('div');
-    const fc = createFormChen(schema, undefined, container);
+
+    container.textContent = '';
+    const fc = createFormChen(schema, undefined);
+    const tm = fc.transactionManager;
 
     function* inputGenerator() {
         const inputs = Array.from(container.getElementsByTagName('input'));
@@ -27,18 +33,19 @@ test('Empty Object one Level', () => {
     input.value = 'foo';
     input.onchange(null);
     let expected = [
-        {"op": "add", "path": "/", "value": {}},
+        {"op": "add", "path": "", "value": {}},
         {"op": "add", "path": "/foo", "value": "foo"}
     ];
-    assert.equal(expected, fc.getPatches());
+
+    assert.equal(expected, tm.patch);
     assert.equal({foo: 'foo'}, fc.value);
 
     input.value = 'foobar';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/foo", "value": "foobar"})
-    assert.equal(expected, fc.getPatches());
+    expected.push({"op": "replace", "path": "/foo", "value": "foobar", oldValue: 'foo'})
+    assert.equal(expected, tm.patch);
     assert.equal({foo: 'foobar'}, fc.value);
-}).finally();
+});
 
 test('Empty Object two Levels', () => {
     const schema = {
@@ -58,8 +65,9 @@ test('Empty Object two Levels', () => {
         }
     };
 
-    const container = document.createElement('div');
-    const fc = createFormChen(schema, undefined, container);
+    container.textContent = '';
+    const fc = createFormChen(schema, undefined);
+    const tm = fc.transactionManager;
 
     function* inputGenerator() {
         const inputs = Array.from(container.getElementsByTagName('input'));
@@ -75,23 +83,23 @@ test('Empty Object two Levels', () => {
     foobarInput.value = 'bar';
     foobarInput.onchange(null);
     let expected = [
-        {"op": "add", "path": "/", "value": {}},
+        {"op": "add", "path": "", "value": {}},
         {"op": "add", "path": "/bar", "value": {}},
         {"op": "add", "path": "/bar/foobar", "value": "bar"}
     ];
-    assert.equal(expected, fc.getPatches());
-    assert.equal({bar: {foobar: 'bar'}}, fc.getValue());
+    assert.equal(expected, tm.patch);
+    assert.equal({bar: {foobar: 'bar'}}, fc.value);
 
     foobarInput.value = 'foobar';
     foobarInput.onchange(null);
-    expected.push({"op": "replace", "path": "/bar/foobar", "value": "foobar"})
-    assert.equal(expected, fc.getPatches());
-    assert.equal({bar: {foobar: 'foobar'}}, fc.getValue());
+    expected.push({"op": "replace", "path": "/bar/foobar", "value": "foobar", "oldValue":"bar"})
+    assert.equal(expected, tm.patch);
+    assert.equal({bar: {foobar: 'foobar'}}, fc.value);
 
     fooInput.value = 'foo';
     fooInput.onchange(null);
     expected.push({"op": "add", "path": "/foo", "value": "foo"});
-    assert.equal(expected, fc.getPatches());
-    assert.equal({bar: {foobar: 'foobar'}, foo: 'foo'}, fc.getValue());
-}).finally();
+    assert.equal(expected, tm.patch);
+    assert.equal({bar: {foobar: 'foobar'}, foo: 'foo'}, fc.value);
+});
 

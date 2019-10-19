@@ -1,3 +1,7 @@
+/////////////////////////////
+/// form-chen JavaScript APIs
+/////////////////////////////
+
 declare module FormChen {
 
     export interface FormChen {

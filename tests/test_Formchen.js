@@ -1,13 +1,16 @@
-import {test, assert} from './utils.js'
-import {createFormChen} from '../modules/FormChen/webcomponent.js'
+import {test, assert} from './grid-chen/utils.js'
+import {createFormChen} from '../form-chen/webcomponent.js'
 import {schema, data} from '../demos/sample2.mjs'
 
+const container = document.createElement('div');
+container.dataset.path = '';
+document.body.appendChild(container);
+
 test('FormChen', () => {
-    const fc = createFormChen(schema, data, document.body);
+    const fc = createFormChen(schema, data);
+    const tm = fc.transactionManager;
 
     const expected = [];
-
-
     const selects = Array.from(document.getElementsByTagName('select'));
 
     function *inputGenerator() {
@@ -21,6 +24,7 @@ test('FormChen', () => {
     input = nextInput();
     input.value = 'foo';
     input.onchange(null);
+    expected.push({"op": "replace", "path": "/someString", "value": "foo"});
     input.value = 'bar';
     input.onchange(null);
     expected.push({"op": "replace", "path": "/someString", "value": "bar"});
@@ -39,17 +43,17 @@ test('FormChen', () => {
     input = nextInput();
     input.value = '2020-01-01';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someDate", "value": new Date(Date.UTC(2020, 0, 1))});
+    expected.push({"op": "replace", "path": "/someDate", "value": '2020-01-01'});
 
     input = nextInput();
     input.value = '2020-01-01T00:00Z';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someDateTime", "value": new Date('2020-01-01T00:00Z')});
+    expected.push({"op": "replace", "path": "/someDateTime", "value": '2020-01-01T01:00+01:00'});
 
     input = nextInput();
     input.value = '2020-01-01T00:00';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someDatePartialTime", "value": new Date('2020-01-01')});
+    expected.push({"op": "replace", "path": "/someDatePartialTime", "value": '2020-01-01T00:00'});
 
     input = nextInput();
     input.checked = false;
@@ -67,7 +71,7 @@ test('FormChen', () => {
     expected.push({"op": "replace", "path": "/someFloat", "value": 3.15});
 
     input = nextInput();
-    input.value = '60';
+    input.value = '60%';
     input.onchange(null);
     expected.push({"op": "replace", "path": "/somePercentValue", "value": 0.6});
 
@@ -80,12 +84,12 @@ test('FormChen', () => {
     (/**@type{HTMLElement}*/ gc.shadowRoot.firstElementChild).focus();
     //dispatchMouseDown(gc);
     dispatchKey(gc, {key:" "});
-    gc.shadowRoot.activeElement.value = '1900';
+    gc.shadowRoot.activeElement.value = '2020-01-01 00:00Z';
     dispatchKey(gc, {code: 'Enter'});
-    expected.push({"op":"replace","path":"/someMatrix","value":
-            [["1900-01-01T00:00:00.000Z",0,0],["2019-03-01T23:00:00.000Z",1,2],["2019-03-02T23:00:00.000Z",2,4]]
-    });
+    expected.push({"op":"replace","path":"/someMatrix/0/0","value":"2020-01-01T01:00+01:00"});
 
-    assert.equal(expected, fc.getPatches());
-}).finally();
+    const actual = tm.patch;
+    actual.forEach(function(op) {delete op.oldValue});
+    assert.equal(expected, actual);
+});
 

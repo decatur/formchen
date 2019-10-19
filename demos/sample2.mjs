@@ -3,6 +3,7 @@ export let schema = {
         "refSchema": {
             title: 'Measurements',
             type: 'array',
+            format: 'grid',
             items: {
                 type: 'array',
                 items: [  // tuple schema
@@ -34,7 +35,7 @@ export let schema = {
         someDate: {
             title: 'Some Date',
             type: 'string',
-            format: 'date'
+            format: 'full-date'
         },
         someDateTime: {
             title: 'Some DateTime',
@@ -62,13 +63,9 @@ export let schema = {
         },
         somePercentValue: {
             title: 'Some Percent Value',
-            type: 'number',
+            type: 'number', format: '%',
             unit: '[%]',
             fractionDigits: 1
-        },
-        unresolvedRef: {
-            title: 'A Unresolvable Reference',
-            $ref: '#/definitions/foobar'
         },
         someMatrix: {
             title: 'Some Matrix',
@@ -86,10 +83,6 @@ export let schema = {
         anEmptyMatrix: {
             title: 'An Undefined Matrix',
             $ref: '#/definitions/refSchema'
-        },
-        invalidSchema: {
-            title: 'Invalid Schema',
-            type: 'Date'
         }
     }
 };
@@ -106,9 +99,8 @@ export let data = {
     someInteger: 7,
     someFloat: 3.14,
     someMatrix: [
-        [new Date(2019, 2, 1), 0, 0],
-        [new Date(2019, 2, 2), 1, 2],
-        [new Date(2019, 2, 3), 2, 4]
-    ],
-    invalidSchema: new Date()
+        ['2019-01-01 00:00Z', 1, 2],
+        ['2019-01-01 00:00Z', 3, 4],
+        ['2019-01-01 00:00Z', 4, 5]
+    ]
 };
