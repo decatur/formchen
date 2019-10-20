@@ -75,17 +75,10 @@ test('FormChen', () => {
     input.onchange(null);
     expected.push({"op": "replace", "path": "/somePercentValue", "value": 0.6});
 
-    function dispatchKey(gc, eventInitDict) {
-        // Note that the active element will change from the grid to the input and back.
-        gc.shadowRoot.activeElement.dispatchEvent(new KeyboardEvent('keydown', eventInitDict));
-    }
-
     const gc = document.querySelector('grid-chen');
-    (/**@type{HTMLElement}*/ gc.shadowRoot.firstElementChild).focus();
-    //dispatchMouseDown(gc);
-    dispatchKey(gc, {key:" "});
-    gc.shadowRoot.activeElement.value = '2020-01-01 00:00Z';
-    dispatchKey(gc, {code: 'Enter'});
+    gc._keyboard('keydown', {key:" "});
+    gc._sendKeys('2020-01-01 00:00Z');
+    gc._keyboard('keydown', {code: 'Enter'});
     expected.push({"op":"replace","path":"/someMatrix/0/0","value":"2020-01-01T01:00+01:00"});
 
     const actual = tm.patch;
