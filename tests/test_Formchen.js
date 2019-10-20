@@ -1,6 +1,7 @@
 import {test, assert} from './grid-chen/utils.js'
 import {createFormChen} from '../form-chen/webcomponent.js'
 import {schema, data} from '../demos/sample2.mjs'
+import * as u from "../grid-chen/utils.js";
 
 const container = document.createElement('div');
 container.dataset.path = '';
@@ -8,7 +9,7 @@ document.body.appendChild(container);
 
 test('FormChen', () => {
     const fc = createFormChen(schema, data);
-    const tm = fc.transactionManager;
+    const tm = u.globalTransactionManager;
 
     const expected = [];
     const selects = Array.from(document.getElementsByTagName('select'));

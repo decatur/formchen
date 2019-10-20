@@ -1,5 +1,6 @@
 import {test, assert} from './grid-chen/utils.js'
 import {createFormChen} from '../form-chen/webcomponent.js'
+import * as u from "../grid-chen/utils.js";
 
 const container = document.createElement('div');
 container.dataset.path = '';
@@ -17,7 +18,7 @@ test('Empty Object one Level', () => {
 
     container.textContent = '';
     const fc = createFormChen(schema, undefined);
-    const tm = fc.transactionManager;
+    const tm = u.globalTransactionManager;
 
     function* inputGenerator() {
         const inputs = Array.from(container.getElementsByTagName('input'));
@@ -67,7 +68,7 @@ test('Empty Object two Levels', () => {
 
     container.textContent = '';
     const fc = createFormChen(schema, undefined);
-    const tm = fc.transactionManager;
+    const tm = u.globalTransactionManager;
 
     function* inputGenerator() {
         const inputs = Array.from(container.getElementsByTagName('input'));

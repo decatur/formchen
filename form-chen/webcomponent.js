@@ -7,7 +7,7 @@ import {
     DatePartialTimeStringConverter,
     StringConverter
 } from "../grid-chen/converter.js";
-import {createTransactionManager, applyJSONPatch} from "../grid-chen/utils.js";
+import {registerGlobalTransactionManager, applyJSONPatch} from "../grid-chen/utils.js";
 
 class CompositeError extends Error {
     name = 'CompositeError';
@@ -170,7 +170,7 @@ export function createFormChen(topSchema, topObj) {
     const rootNode = createProxyNode('', topSchema, null);
     rootNode.obj = topObj;
 
-    const tm = createTransactionManager();
+    const tm = registerGlobalTransactionManager();
 
     function applyTransaction(trans) {
         rootNode.obj = applyJSONPatch(rootNode.obj, trans.patch);
@@ -416,10 +416,6 @@ export function createFormChen(topSchema, topObj) {
          */
         get value() {
             return rootNode.obj
-        }
-
-        get transactionManager() {
-            return tm
         }
     }
 

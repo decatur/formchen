@@ -314,7 +314,7 @@ export function applyJSONPatch(data, patch) {
  * @returns {GridChen.TransactionManager}
  */
 export function registerGlobalTransactionManager() {
-    const globalTransactionManager = createTransactionManager();
+    globalTransactionManager = createTransactionManager();
 
     document.body.addEventListener('keydown', function (evt) {
         if (evt.code === 'KeyY' && evt.ctrlKey) {

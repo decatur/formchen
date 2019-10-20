@@ -1,4 +1,5 @@
 import {createFormChen} from "./form-chen/webcomponent.js"
+import * as u from "./grid-chen/utils.js";
 
 const schemaElement = document.querySelector('.schema');
 const dataElement = document.querySelector('.data');
@@ -45,8 +46,9 @@ function rebind() {
         alert(e + '; See console');
     }
 
-    fc.transactionManager.addEventListener('change', function () {
-        patchElement.value = JSON.stringify(fc.transactionManager.patch, null, 2);
+    const tm = u.registerGlobalTransactionManager;
+    tm.addEventListener('change', function () {
+        patchElement.value = JSON.stringify(tm.patch, null, 2);
         dataElement.value = JSON.stringify(fc.value, null, 2);
     });
 }

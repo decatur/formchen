@@ -9,6 +9,5 @@ declare module FormChen {
          * The current value of the bound object.
          */
         readonly value: object;
-        readonly transactionManager: GridChen.TransactionManager
     }
 }
