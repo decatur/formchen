@@ -46,7 +46,7 @@ function rebind() {
         alert(e + '; See console');
     }
 
-    const tm = u.registerGlobalTransactionManager;
+    const tm = u.globalTransactionManager;
     tm.addEventListener('change', function () {
         patchElement.value = JSON.stringify(tm.patch, null, 2);
         dataElement.value = JSON.stringify(fc.value, null, 2);

@@ -24,6 +24,7 @@ function createElement(tagName) {
     return document.createElement(tagName)
 }
 
+
 /**
  * Example:
  *      getValueByPointer({definitions:{foobar: 1}}, '#/definitions/foobar')
@@ -33,35 +34,40 @@ function createElement(tagName) {
  * @returns {object}
  */
 function getValueByPointer(obj, pointer) {
-    return pointer.substr(2).split('/').reduce((res, prop) => res[prop], obj);
+    return pointer.substr(2).split('/').reduce(((res, prop) => res[prop]), obj);
 }
 
 /**
  ProxyNode decorates a nested JavaScript value to make the object graph navigable from child to parent.
 
- Invariant:
- node.parent.obj[node.key] = node.obj
-
- node1                        node2                    node3
- ------------------------        ------------------        ---------------
- obj    | {foo: {bar: 'foobar'}} |      | {bar: 'foobar'}} |      | 'foobar'      |
- parent | null                   |  <-  | node1            |  <-  | node2         |
- key    | ''                     |      | 'foo'            |      | 'bar'         |
- ------------------------        ------------------        ---------------
+ ------------------------              ------------------            ---------------
+ obj    | {foo: {bar: 'foobar'}} |   parent   | {bar: 'foobar'}} |  parent  | 'undefined     |
+ key    | ''                     |     <-     | 'foo'            |    <-    | 'bar'         |
+ ------------------------              ------------------            ---------------
  */
 
-class ProxyNode {
-    static root;
-    /** @type {*} */
+export class ProxyNode {
+    /**
+     * Value in the object graph node or undefined if a leave node.
+     * @type {*}
+     */
     obj;
+
     /** @type {ProxyNode} */
     parent;
-    /** @type {string} */
+
+    /**
+     * The key in the parent object for this obj, i.e. node.parent.obj[node.key] = node.obj.
+     * @type {string|number}
+     */
     key;
+
     /** @type {GridChen.JSONSchema} */
     schema;
+
     /** @type {string} */
     title;
+
     /** @type {boolean} */
     readOnly = false;
 
@@ -102,9 +108,20 @@ class ProxyNode {
         return undefined;
     }
 
+    /**
+     * @returns {ProxyNode}
+     */
+    get root() {
+        let n = this;
+        while (n.parent) {
+            n = n.parent;
+        }
+        return n;
+    }
+
     resolveSchema(schema) {
         if ('$ref' in schema) {
-            const refSchema = getValueByPointer(ProxyNode.root, schema['$ref']);
+            const refSchema = getValueByPointer(this.root.schema, schema['$ref']);
             if (!refSchema) {
                 throw new Error('Undefined $ref at ' + this.path);
             }
@@ -114,16 +131,23 @@ class ProxyNode {
     }
 
     /**
-     * @returns {GridChen.JSONPatch}
+     * @returns {GridChen.Patch}
      */
     createParents() {
-        /** @type {GridChen.JSONPatch} */
-        const jsonPatch = [];
+        const patch = /** @type {GridChen.Patch} */ {
+            /** @type {GridChen.Patch} */
+            apply(patch) {
+                patch.node.obj = applyJSONPatch(patch.node.obj, patch.operations);
+            },
+            operations: [],
+            node: this.root,
+            pathPrefix: this.root.schema.pathPrefix || ''
+        };
         let n = this.parent;
         let child = this;
         while (n && n.obj == null) {
             let empty = n.schema.items ? [] : {};
-            jsonPatch.unshift({op: 'add', path: n.path, value: empty});
+            patch.operations.unshift({op: 'add', path: n.path, value: empty});
             empty = n.schema.items ? [] : {};
             n.obj = empty;
             if (child) {
@@ -132,16 +156,51 @@ class ProxyNode {
             child = n;
             n = n.parent;
         }
-        return jsonPatch
+        return patch
+    }
+
+    /**
+     * Removes the value for this node.
+     * If the parent holder object thus will become empty, it is also removed.
+     * This will continue to the root.
+     * @returns {GridChen.Patch}
+     */
+    removeValue() {
+        const patch = /** @type {GridChen.Patch} */ {
+            /** @type {GridChen.Patch} */
+            apply(patch) {
+                patch.node.obj = applyJSONPatch(patch.node.obj, patch.operations);
+            },
+            operations: [],
+            node: this.root,
+            pathPrefix: this.root.schema.pathPrefix || ''
+        };
+        delete this.parent.obj[this.key];
+        let n = this;
+        while (n.parent) {
+            n = n.parent;
+            if ((n.schema.type ==='object'?Object.values(n.obj): n.obj).length === 0) {
+                let oldValue = n.obj;
+                delete n.obj;
+                if (n.parent) {
+                    oldValue = n.parent.obj[n.key];
+                    delete n.parent.obj[n.key];
+                }
+                patch.operations.push({op: 'remove', path: n.path, oldValue});
+            } else {
+                break;
+            }
+        }
+        return patch
     }
 }
+
 
 /**
  * @param {GridChen.JSONSchema} topSchema
  * @param {object} topObj
  */
 export function createFormChen(topSchema, topObj) {
-    ProxyNode.root = topSchema;
     const containerByPath = {};
     const nodesByPath = {};
     const errors = [];
@@ -172,9 +231,12 @@ export function createFormChen(topSchema, topObj) {
 
     const tm = registerGlobalTransactionManager();
 
-    function applyTransaction(trans) {
-        rootNode.obj = applyJSONPatch(rootNode.obj, trans.patch);
-        for (let op of trans.patch) {
+    /**
+     * @param {GridChen.Patch} patch
+     */
+    function apply(patch) {
+        rootNode.obj = applyJSONPatch(rootNode.obj, patch.operations);
+        for (let op of patch.operations) {
             const node = nodesByPath[op.path];
             if (node.refreshUI) {
                 node.refreshUI();
@@ -227,6 +289,25 @@ export function createFormChen(topSchema, topObj) {
         node.schema.pathPrefix = node.path;
         const view = createView(node.schema, node.obj);
         grid.resetFromView(view, tm);
+        grid.context = {
+            /**
+             * @returns {GridChen.Patch}
+             */
+            removeValue() {
+                return node.removeValue();
+            },
+            /**
+             * @param {object} value
+             * @returns {GridChen.Patch}
+             */
+            setValue(value) {
+                const patch = node.createParents();
+                if (node.parent) {
+                    node.parent.obj[node.key] = value;
+                }
+                return patch;
+            }
+        };
     }
 
     /**
@@ -363,27 +444,51 @@ export function createFormChen(topSchema, topObj) {
         }
 
         input.onchange = function () {
-            const patch = node.createParents();
+            let oldValue = undefined;
+            let value;
 
-            let op = {op: (node.parent.obj[node.key] === undefined) ? 'add' : 'replace', path: path};
+            if (node.parent.obj) {
+                oldValue = node.parent.obj[node.key];
+            }
+
             if (schema.type === 'boolean') {
-                op.value = input.checked;
+                value = input.checked;
             } else if (schema.enum) {
-                op.value = input.value;
+                value = input.value;
             } else {
                 const newValue = schema.converter.fromEditable(input.value.trim());
                 if (newValue === '') {
-                    op.op = 'remove';
+                    value = undefined;
                 } else {
-                    op.value = newValue;
+                    value = newValue;
                 }
             }
 
-            op.oldValue = node.parent.obj[node.key];
-            patch.push(op);
-            node.parent.obj[node.key] = op.value;
-            const trans = tm.openTransaction(applyTransaction);
-            trans.patch = patch;
+            if (value === oldValue) {
+                return
+            }
+
+            let patch;
+            if (value == null) {
+                const op = {op: 'remove', path:path, oldValue};
+                patch = node.removeValue();
+                patch.apply = apply; // TODO: Why?
+                patch.operations.unshift(op);
+            } else {
+                patch = node.createParents();
+                apply = apply; // TODO: Why?
+                let op;
+                if (oldValue == null) {
+                    op = {op: 'add', path:path, value};
+                } else {
+                    op = {op: 'replace', path:path, value, oldValue};
+                }
+                patch.operations.push(op);
+                node.parent.obj[node.key] = op.value;
+            }
+
+            const trans = tm.openTransaction();
+            trans.patches.push(patch);
             trans.commit();
         };
 

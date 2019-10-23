@@ -1,1 +1,1 @@
-export const modules =  ['test_Formchen', 'test_empty_object'];
+export const modules =  ['test_Formchen', 'test_empty_object', 'test_proxynode'];

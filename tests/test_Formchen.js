@@ -25,62 +25,62 @@ test('FormChen', () => {
     input = nextInput();
     input.value = 'foo';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someString", "value": "foo"});
+    expected.push({op: "replace", path: "/someString", value: "foo"});
     input.value = 'bar';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someString", "value": "bar"});
+    expected.push({op: "replace", path: "/someString", value: "bar"});
 
     input = nextInput();
     input.value = 'ftp://bar';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someURI", "value": "ftp://bar"});
+    expected.push({op: "replace", path: "/someURI", value: "ftp://bar"});
 
     /** @type{HTMLSelectElement} */
     let select = selects[0];
     select.selectedIndex = 1; //inputs[2].value = 'Tilda Swift';
     select.onchange(null);
-    expected.push({"op": "replace", "path": "/someEnum", "value": "Tilda Swift"});
+    expected.push({op: "replace", path: "/someEnum", value: "Tilda Swift"});
 
     input = nextInput();
     input.value = '2020-01-01';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someDate", "value": '2020-01-01'});
+    expected.push({op: "replace", path: "/someDate", value: '2020-01-01'});
 
     input = nextInput();
     input.value = '2020-01-01T00:00Z';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someDateTime", "value": '2020-01-01T01:00+01:00'});
+    expected.push({op: "replace", path: "/someDateTime", value: '2020-01-01T01:00+01:00'});
 
     input = nextInput();
     input.value = '2020-01-01T00:00';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someDatePartialTime", "value": '2020-01-01T00:00'});
+    expected.push({op: "replace", path: "/someDatePartialTime", value: '2020-01-01T00:00'});
 
     input = nextInput();
     input.checked = false;
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someBoolean", "value": false});
+    expected.push({op: "replace", path: "/someBoolean", value: false});
 
     input = nextInput();
     input.value = '13';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someInteger", "value": 13});
+    expected.push({op: "replace", path: "/someInteger", value: 13});
 
     input = nextInput();
     input.value = '3,15';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/someFloat", "value": 3.15});
+    expected.push({op: "replace", path: "/someFloat", value: 3.15});
 
     input = nextInput();
     input.value = '60%';
     input.onchange(null);
-    expected.push({"op": "replace", "path": "/somePercentValue", "value": 0.6});
+    expected.push({op: "replace", path: "/somePercentValue", value: 0.6});
 
     const gc = document.querySelector('grid-chen');
     gc._keyboard('keydown', {key:" "});
     gc._sendKeys('2020-01-01 00:00Z');
     gc._keyboard('keydown', {code: 'Enter'});
-    expected.push({"op":"replace","path":"/someMatrix/0/0","value":"2020-01-01T01:00+01:00"});
+    expected.push({op:"replace",path:"/someMatrix/0/0",value:"2020-01-01T01:00+01:00"});
 
     const actual = tm.patch;
     actual.forEach(function(op) {delete op.oldValue});
