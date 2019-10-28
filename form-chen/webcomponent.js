@@ -11,6 +11,7 @@ import {registerGlobalTransactionManager, applyJSONPatch} from "../grid-chen/uti
 
 class CompositeError extends Error {
     name = 'CompositeError';
+
     constructor(errors) {
         super();
         this.errors = errors;
@@ -38,7 +39,8 @@ function getValueByPointer(obj, pointer) {
 }
 
 /**
- ProxyNode decorates a nested JavaScript value to make the object graph navigable from child to parent.
+ TypedValue decorates a (possibly nested) JavaScript value and its type (via schema).
+ It also makes the type graph navigable from child to parent and from parent to child.
 
  ------------------------              ------------------            ---------------
  obj    | {foo: {bar: 'foobar'}} |   parent   | {bar: 'foobar'}} |  parent  | 'undefined     |
@@ -46,12 +48,7 @@ function getValueByPointer(obj, pointer) {
  ------------------------              ------------------            ---------------
  */
 
-export class ProxyNode {
-    /**
-     * Value in the object graph node or undefined if a leave node.
-     * @type {*}
-     */
-    obj;
+export class TypedValue {
 
     /** @type {ProxyNode} */
     parent;
@@ -91,7 +88,35 @@ export class ProxyNode {
         } else {
             this.title = schema.title;
         }
-        this._path = (this.parent ? this.parent._path + '/' + this.key : '')
+        this._path = (this.parent ? this.parent._path + '/' + this.key : '');
+        if (parent) {
+            parent.children.push(this);
+        }
+    }
+}
+
+export class ProxyNode extends TypedValue {
+    /**
+     * Value in the object graph node or undefined if a leave node.
+     * @type {*}
+     */
+    obj;
+
+    /**
+     * @type {TypedValue[]}
+     */
+    children;
+
+    /**
+     * @param {string} key
+     * @param {GridChen.JSONSchema} schema
+     * @param {ProxyNode} parent
+     */
+    constructor(key, schema, parent) {
+        super(key, schema, parent)
+
+        this.children = [];
+
     }
 
     /**
@@ -130,24 +155,95 @@ export class ProxyNode {
         return schema
     }
 
+    refreshUI() {
+    }
+
     /**
-     * @returns {GridChen.Patch}
+     * @param {GridChen.Patch} obj
+     * @returns {undefined}
      */
-    createParents() {
+    setValue(obj) {
+        let oldValue;
+        if (['object', 'array'].includes(this.schema.type)) {
+            oldValue = this.obj;
+        } else if (this.parent.obj == null) {
+            oldValue = undefined;
+        } else {
+            oldValue = this.parent.obj[this.key];
+        }
+
+        if (obj == oldValue) {
+            return undefined
+        }
+
+        const root = this.root;
         const patch = /** @type {GridChen.Patch} */ {
             /** @type {GridChen.Patch} */
             apply(patch) {
-                patch.node.obj = applyJSONPatch(patch.node.obj, patch.operations);
+                for (let op of patch.operations) {
+                    const node = root.nodesByPath[op.path];
+                    node._setValue(op.value);
+                }
             },
             operations: [],
-            node: this.root,
+            //node: this.root,
             pathPrefix: this.root.schema.pathPrefix || ''
         };
+
+        if (obj == null) {
+            patch.operations.push({op: 'remove', path: this.path, oldValue});
+        } else if (oldValue == null) {
+            patch.operations.push(...this.createPathToRoot());
+            patch.operations.push({op: 'add', path: this.path, value: obj});
+        } else {
+            patch.operations.push({op: 'replace', path: this.path, value: obj, oldValue});
+        }
+
+        this._setValue(obj, patch.operations);
+
+        if (obj == null) {
+            patch.operations.push(...this.clearPathToRoot());
+        }
+
+        return patch
+    }
+
+    _setValue(obj) {
+        if (['object', 'array'].includes(this.schema.type)) {
+            if (obj == null) {
+                delete this.obj;
+            } else {
+                this.obj = obj;
+            }
+        }
+
+        if (this.parent) {
+            if (obj == null) {
+                if (!(this.parent.obj == null)) {
+                    delete this.parent.obj[this.key];
+                }
+            } else {
+                this.parent.obj[this.key] = obj;
+            }
+        }
+
+        for (let child of this.children) {
+            child._setValue((obj==null?undefined:obj[child.key]));
+        }
+
+        this.refreshUI();
+    }
+
+    /**
+     * @returns {GridChen.JSONPatchOperation[]}
+     */
+    createPathToRoot() {
+        let operations = [];
         let n = this.parent;
         let child = this;
         while (n && n.obj == null) {
             let empty = n.schema.items ? [] : {};
-            patch.operations.unshift({op: 'add', path: n.path, value: empty});
+            operations.unshift({op: 'add', path: n.path, value: empty});
             empty = n.schema.items ? [] : {};
             n.obj = empty;
             if (child) {
@@ -156,42 +252,36 @@ export class ProxyNode {
             child = n;
             n = n.parent;
         }
-        return patch
+        return operations
     }
 
     /**
      * Removes the value for this node.
      * If the parent holder object thus will become empty, it is also removed.
      * This will continue to the root.
-     * @returns {GridChen.Patch}
+     * @returns {GridChen.JSONPatchOperation[]}
      */
-    removeValue() {
-        const patch = /** @type {GridChen.Patch} */ {
-            /** @type {GridChen.Patch} */
-            apply(patch) {
-                patch.node.obj = applyJSONPatch(patch.node.obj, patch.operations);
-            },
-            operations: [],
-            node: this.root,
-            pathPrefix: this.root.schema.pathPrefix || ''
-        };
-        delete this.parent.obj[this.key];
+    clearPathToRoot() {
+        let operations = [];
         let n = this;
-        while (n.parent) {
+        while (true) {
             n = n.parent;
-            if ((n.schema.type ==='object'?Object.values(n.obj): n.obj).length === 0) {
+            if (!n) break
+            if (n.obj == null) break;
+            if ((n.schema.type === 'object' ? Object.values(n.obj) : n.obj).length === 0) {
                 let oldValue = n.obj;
                 delete n.obj;
                 if (n.parent) {
                     oldValue = n.parent.obj[n.key];
                     delete n.parent.obj[n.key];
                 }
-                patch.operations.push({op: 'remove', path: n.path, oldValue});
+                operations.push({op: 'remove', path: n.path, oldValue});
             } else {
                 break;
             }
         }
-        return patch
+
+        return operations
     }
 }
 
@@ -212,6 +302,11 @@ export function createFormChen(topSchema, topObj) {
             const jsonPath = prefixedJsonPath.substr(pathPrefix.length);
             containerByPath[jsonPath] = elem;
             elem.textContent = '';
+            elem.onkeydown = function (evt) {
+                if (evt.code === 'KeyA' && evt.ctrlKey) {
+                    alert(evt.target.id)
+                }
+            }
         }
     }
 
@@ -227,8 +322,7 @@ export function createFormChen(topSchema, topObj) {
     }
 
     const rootNode = createProxyNode('', topSchema, null);
-    rootNode.obj = topObj;
-
+    rootNode.nodesByPath = nodesByPath;
     const tm = registerGlobalTransactionManager();
 
     /**
@@ -238,9 +332,7 @@ export function createFormChen(topSchema, topObj) {
         rootNode.obj = applyJSONPatch(rootNode.obj, patch.operations);
         for (let op of patch.operations) {
             const node = nodesByPath[op.path];
-            if (node.refreshUI) {
-                node.refreshUI();
-            }
+            node.refreshUI();
         }
     }
 
@@ -250,12 +342,7 @@ export function createFormChen(topSchema, topObj) {
         throw new CompositeError(errors);
     }
 
-    for (let path of Object.keys(nodesByPath)) {
-        const node = nodesByPath[path];
-        if (node.refreshUI) {
-            node.refreshUI();
-        }
-    }
+    rootNode.setValue(topObj);
 
     /**
      * @param {ProxyNode} node
@@ -287,6 +374,7 @@ export function createFormChen(topSchema, topObj) {
         label.appendChild(grid);
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
         node.schema.pathPrefix = node.path;
+
         const view = createView(node.schema, node.obj);
         grid.resetFromView(view, tm);
         grid.context = {
@@ -294,20 +382,21 @@ export function createFormChen(topSchema, topObj) {
              * @returns {GridChen.Patch}
              */
             removeValue() {
-                return node.removeValue();
+                return node.setValue(undefined)
             },
             /**
              * @param {object} value
              * @returns {GridChen.Patch}
              */
             setValue(value) {
-                const patch = node.createParents();
-                if (node.parent) {
-                    node.parent.obj[node.key] = value;
-                }
-                return patch;
+                return node.setValue(value)
             }
         };
+
+        node.refreshUI = function() {
+            view.applyJSONPatch([{op:'replace', path:'', value:node.obj}]);
+            grid._refresh();
+        }
     }
 
     /**
@@ -399,9 +488,9 @@ export function createFormChen(topSchema, topObj) {
             node.refreshUI = function () {
                 const value = this.getValue();
                 if (value == null) {
-                    input.value = '';
+                    input.defaultValue = input.value = '';
                 } else {
-                    input.value = this.schema.converter.toEditable(value);
+                    input.defaultValue = input.value = this.schema.converter.toEditable(value);
                 }
             };
 
@@ -444,12 +533,7 @@ export function createFormChen(topSchema, topObj) {
         }
 
         input.onchange = function () {
-            let oldValue = undefined;
             let value;
-
-            if (node.parent.obj) {
-                oldValue = node.parent.obj[node.key];
-            }
 
             if (schema.type === 'boolean') {
                 value = input.checked;
@@ -464,29 +548,7 @@ export function createFormChen(topSchema, topObj) {
                 }
             }
 
-            if (value === oldValue) {
-                return
-            }
-
-            let patch;
-            if (value == null) {
-                const op = {op: 'remove', path:path, oldValue};
-                patch = node.removeValue();
-                patch.apply = apply; // TODO: Why?
-                patch.operations.unshift(op);
-            } else {
-                patch = node.createParents();
-                apply = apply; // TODO: Why?
-                let op;
-                if (oldValue == null) {
-                    op = {op: 'add', path:path, value};
-                } else {
-                    op = {op: 'replace', path:path, value, oldValue};
-                }
-                patch.operations.push(op);
-                node.parent.obj[node.key] = op.value;
-            }
-
+            const patch = node.setValue(value);
             const trans = tm.openTransaction();
             trans.patches.push(patch);
             trans.commit();
@@ -505,8 +567,9 @@ export function createFormChen(topSchema, topObj) {
             label.appendChild(unit);
         }
 
-        label.setAttribute('for', 'form-chen-' + (labelCount));
-        input.id = 'form-chen-' + (labelCount++);
+
+        label.setAttribute('for', node.path);
+        input.id = node.path;
         container.appendChild(label);
         container.appendChild(input);
     }
@@ -521,6 +584,14 @@ export function createFormChen(topSchema, topObj) {
          */
         get value() {
             return rootNode.obj
+        }
+
+        /**
+         * @param {string} path
+         * @returns {ProxyNode}
+         */
+        getNode(path) {
+            return nodesByPath[path];
         }
     }
 

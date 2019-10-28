@@ -148,6 +148,47 @@ test('delete', () => {
     assert.equal(undefined, fc.value);
 });
 
+test('delete subtree', () => {
+    const schema = {
+        type: 'object',
+        properties: {
+            foo: {
+                type: 'string'
+            },
+            bar: {
+                type: 'object',
+                properties: {
+                    foobar: {
+                        type: 'string'
+                    }
+                }
+            }
+        }
+    };
+
+    container.textContent = '';
+    const fc = createFormChen(schema, {bar:{foobar:'foobar'}});
+    const tm = u.globalTransactionManager;
+
+    function* inputGenerator() {
+        const inputs = Array.from(container.getElementsByTagName('input'));
+        for (const input of inputs) yield input;
+    }
+
+    const inputs = inputGenerator();
+    const nextInput = () => inputs.next().value;
+
+    let fooInput = nextInput();
+    let foobarInput = nextInput();
+
+    fc.getNode('/bar').setValue(undefined);
+    assert.equal('', foobarInput.value);
+
+    fc.getNode('/foo').setValue(undefined);
+    assert.equal('', fooInput.value);
+    assert.equal(undefined, fc.value);
+});
+
 test('Empty object with grid', () => {
     const schema = {
         definitions: {

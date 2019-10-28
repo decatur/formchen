@@ -1631,6 +1631,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     Object.defineProperty(gridchenElement, '_textContent',
         {get: () => cellParent.textContent}
     );
+
+    gridchenElement['_refresh'] = refresh;
 }
 
 /**
