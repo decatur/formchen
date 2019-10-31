@@ -292,11 +292,12 @@ class Selection extends Range {
     constructor(repainter, eventTarget) {
         super(0, 0, 1, 1);
         this.initial = {row: 0, col: 0};
-        this.head = {row: 0, col: 0}; // Cell opposite the initial.
+        this.pilot = {row: 0, col: 0}; // Cell relative to which selection expansion occurs.
         this.repainter = repainter;
         this.eventTarget = eventTarget;
         /** @type{Array<Range>} */
         this.areas = [];
+        this.set(0, 0);
     }
 
     /**
@@ -321,10 +322,9 @@ class Selection extends Range {
     set(rowIndex, columnIndex) {
         logger.log('Selection.set');
         this.hide(); // TODO: Why?
-        this.initial = {row: rowIndex, col: columnIndex};
-        this.head = {row: rowIndex, col: columnIndex};
+
         this.areas = [];
-        this.add(rowIndex, columnIndex);
+        this.toggle(rowIndex, columnIndex);
     }
 
     /**
@@ -335,7 +335,7 @@ class Selection extends Range {
         logger.log('Selection.expand');
         this.hide();
 
-        this.head = {row: rowIndex, col: columnIndex};
+        this.pilot = {row: rowIndex, col: columnIndex};
         const r = this.areas.pop();
         r.rowIndex = Math.min(this.initial.row, rowIndex);
         r.columnIndex = Math.min(this.initial.col, columnIndex);
@@ -351,10 +351,23 @@ class Selection extends Range {
      * @param {number} rowIndex
      * @param {number} columnIndex
      */
-    add(rowIndex, columnIndex) {
+    toggle(rowIndex, columnIndex) {
         logger.log('Selection.add');
         this.hide(); // TODO: Why?
-        this.areas.push(new Range(rowIndex, columnIndex, 1, 1));
+        let i;
+        console.log(JSON.stringify(this.areas, null, 2))
+        for (i=this.areas.length-1; i>=0; i--) {
+            const area = this.areas[i];
+            if (area.columnCount === 1 && area.rowCount === 1 && area.rowIndex === rowIndex && area.columnIndex === columnIndex) {
+                this.areas.splice(i, 1);
+                break;
+            }
+        }
+        if (i === -1) {
+            this.initial = {row: rowIndex, col: columnIndex};
+            this.pilot = {row: rowIndex, col: columnIndex};
+            this.areas.push(new Range(rowIndex, columnIndex, 1, 1));
+        }
         this.convexHull();
         this.eventTarget.dispatchEvent(new Event('selectionChanged'));
     }
@@ -829,7 +842,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         if (evt.shiftKey) {
             selection.expand(rowIndex, colIndex);
         } else if (evt.ctrlKey) {
-            selection.add(rowIndex, colIndex);
+            selection.toggle(rowIndex, colIndex);
+            activeCell.move(rowIndex, colIndex);
             selection.show();
         } else {
             navigateCell(evt, rowIndex - activeCell.row, colIndex - activeCell.col);
@@ -944,7 +958,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
 
         if (rowIndex === -1) {
-            operations.push(...viewModel.removeModel());
+            viewModel.removeModel();  // We can ignore this patch, because it is included in the patch from removeValue().
             trans.patches.push(gridchenElement.context.removeValue());
         }
 
@@ -1252,7 +1266,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
         let cell;
         if (isExpansion) {
-            cell = selection.head;
+            cell = selection.pilot;
         } else {
             cell = activeCell;
         }
@@ -1343,9 +1357,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
                 if (model !== viewModel.getModel()) {
                     trans.patches.push(gridchenElement.context.setValue(viewModel.getModel()));
+                } else {
+                    trans.patches.push(createPatch(operations));
                 }
-
-                trans.patches.push(createPatch(operations));
                 // Note: First refresh, then commit!
                 refresh();
                 trans.commit();

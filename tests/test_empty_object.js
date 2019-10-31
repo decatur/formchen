@@ -229,17 +229,18 @@ test('Empty object with grid', () => {
 
     let patch = tm.patch;
     assert.equal({op: 'add', path: "", value: {}}, patch[0]);
-    assert.equal({op: 'add', path: "/foo", value: Array(1)}, patch[1]);
-    assert.equal({op: 'replace', path: "/foo/0", value: Array(1), oldValue: null}, patch[2]);
-    assert.equal({op: 'replace', path: "/foo/0/0", value: "2020-01-01T01:00+01:00", oldValue: null}, patch[3]);
+    assert.equal({op: 'add', path: "/foo", value:[['2020-01-01T01:00+01:00']]}, patch[1]);
+    assert.equal(2, patch.length);
+    //assert.equal({op: 'replace', path: "/foo/0", value: Array(1), oldValue: null}, patch[2]);
+    //assert.equal({op: 'replace', path: "/foo/0/0", value: "2020-01-01T01:00+01:00", oldValue: null}, patch[3]);
 
     gc._mousedown(0, 0);
     gc._keyboard('keydown', {code: 'Delete'});
     patch = tm.patch;
-    assert.equal({op: 'replace', path: "/foo/0/0", value: null, oldValue: "2020-01-01T01:00+01:00"}, patch[4]);
-    assert.equal({op: 'remove', path: "/foo/0", oldValue: Array(1)}, patch[5]);
-    assert.equal({op: 'remove', path: "/foo", oldValue: Array(0)}, patch[6]);
-    assert.equal({op: 'remove', path: "", "oldValue":{}}, patch[7]);
+    assert.equal({op: 'replace', path: "/foo/0/0", value: null, oldValue: "2020-01-01T01:00+01:00"}, patch[2]);
+    assert.equal({op: 'remove', path: "/foo/0", oldValue: Array(1)}, patch[3]);
+    assert.equal({op: 'remove', path: "/foo", oldValue: Array(0)}, patch[4]);
+    assert.equal({op: 'remove', path: "", "oldValue":{}}, patch[5]);
 
     value = fc.value;
     assert.equal(undefined, value);
