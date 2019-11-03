@@ -21,6 +21,11 @@ class CompositeError extends Error {
 // Global unique label id.
 let labelCount = 0;
 
+/**
+ *
+ * @param {string} tagName
+ * @returns {HTMLElement}
+ */
 function createElement(tagName) {
     return document.createElement(tagName)
 }
@@ -159,7 +164,7 @@ export class ProxyNode extends TypedValue {
     }
 
     /**
-     * @param {GridChen.Patch} obj
+     * @param {object} obj
      * @returns {undefined}
      */
     setValue(obj) {
@@ -323,7 +328,7 @@ export function createFormChen(topSchema, topObj) {
 
     const rootNode = createProxyNode('', topSchema, null);
     rootNode.nodesByPath = nodesByPath;
-    const tm = registerGlobalTransactionManager();
+    const transactionManager = registerGlobalTransactionManager();
 
     /**
      * @param {GridChen.Patch} patch
@@ -376,21 +381,9 @@ export function createFormChen(topSchema, topObj) {
         node.schema.pathPrefix = node.path;
 
         const view = createView(node.schema, node.obj);
-        grid.resetFromView(view, tm);
-        grid.context = {
-            /**
-             * @returns {GridChen.Patch}
-             */
-            removeValue() {
-                return node.setValue(undefined)
-            },
-            /**
-             * @param {object} value
-             * @returns {GridChen.Patch}
-             */
-            setValue(value) {
-                return node.setValue(value)
-            }
+        grid.resetFromView(view, transactionManager);
+        view.updateHolder = function() {
+            return node.setValue(view.getModel())
         };
 
         node.refreshUI = function() {
@@ -549,7 +542,7 @@ export function createFormChen(topSchema, topObj) {
             }
 
             const patch = node.setValue(value);
-            const trans = tm.openTransaction();
+            const trans = transactionManager.openTransaction();
             trans.patches.push(patch);
             trans.commit();
         };

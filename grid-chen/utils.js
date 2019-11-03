@@ -1,3 +1,12 @@
+/**
+ * Author: Wolfgang Kühn 2019
+ * Source located at https://github.com/decatur/grid-chen/grid-chen
+ *
+ * Module implementing, well, utilities.
+ */
+
+const DEBUG = (location.hostname === 'localhost');
+
 function pad(v) {
     return String(v).padStart(2, '0');
 }
@@ -54,7 +63,6 @@ export function toLocaleISODateTimeString(d, displayResolution) {
     if (dh < 0) dh += 24;
     return s + '+' + pad(String(dh)) + ':00';
 }
-
 
 const localeDateParsers = {};
 
@@ -282,7 +290,7 @@ function applyJSONPatchOperation(holder, op) {
 }
 
 /**
- * @param {{'':object}} holder
+ * @param {{'':*}} holder
  * @param {GridChen.JSONPatchOperation[]} patch
  */
 function applyPatch(holder, patch) {
@@ -316,9 +324,14 @@ export function applyJSONPatch(data, patch) {
 export function registerGlobalTransactionManager() {
     globalTransactionManager = createTransactionManager();
 
-    document.body.addEventListener('keydown', function (evt) {
+    /**
+     * @param {KeyboardEvent} evt
+     */
+    function listener(evt) {
         if (evt.code === 'KeyY' && evt.ctrlKey) {
-            if (evt.target.tagName === 'INPUT' && evt.target.value != evt.target.defaultValue) {
+            /** type{HTMLElement} */
+            const target = evt.target;
+            if (target.tagName === 'INPUT' && target.value !== target.defaultValue) {
                 // Let the default browser undo action be performed on this input element.
             } else {
                 evt.preventDefault();
@@ -331,7 +344,9 @@ export function registerGlobalTransactionManager() {
             evt.stopPropagation();
             globalTransactionManager.redo();
         }
-    });
+    }
+
+    document.body.addEventListener('keydown', listener);
     return globalTransactionManager;
 }
 
@@ -460,4 +475,12 @@ export function createTransactionManager() {
 
     return new TransactionManager();
 }
+
+let logCounter = 0;
+export const logger = {
+    log: (DEBUG ? (a, b) => window.console.log(logCounter++ + ': ' + a, b) : () => undefined),
+    error: function (a, b) {
+        window.console.error(logCounter++ + ': ' + a, b);
+    }
+};
 
