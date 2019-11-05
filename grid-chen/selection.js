@@ -28,7 +28,7 @@ export class Range {
     }
 
     /**
-     * @returns {Range}
+     * @returns {GridChen.Range}
      */
     clone() {
         return Object.assign(new Range(0, 0,0,0), this);
@@ -41,8 +41,8 @@ export class Range {
     /**
      * TODO: Merge Range and Rect.
      * Intersect this range with another range.
-     * @param {Range} other
-     * @returns {Range}
+     * @param {GridChen.Range} other
+     * @returns {GridChen.Range}
      */
     intersect(other) {
         const row = intersectInterval(
@@ -61,7 +61,7 @@ export class Range {
      * Copy this range to an offset position.
      * @param {number} rowOffset
      * @param {number} colOffset
-     * @returns {Range}
+     * @returns {GridChen.Range}
      */
     offset(rowOffset, colOffset) {
         return new Range(
@@ -173,8 +173,8 @@ export class Selection extends Range {
 }
 
 /**
- * @param evt
- * @param {Selection} selection
+ * @param {KeyboardEvent} evt
+ * @param {GridChen.Selection} selection
  */
 export function keyDownHandler(evt, selection) {
     logger.log('selection.onkeydown ' + evt.code);

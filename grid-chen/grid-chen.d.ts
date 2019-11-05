@@ -66,6 +66,7 @@ declare module GridChen {
         columnIndex: number;
         rowCount: number;
         columnCount: number;
+        offset: (rowOffset: number, colOffset: number) => Range;
     }
 
     /**
@@ -106,18 +107,6 @@ declare module GridChen {
         oldValue?: any;
     }
 
-    export interface Context {
-            /**
-             * @returns {GridChen.Patch}
-             */
-            removeValue: () => Patch;
-            /**
-             * @param {object} value
-             * @returns {GridChen.Patch}
-             */
-            setValue: (value: object) => Patch;
-    }
-
     export interface Patch {
         apply: (Patch) => void;
         pathPrefix: string;
@@ -132,10 +121,10 @@ declare module GridChen {
     export interface MatrixView {
         schema: GridSchema;
         getModel: () => object;
-        setModel: (obj) => void;
+        // setModel: (obj) => void;
         columnCount: () => number;
         rowCount: () => number;
-        removeModel: () => JSONPatch;
+        removeModel: () => JSONPatch; // TODO: Return void.
         deleteRow: (rowIndex: number) => JSONPatch;
         getCell: (rowIndex: number, colIndex: number) => any;
         getRow: (rowIndex: number) => any;
@@ -143,8 +132,9 @@ declare module GridChen {
         setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatchOperation[];
         splice: (rowIndex: number) => GridChen.JSONPatch;
         sort: (colIndex: number) => number;
-        // TODO: Return the patched object as of getModel()
+        // TODO: Return the patched object as of getModel()?
         applyJSONPatch: (patch: JSONPatch) => void;
+        updateHolder: () => Patch;
     }
 
     export interface Transaction {

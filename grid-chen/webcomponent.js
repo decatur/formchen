@@ -88,14 +88,13 @@ function openDialog() {
  * @implements {GridChen.GridChen}
  */
 export class GridChen extends HTMLElement {
-    selectedRange; // Appease IDE.
-
-    select(range) {
-        // Appease IDE.
-    }
 
     constructor() {
         super();
+        // Property mixed in later
+        this.selectedRange = void 0;
+        // Method mixed in later
+        this.select = void 0;
     }
 
     /**
@@ -304,6 +303,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
     function refresh() {
         rowCount = viewModel.rowCount();
+        // TODO: Can we do better, i.e. send event to selection.grid?
         selection.grid.rowCount = rowCount;
         setFirstRow(firstRow);
         /*if (window.performance.now() - lastRefreshMillis < 100) {
@@ -416,7 +416,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
     /**
      *
-     * @param {Range} range
+     * @param {GridChen.Range} range
      * @param {boolean} show
      */
     function repaintSelection(range, show) {
@@ -551,7 +551,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
 
         if (rowIndex === -1) {
-            viewModel.removeModel();  // We can ignore this patch, because it is included in the patch from removeValue().
+            // We can ignore this patch, because it is included in the patch from updateHolder().
+            // TODO: Do we need removeModel()s patch at all? => No, but there is a unit test to that effect.
+            void viewModel.removeModel();
             trans.patches.push(viewModel.updateHolder());
         }
 
@@ -752,7 +754,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
         /** @type{Array<number>} */
         const columnIndices = [];
-        for (const /** @type{Range} */ r of selection.areas) {
+        for (const /** @type{GridChen.Range} */ r of selection.areas) {
             for (let count = 0; count < r.columnCount; count++) {
                 columnIndices.push(r.columnIndex + count);
             }
@@ -877,7 +879,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     }
 
     /**
-     * @param {Range} range
+     * @param {GridChen.Range} range
      * @returns {Array<Array<?>>}
      */
     function getRangeData(range) {
@@ -894,7 +896,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
     /**
      * TODO: Move this to matrixview.js
-     * @param {Range} r
+     * @param {GridChen.Range} r
      * @param {string} sep
      * @param {boolean} withHeaders
      * @returns {string}
@@ -1024,9 +1026,10 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
     }
 
-    let selection = new Selection(repaintSelection);
+    let selection = /** @type{GridChen.Selection} */ new Selection(repaintSelection);
     selection.grid = {
         container,
+        rowCount, // Will be updated on refresh().
         colCount,
         pageIncrement,
         scrollIntoView,
@@ -1044,9 +1047,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     container.addEventListener('keydown', (evt) => keyDownHandler(evt, selection));
     container.addEventListener('keydown', keyDownListener);
 
-    const editor = createEditor(cellParent, commitCellEdit, selection,
-        activeCell,
-        lineHeight);
+    const editor = createEditor(cellParent, commitCellEdit, selection, lineHeight);
 
     firstRow = 0;
     refresh();
@@ -1073,9 +1074,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
     /**
      * Hidden API for unit testing.
-     * Dispatches a mousedown event in the middle of the specified cell.
+     * Dispatches a mousedown&mouseup event in the middle of the specified cell.
      */
-    gridchenElement['_mousedown'] = function (rowIndex, columnIndex) {
+    gridchenElement['_click'] = function (rowIndex, columnIndex) {
         // TODO: This is the inverse of selection.startSelection.index(), so bring it together.
         const rect = cellParent.getBoundingClientRect();
         let grid_y = rowIndex - firstRow;
@@ -1084,7 +1085,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         let x = ((columnIndex === 0 ? 0 : columnEnds[columnIndex - 1]) + columnEnds[columnIndex]) / 2;
         let clientX = x + rect.x;
 
-        container.dispatchEvent(new MouseEvent('mousedown', {clientX: clientX, clientY: clientY}));
+        cellParent.dispatchEvent(new MouseEvent('mousedown', {clientX: clientX, clientY: clientY}));
+        cellParent.dispatchEvent(new MouseEvent('mouseup', {clientX: clientX, clientY: clientY}));
     };
 
     /**

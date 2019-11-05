@@ -220,7 +220,7 @@ test('Empty object with grid', () => {
     const tm = u.globalTransactionManager;
 
     const gc = document.querySelector('grid-chen');
-    gc._mousedown(0, 0);
+    gc._click(0, 0);  // NoOp because cell 0,0 is selected by default.
     gc._sendKeys('2020-01-01 00:00Z');
     gc._keyboard('keydown', {code: 'Enter'});
 
@@ -234,7 +234,7 @@ test('Empty object with grid', () => {
     //assert.equal({op: 'replace', path: "/foo/0", value: Array(1), oldValue: null}, patch[2]);
     //assert.equal({op: 'replace', path: "/foo/0/0", value: "2020-01-01T01:00+01:00", oldValue: null}, patch[3]);
 
-    gc._mousedown(0, 0);
+    gc._click(0, 0);
     gc._keyboard('keydown', {code: 'Delete'});
     patch = tm.patch;
     assert.equal({op: 'replace', path: "/foo/0/0", value: null, oldValue: "2020-01-01T01:00+01:00"}, patch[2]);
