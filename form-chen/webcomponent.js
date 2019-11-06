@@ -1,3 +1,5 @@
+//@ts-check
+
 import "../grid-chen/webcomponent.js"
 import {createView} from "../grid-chen/matrixview.js";
 import {
@@ -17,19 +19,6 @@ class CompositeError extends Error {
         this.errors = errors;
     }
 }
-
-// Global unique label id.
-let labelCount = 0;
-
-/**
- *
- * @param {string} tagName
- * @returns {HTMLElement}
- */
-function createElement(tagName) {
-    return document.createElement(tagName)
-}
-
 
 /**
  * Example:
@@ -64,7 +53,7 @@ export class TypedValue {
      */
     key;
 
-    /** @type {GridChen.JSONSchema} */
+    /** @type {GridChenNS.JSONSchema} */
     schema;
 
     /** @type {string} */
@@ -75,7 +64,7 @@ export class TypedValue {
 
     /**
      * @param {string} key
-     * @param {GridChen.JSONSchema} schema
+     * @param {GridChenNS.JSONSchema} schema
      * @param {ProxyNode} parent
      */
     constructor(key, schema, parent) {
@@ -114,7 +103,7 @@ export class ProxyNode extends TypedValue {
 
     /**
      * @param {string} key
-     * @param {GridChen.JSONSchema} schema
+     * @param {GridChenNS.JSONSchema} schema
      * @param {ProxyNode} parent
      */
     constructor(key, schema, parent) {
@@ -165,7 +154,7 @@ export class ProxyNode extends TypedValue {
 
     /**
      * @param {object} obj
-     * @returns {undefined}
+     * @returns {GridChenNS.Patch | undefined}
      */
     setValue(obj) {
         let oldValue;
@@ -182,8 +171,7 @@ export class ProxyNode extends TypedValue {
         }
 
         const root = this.root;
-        const patch = /** @type {GridChen.Patch} */ {
-            /** @type {GridChen.Patch} */
+        const patch = /** @type {GridChenNS.Patch} */ {
             apply(patch) {
                 for (let op of patch.operations) {
                     const node = root.nodesByPath[op.path];
@@ -204,7 +192,7 @@ export class ProxyNode extends TypedValue {
             patch.operations.push({op: 'replace', path: this.path, value: obj, oldValue});
         }
 
-        this._setValue(obj, patch.operations);
+        this._setValue(obj);
 
         if (obj == null) {
             patch.operations.push(...this.clearPathToRoot());
@@ -240,7 +228,7 @@ export class ProxyNode extends TypedValue {
     }
 
     /**
-     * @returns {GridChen.JSONPatchOperation[]}
+     * @returns {GridChenNS.JSONPatchOperation[]}
      */
     createPathToRoot() {
         let operations = [];
@@ -264,7 +252,7 @@ export class ProxyNode extends TypedValue {
      * Removes the value for this node.
      * If the parent holder object thus will become empty, it is also removed.
      * This will continue to the root.
-     * @returns {GridChen.JSONPatchOperation[]}
+     * @returns {GridChenNS.JSONPatchOperation[]}
      */
     clearPathToRoot() {
         let operations = [];
@@ -292,7 +280,7 @@ export class ProxyNode extends TypedValue {
 
 
 /**
- * @param {GridChen.JSONSchema} topSchema
+ * @param {GridChenNS.JSONSchema} topSchema
  * @param {object} topObj
  */
 export function createFormChen(topSchema, topObj) {
@@ -317,7 +305,7 @@ export function createFormChen(topSchema, topObj) {
 
     /**
      * @param {string} key
-     * @param {GridChen.JSONSchema} schema
+     * @param {GridChenNS.JSONSchema} schema
      * @param {ProxyNode} parent
      */
     function createProxyNode(key, schema, parent) {
@@ -331,7 +319,7 @@ export function createFormChen(topSchema, topObj) {
     const transactionManager = registerGlobalTransactionManager();
 
     /**
-     * @param {GridChen.Patch} patch
+     * @param {GridChenNS.Patch} patch
      */
     function apply(patch) {
         rootNode.obj = applyJSONPatch(rootNode.obj, patch.operations);
@@ -367,12 +355,12 @@ export function createFormChen(topSchema, topObj) {
      * @param {Element} containerElement
      */
     function bindGrid(node, containerElement) {
-        const label = createElement('label');
+        const label = document.createElement('label');
         label.className = 'grid-label';
         label.textContent = node.title;
         containerElement.appendChild(label);
 
-        const grid = createElement('grid-chen');
+        const grid = /** @type{GridChenNS.GridChen} */ (document.createElement('grid-chen'));
         if (node.schema.height) {
             grid.style.height = node.schema.height + 'px';
         }
@@ -399,14 +387,14 @@ export function createFormChen(topSchema, topObj) {
     function bindArray(node, containerElement) {
         if (Array.isArray(node.schema.items)) {
             // Fixed length tuple.
-            const tupleSchemas = /**@type{GridChen.JSONSchema[]}*/ node.schema.items;
+            const tupleSchemas = /**@type{GridChenNS.JSONSchema[]}*/ node.schema.items;
             for (let [key, childSchema] of Object.entries(tupleSchemas)) {
                 const childNode = createProxyNode(key, childSchema, node);
                 childNode.obj = node.obj ? node.obj[key] : undefined;
                 bindNode(childNode, containerElement);
             }
         } else if (node.obj) {
-            const itemSchema = /**@type{GridChen.JSONSchema}*/ node.schema.items;
+            const itemSchema = /**@type{GridChenNS.JSONSchema}*/ (node.schema.items);
             for (let key = 0; key < node.obj.length; key++) {
                 const childNode = createProxyNode(String(key), itemSchema, node);
                 childNode.obj = node.obj[key];
@@ -456,20 +444,20 @@ export function createFormChen(topSchema, topObj) {
 
         if (!container) return;
 
-        const label = createElement('label');
+        const label = document.createElement('label');
         let input;
 
         if (schema.type === 'boolean') {
-            input = createElement('input');
+            input = document.createElement('input');
             input.type = 'checkbox';
             node.refreshUI = function () {
                 const value = this.getValue();
                 input.checked = (value == null ? false : value);
             };
         } else if (schema.enum) {
-            input = createElement('select');
+            input = document.createElement('select');
             schema.enum.forEach(function (optionName) {
-                const option = createElement('option');
+                const option = document.createElement('option');
                 option.textContent = optionName;
                 input.appendChild(option);
             });
@@ -477,7 +465,7 @@ export function createFormChen(topSchema, topObj) {
                 input.value = this.getValue();
             };
         } else {
-            input = createElement('input');
+            input = document.createElement('input');
             node.refreshUI = function () {
                 const value = this.getValue();
                 if (value == null) {
@@ -554,7 +542,7 @@ export function createFormChen(topSchema, topObj) {
         }
 
         if (schema.unit) {
-            const unit = createElement('span');
+            const unit = document.createElement('span');
             unit.className += ' unit';
             unit.textContent = schema.unit;
             label.appendChild(unit);
@@ -568,7 +556,7 @@ export function createFormChen(topSchema, topObj) {
     }
 
     /**
-     * @implements {FormChen.FormChen}
+     * @implements {FormChenNS.FormChen}
      */
     class FormChen {
         /**

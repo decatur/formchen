@@ -2,7 +2,7 @@
 /// form-chen JavaScript APIs
 /////////////////////////////
 
-declare module FormChen {
+declare module FormChenNS {
 
     export interface FormChen {
         /**
