@@ -2,6 +2,7 @@
 
 import "../grid-chen/webcomponent.js"
 import {createView} from "../grid-chen/matrixview.js";
+import {Range} from "../grid-chen/selection.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
@@ -42,7 +43,60 @@ function getValueByPointer(obj, pointer) {
  ------------------------              ------------------            ---------------
  */
 
+ class Graph {
+     /**
+      * @param {GridChenNS.JSONSchema} rootSchema
+      */
+     constructor(rootSchema) {
+        this.rootSchema = rootSchema;
+        /** @type{{[key: string]: TypedValue}} */
+        //this.nodesByPath = {};
+        /** @type{TypedValue[]} */
+        this.nodes = [];
+     }
+
+     /**
+      * @param {TypedValue} node 
+      */
+     add(node) {
+         this.nodes.push(node);
+     }
+
+     /**
+      * @param {string} path 
+      * @returns {TypedValue}
+      */
+     getNode(path) {
+        for (const node of this.nodes) {
+            if (node.path === path) {
+                return node
+            }
+        }
+        return null;
+     }
+
+    /**
+      * TODO: Move this to createFormChen()
+      * @param {GridChenNS.JSONSchema} schema
+      * @param {string} path
+      * @returns {GridChenNS.JSONSchema}
+      */
+    resolveSchema(schema, path) {
+        if ('$ref' in schema) {
+            const refSchema = getValueByPointer(this.rootSchema, schema['$ref']);
+            if (!refSchema) {
+                throw new Error('Undefined $ref at ' + path);
+            }
+            return refSchema
+        }
+        return schema
+    }
+ }
+
 export class TypedValue {
+
+    /**  @type {Graph} graph */
+    graph;
 
     /** @type {ProxyNode} */
     parent;
@@ -63,62 +117,58 @@ export class TypedValue {
     readOnly = false;
 
     /**
-     * @param {string} key
+     * @param {Graph} graph
+     * @param {string | number} key
      * @param {GridChenNS.JSONSchema} schema
      * @param {ProxyNode} parent
      */
-    constructor(key, schema, parent) {
-        this.key = key;
+    constructor(graph, key, schema, parent) {
+        this.graph = graph;
         this.parent = parent;
+        this.key = key;
         if (typeof schema.readOnly === 'boolean') {
             this.readOnly = schema.readOnly
         } else if (parent) {
             // Inherit read only.
             this.readOnly = parent.readOnly;
         }
-        this.schema = this.resolveSchema(schema);
+        this.schema = graph.resolveSchema(schema, this.path);
         if (schema.title == null) {
-            this.title = this.schema.title || key;
+            this.title = this.schema.title || String(key);
         } else {
             this.title = schema.title;
         }
-        this._path = (this.parent ? this.parent._path + '/' + this.key : '');
+        
         if (parent) {
             parent.children.push(this);
         }
-    }
-}
-
-export class ProxyNode extends TypedValue {
-    /**
-     * Value in the object graph node or undefined if a leave node.
-     * @type {*}
-     */
-    obj;
-
-    /**
-     * @type {TypedValue[]}
-     */
-    children;
-
-    /**
-     * @param {string} key
-     * @param {GridChenNS.JSONSchema} schema
-     * @param {ProxyNode} parent
-     */
-    constructor(key, schema, parent) {
-        super(key, schema, parent)
-
-        this.children = [];
-
     }
 
     /**
      * @returns {string}
      */
     get path() {
-        return this._path
+        /** @type{TypedValue} */
+        let n = this;
+        let parts = [];
+        while (n) {
+            parts.unshift(String(n.key));
+            n = n.parent;
+        }
+        return parts.join('/');
     }
+
+    // /**
+    //  * @returns {TypedValue}
+    //  */
+    // get root() {
+    //     /** @type{TypedValue} */
+    //     let n = this;
+    //     while (n.parent) {
+    //         n = n.parent;
+    //     }
+    //     return n;
+    // }
 
     getValue() {
         if (this.parent.obj) {
@@ -127,34 +177,11 @@ export class ProxyNode extends TypedValue {
         return undefined;
     }
 
-    /**
-     * @returns {ProxyNode}
-     */
-    get root() {
-        let n = this;
-        while (n.parent) {
-            n = n.parent;
-        }
-        return n;
-    }
-
-    resolveSchema(schema) {
-        if ('$ref' in schema) {
-            const refSchema = getValueByPointer(this.root.schema, schema['$ref']);
-            if (!refSchema) {
-                throw new Error('Undefined $ref at ' + this.path);
-            }
-            return refSchema
-        }
-        return schema
-    }
-
-    refreshUI() {
-    }
+    
 
     /**
      * @param {object} obj
-     * @returns {GridChenNS.Patch | undefined}
+     * @returns {GridChenNS.Patch}
      */
     setValue(obj) {
         let oldValue;
@@ -166,23 +193,45 @@ export class ProxyNode extends TypedValue {
             oldValue = this.parent.obj[this.key];
         }
 
-        if (obj == oldValue) {
-            return undefined
-        }
-
-        const root = this.root;
         const patch = /** @type {GridChenNS.Patch} */ {
-            apply(patch) {
+            apply: (patch) => {
                 for (let op of patch.operations) {
-                    const node = root.nodesByPath[op.path];
+                    let node = this.graph.getNode(op.path);
+                    if (node == null) {
+                        const gridNode = this.graph.getNode('/measurements');
+                        let index = gridNode.grid.selectedRange.rowIndex;
+                        const detailNode = this.graph.getNode('/measurements/' + index + '/3');
+                        // TODO: Refactor...
+                        index = patch.details.selectedRange.rowIndex;
+                        detailNode.obj = gridNode.obj[index]?gridNode.obj[index][3]:null;
+                        detailNode.key = gridNode.path + '/' + index + '/3';
+                        node = this.graph.getNode('/measurements/' + index + '/3/foo');
+                        gridNode.grid.select(patch.details.selectedRange);
+                        
+                        //node.foo = function() {
+                        //    if (!node.obj[index][3]) node.obj[index][3] = node.obj;
+                        //}
+                    }
                     node._setValue(op.value);
                 }
             },
             operations: [],
-            //node: this.root,
-            pathPrefix: this.root.schema.pathPrefix || ''
+            pathPrefix: this.graph.rootSchema.pathPrefix || ''
         };
 
+        let n = this;
+        while(n) {
+            if (n.grid) {
+                patch.details = { selectedRange: n.grid.selectedRange };
+                break;
+            }
+            n = n.parent;
+        }
+
+        if (obj == oldValue) {
+            return patch
+        }
+        
         if (obj == null) {
             patch.operations.push({op: 'remove', path: this.path, oldValue});
         } else if (oldValue == null) {
@@ -220,10 +269,6 @@ export class ProxyNode extends TypedValue {
             }
         }
 
-        for (let child of this.children) {
-            child._setValue((obj==null?undefined:obj[child.key]));
-        }
-
         this.refreshUI();
     }
 
@@ -233,12 +278,14 @@ export class ProxyNode extends TypedValue {
     createPathToRoot() {
         let operations = [];
         let n = this.parent;
+        /** @type{TypedValue} */
         let child = this;
         while (n && n.obj == null) {
             let empty = n.schema.items ? [] : {};
             operations.unshift({op: 'add', path: n.path, value: empty});
             empty = n.schema.items ? [] : {};
             n.obj = empty;
+            if (n.foo) n.foo();
             if (child) {
                 n.obj[child.key] = child.obj;
             }
@@ -256,6 +303,7 @@ export class ProxyNode extends TypedValue {
      */
     clearPathToRoot() {
         let operations = [];
+        /** @type{TypedValue} */
         let n = this;
         while (true) {
             n = n.parent;
@@ -276,6 +324,45 @@ export class ProxyNode extends TypedValue {
 
         return operations
     }
+
+    refreshUI() {
+    }
+}
+
+export class ProxyNode extends TypedValue {
+    /**
+     * Value in the object graph node or undefined if a leave node.
+     * @type {*}
+     */
+    obj;
+
+    /**
+     * @type {TypedValue[]}
+     */
+    children;
+
+    /**
+     * @param {Graph} graph
+     * @param {string | number} key
+     * @param {GridChenNS.JSONSchema} schema
+     * @param {ProxyNode} parent
+     */
+    constructor(graph, key, schema, parent) {
+        super(graph, key, schema, parent)
+        this.children = [];
+    }
+
+    
+
+    _setValue(obj) {
+        super._setValue(obj);
+
+        for (let child of this.children) {
+            child._setValue((obj==null?undefined:obj[child.key]));
+        }
+    }
+
+    
 }
 
 
@@ -285,37 +372,38 @@ export class ProxyNode extends TypedValue {
  */
 export function createFormChen(topSchema, topObj) {
     const containerByPath = {};
-    const nodesByPath = {};
     const errors = [];
     const pathPrefix = topSchema.pathPrefix || '';
+    const graph = new Graph(topSchema);
 
-    for (const elem of document.body.querySelectorAll('[data-path]')) {
+    for (const _elem of document.body.querySelectorAll('[data-path]')) {
+        const elem = /**@type{HTMLElement}*/ (_elem);
         const prefixedJsonPath = elem.dataset.path.trim();
         if (prefixedJsonPath === pathPrefix || prefixedJsonPath.startsWith(pathPrefix + '/')) {
             const jsonPath = prefixedJsonPath.substr(pathPrefix.length);
             containerByPath[jsonPath] = elem;
             elem.textContent = '';
-            elem.onkeydown = function (evt) {
-                if (evt.code === 'KeyA' && evt.ctrlKey) {
-                    alert(evt.target.id)
-                }
-            }
+            // /** @param {KeyboardEvent} evt */
+            // elem.onkeydown = function (evt) {
+            //     if (evt.code === 'KeyA' && evt.ctrlKey) {
+            //         alert(evt.target.id)
+            //     }
+            // }
         }
     }
 
     /**
-     * @param {string} key
+     * @param {string | number} key
      * @param {GridChenNS.JSONSchema} schema
      * @param {ProxyNode} parent
      */
     function createProxyNode(key, schema, parent) {
-        const node = new ProxyNode(key, schema, parent);
-        nodesByPath[node.path] = node;
+        const node = new ProxyNode(graph, key, schema, parent);
+        graph.add(node);
         return node;
     }
 
     const rootNode = createProxyNode('', topSchema, null);
-    rootNode.nodesByPath = nodesByPath;
     const transactionManager = registerGlobalTransactionManager();
 
     /**
@@ -324,7 +412,7 @@ export function createFormChen(topSchema, topObj) {
     function apply(patch) {
         rootNode.obj = applyJSONPatch(rootNode.obj, patch.operations);
         for (let op of patch.operations) {
-            const node = nodesByPath[op.path];
+            const node = graph.getNode(op.path);
             node.refreshUI();
         }
     }
@@ -351,7 +439,7 @@ export function createFormChen(topSchema, topObj) {
     }
 
     /**
-     * @param {ProxyNode} node
+     * @param {TypedValue} node
      * @param {Element} containerElement
      */
     function bindGrid(node, containerElement) {
@@ -367,12 +455,31 @@ export function createFormChen(topSchema, topObj) {
         label.appendChild(grid);
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
         node.schema.pathPrefix = node.path;
-
-        const view = createView(node.schema, node.obj);
+        node.grid = grid;
+        const gridSchema = Object.assign({}, node.schema);
+        // TODO: How to select master?
+        const detailSchema = /**@type{GridChenNS.JSONSchema}*/(gridSchema.items).items.pop();
+        const view = createView(gridSchema, node.obj);
         grid.resetFromView(view, transactionManager);
         view.updateHolder = function() {
             return node.setValue(view.getModel())
         };
+
+        const detailNode = createProxyNode(undefined, detailSchema, null);
+        detailNode.grid = grid;
+        bindNode(detailNode, containerElement);
+
+        grid.addEventListener('selectionChanged', function() {
+            const selection = grid.selectedRange;
+            const index = selection.rowIndex;
+            detailNode.obj = node.obj[index]?node.obj[index][3]:null;
+            detailNode.key = node.path + '/' + index + '/3';
+            detailNode.foo = function() {
+                if (!node.obj[index][3]) node.obj[index][3] = detailNode.obj;
+            }
+            for (const n of detailNode.children)
+                n.refreshUI();
+        });
 
         node.refreshUI = function() {
             view.applyJSONPatch([{op:'replace', path:'', value:node.obj}]);
@@ -387,20 +494,21 @@ export function createFormChen(topSchema, topObj) {
     function bindArray(node, containerElement) {
         if (Array.isArray(node.schema.items)) {
             // Fixed length tuple.
-            const tupleSchemas = /**@type{GridChenNS.JSONSchema[]}*/ node.schema.items;
+            const tupleSchemas = /**@type{GridChenNS.JSONSchema[]}*/ (node.schema.items);
             for (let [key, childSchema] of Object.entries(tupleSchemas)) {
                 const childNode = createProxyNode(key, childSchema, node);
-                childNode.obj = node.obj ? node.obj[key] : undefined;
+                //childNode.obj = node.obj ? node.obj[key] : undefined;
                 bindNode(childNode, containerElement);
             }
-        } else if (node.obj) {
-            const itemSchema = /**@type{GridChenNS.JSONSchema}*/ (node.schema.items);
-            for (let key = 0; key < node.obj.length; key++) {
-                const childNode = createProxyNode(String(key), itemSchema, node);
-                childNode.obj = node.obj[key];
-                bindNode(childNode, containerElement);
-            }
-        }
+        } 
+        // else if (node.obj) {
+        //     const itemSchema = /**@type{GridChenNS.JSONSchema}*/ (node.schema.items);
+        //     for (let key = 0; key < node.obj.length; key++) {
+        //         const childNode = createProxyNode(key, itemSchema, node);
+        //         childNode.obj = node.obj[key];
+        //         bindNode(childNode, containerElement);
+        //     }
+        // }
     }
 
     function bindNode(node, container) {
@@ -420,6 +528,11 @@ export function createFormChen(topSchema, topObj) {
         }
     }
 
+    /**
+     * 
+     * @param {TypedValue} node 
+     * @param {HTMLElement} container 
+     */
     function bindNodeFailSafe(node, container) {
         const schema = node.schema;
         const value = node.obj;
@@ -427,18 +540,19 @@ export function createFormChen(topSchema, topObj) {
 
         console.log('bind: ' + path);
 
-        if (schema.format === 'grid') {
-            if (container) bindGrid(node, container);
-            return
-        }
+        
 
         if (schema.type === 'object') {
-            bindObject(node, container);
+            bindObject(/**@type{ProxyNode}*/(node), container);
             return
         }
 
         if (schema.type === 'array') {
-            bindArray(node, container);
+            if (schema.format === 'grid') {
+                if (container) bindGrid(node, container);
+            } else {
+                bindArray(/**@type{ProxyNode}*/(node), container);
+            }
             return
         }
 
@@ -458,7 +572,7 @@ export function createFormChen(topSchema, topObj) {
             input = document.createElement('select');
             schema.enum.forEach(function (optionName) {
                 const option = document.createElement('option');
-                option.textContent = optionName;
+                option.textContent = String(optionName);
                 input.appendChild(option);
             });
             node.refreshUI = function () {
@@ -569,10 +683,10 @@ export function createFormChen(topSchema, topObj) {
 
         /**
          * @param {string} path
-         * @returns {ProxyNode}
+         * @returns {TypedValue}
          */
         getNode(path) {
-            return nodesByPath[path];
+            return graph.getNode(path);
         }
     }
 

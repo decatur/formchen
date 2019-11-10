@@ -14,7 +14,7 @@ export function init(schema, data) {
 
 function rebind() {
     patchElement.value = '';
-    const rootElement = document.querySelector('[data-path=""]');
+    const rootElement = document.querySelector('[data-path="myPrefix"]');
     let schema;
 
     try {
@@ -42,8 +42,8 @@ function rebind() {
     try {
         fc = createFormChen(schema, data);
     } catch (e) {
-        console.log(e.errors);
-        alert(e + '; See console');
+        console.error(e);
+        rootElement.textContent = String(e);
     }
 
     const tm = u.globalTransactionManager;

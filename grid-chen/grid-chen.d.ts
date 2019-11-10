@@ -6,20 +6,27 @@ declare module GridChenNS {
 
     export interface JSONSchema {
         title: string;
+        description: string;
         pathPrefix: string,
         type: string;
+        format: string;
         /**
          * If properties is set, this schema describes an object.
          */
-        properties?: Object;
+        properties?: {[key: string]: JSONSchema};
         /**
          * If items is an array object, this schema describes a fixed length tuple
          * with item at index having schema items[index].
          * If items is an object, this schema describes a variable length array
          * with each item having the object as its schema.
          */
-        items?: Object | Object[];
+        items?: JSONSchema | JSONSchema[];
+        enum?: (string | number)[];
         readOnly?: boolean;
+        height?: number;
+        converter: Converter;
+        fractionDigits?: number;
+        unit: string;
     }
 
     export interface ColumnSchema {
@@ -87,6 +94,7 @@ declare module GridChenNS {
         readonly selectedRange: Range;
 
         select: (Range) => void;
+        _refresh: () => void;
     }
 
     interface SelectionChanged extends Event {
@@ -112,8 +120,8 @@ declare module GridChenNS {
     export interface Patch {
         apply: (Patch) => void;
         pathPrefix: string;
-        detail: object;
         operations: JSONPatchOperation[];
+        detail?: object;
     }
 
     export type JSONPatch = JSONPatchOperation[];
@@ -132,7 +140,7 @@ declare module GridChenNS {
         getRow: (rowIndex: number) => any;
         getColumn: (colIndex: number) => any;
         setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatchOperation[];
-        splice: (rowIndex: number) => GridChen.JSONPatch;
+        splice: (rowIndex: number) => JSONPatch;
         sort: (colIndex: number) => number;
         // TODO: Return the patched object as of getModel()?
         applyJSONPatch: (patch: JSONPatch) => void;
