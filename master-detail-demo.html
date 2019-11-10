@@ -1,24 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>form-chen Basic</title>
     <link rel="stylesheet" href="demo.css">
     <script src="./theme.js"></script>
 </head>
+
 <body>
 
-<h1><a href="index.html">form-chen</a> / Basic Demo</h1>
+    <h1><a href="index.html">form-chen</a> / Basic Demo</h1>
 
-<form style="display: grid;grid-template-columns: 33% 33% 33%;">
-    <label>Schema <textarea class="schema"></textarea></label>
-    <label>Data <textarea class="data"></textarea></label>
-    <label>Patch <textarea class="patch"></textarea></label>
-</form>
+    <form style="display: grid;grid-template-columns: 33% 33% 33%;">
+        <label>Schema <textarea class="schema"></textarea></label>
+        <label>Data <textarea class="data"></textarea></label>
+        <label>Patch <textarea class="patch"></textarea></label>
+    </form>
 
-<div class="form-chen">
-    <div data-path="myPrefix"></div>
-</div>
+    <div class="form-chen">
+        <div data-path="myPrefix"></div>
+    </div>
 
 </body>
 <script nomodule>alert('Your browser is not supported')</script>
@@ -34,14 +36,15 @@
                 items: {
                     type: 'array',
                     items: [  // tuple schema
-                        {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
-                        {title: 'Age [d]', width: 100, type: 'number'},
-                        {title: 'Weight [g]', width: 100, type: 'number'},
-                        {title: 'Detail', type: 'object', properties: {
-                            foo: { type: 'string'},
-                            bar: { type: 'string'}
+                        { title: 'TimeStamp', width: 200, type: 'string', format: 'date-time' },
+                        { title: 'Age [d]', width: 100, type: 'number' },
+                        { title: 'Weight [g]', width: 100, type: 'number' },
+                        {
+                            title: 'Detail', type: 'object', properties: {
+                                foo: { type: 'string' },
+                                bar: { type: 'string' }
+                            },
                         }
-                    },
                     ]
                 }
             }
@@ -101,9 +104,9 @@
         latitude: 41.40338,
         longitude: 2.17403,
         measurements: [
-            ["2019-01-01T00:00Z", 0, 0, {bar:'Some Bar'}],
+            ["2019-01-01T00:00Z", 0, 0, { bar: 'Some Bar' }],
             ["2019-02-01T00:00Z", 1, 2],
-            ["2019-03-01T00:00Z", 2, 4, {foo:'Some Foo'}]
+            ["2019-03-01T00:00Z", 2, 4, { foo: 'Some Foo' }]
         ],
         isCompleted: true
     };
@@ -111,4 +114,5 @@
     demo.init(schema, data);
 
 </script>
+
 </html>

@@ -117,6 +117,10 @@ function sortedColumns(properties) {
     return entries;
 }
 
+function assert(condition, ...data) {
+    if (!condition) throw new Error(data)
+}
+
 
 /**
  * @param {GridChenNS.JSONSchema} schema
@@ -124,38 +128,46 @@ function sortedColumns(properties) {
  * @returns {GridChenNS.MatrixView}
  */
 export function createView(schema, matrix) {
-    const columnSchemas = createColumnSchemas(schema);
-    if (columnSchemas instanceof Error) {
-        throw columnSchemas;
-    }
-
-    columnSchemas.readOnly = (typeof schema.readOnly === 'boolean') ? schema.readOnly : false;
-    columnSchemas.pathPrefix = schema.pathPrefix || '';
-    return columnSchemas.viewCreator(columnSchemas, matrix);
-}
-
-/**
- * @param {GridChenNS.JSONSchema} schema
- * @returns {object}
- */
-export function createColumnSchemas(schema) {
-    if (!schema) {
-        return new Error('selectViewCreator() received undefined schema')
-    }
-
-
     const invalidError = new Error('Invalid schema: ' + schema.title);
 
-    if (schema.items && Array.isArray(schema.items.items)) {
-        return {
+    if (schema.type === 'array' && typeof schema.items === 'object' && Array.isArray(schema.items['items'])) {
+        // Array of tuples.
+        /** @type{GridChenNS.JSONSchema[]} */
+        const schemas = schema.items['items'];
+        const columnSchemas = [];
+        const detailSchemas = [];
+        /** @type{number[]} */
+        const columnIndices = [];
+        /** @type{number[]} */
+        const detailIndices = [];
+
+        for (const [columnIndex, columnSchema] of schemas.entries()) {
+            if (columnSchema.type === 'object' || columnSchema.type === 'array') {
+                detailSchemas.push(columnSchema);
+                detailIndices.push(columnIndex);
+            } else {
+                columnSchemas.push(columnSchema);
+                columnIndices.push(columnIndex);
+            }
+        }
+
+        const matrixSchema = {
             title: schema.title,
-            columnSchemas: schema.items.items,
+            columnSchemas,
+            columnIndices,
+            detailSchemas,
+            detailIndices,
             viewCreator: createRowMatrixView
         }
+
+        matrixSchema.readOnly = (typeof schema.readOnly === 'boolean') ? schema.readOnly : false;
+        matrixSchema.pathPrefix = schema.pathPrefix || '';
+        
+        return createRowMatrixView(matrixSchema, matrix); 
     }
 
-    if (schema.items && schema.items.type === 'object') {
-        const entries = sortedColumns(schema.items.properties);
+    if (schema.type === 'array' && typeof schema.items === 'object' && schema.items['properties']) {
+        const entries = sortedColumns(schema.items['properties']);
 
         return {
             title: schema.title,
@@ -192,7 +204,7 @@ export function createColumnSchemas(schema) {
             const colSchema = property.items;
             if (typeof colSchema !== 'object') {
                 // TODO: Be much more strict!
-                return invalidError
+                throw invalidError;
             }
             if (!colSchema.title) colSchema.title = property.title || entry[0];
             if (!colSchema.width) colSchema.width = property.width;
@@ -213,7 +225,7 @@ export function createColumnSchemas(schema) {
         }
     }
 
-    return invalidError
+    throw invalidError
 }
 
 /**
@@ -343,7 +355,8 @@ function padArray(a, targetLength, prefix) {
  * @returns {GridChenNS.MatrixView}
  */
 export function createRowMatrixView(schema, rows) {
-    let schemas = schema.columnSchemas;
+    const schemas = schema.columnSchemas;
+    const columnIndices = schema.columnIndices;
     updateSchema(schemas);
 
     /**
@@ -355,6 +368,25 @@ export function createRowMatrixView(schema, rows) {
         constructor() {
             super();
             this.schema = schema;
+        }
+
+        /**
+         * @param {number} rowIndex 
+         * @param {number} colIndex
+         * @returns {{path: string, value: number | string | boolean}}
+         */
+        getDetail(rowIndex, detailIndex) {
+            const colIndex = schema.detailIndices[detailIndex];
+            return {
+                path: '/' + rowIndex + '/' + detailIndex,
+                value: (rowIndex < rows.length?rows[rowIndex][colIndex]:null)
+            }
+        }
+
+        setDetail(rowIndex, detailIndex, value) {
+            // Note: rowIndex should never be out of range, i.e. for this detail there must already be a master.
+            const colIndex = schema.detailIndices[detailIndex];
+            rows[rowIndex][colIndex] = value;
         }
 
         getModel() {
@@ -387,9 +419,10 @@ export function createRowMatrixView(schema, rows) {
         /**
          * @param {GridChenNS.Interval} rowsRange
          * @param {number} colIndex
-         * @returns {?[]}
+         * @returns {any[]}
          */
         getColumnSlice(rowsRange, colIndex) {
+            colIndex = columnIndices[colIndex];
             return range(rowsRange.sup - rowsRange.min).map(i => rowsRange[rowsRange.min + i][colIndex]);
         }
 
@@ -409,6 +442,7 @@ export function createRowMatrixView(schema, rows) {
          * @returns {*}
          */
         getCell(rowIndex, colIndex) {
+            colIndex = columnIndices[colIndex];
             // TODO: Should not be called with rowIndex >= rowCount.
             if (!rows[rowIndex]) {
                 return null;
@@ -423,6 +457,7 @@ export function createRowMatrixView(schema, rows) {
          * @returns {GridChenNS.JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
+            colIndex = columnIndices[colIndex];
             let patch = [];
 
             if (value == null) {
@@ -473,6 +508,7 @@ export function createRowMatrixView(schema, rows) {
          * @param {number} colIndex
          */
         sort(colIndex) {
+            colIndex = columnIndices[colIndex];
             let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
         }
@@ -619,7 +655,8 @@ export function createRowObjectsView(schema, rows) {
 
 /**
  * @param {GridChenNS.GridSchema} schema
- * @param {Array<object>} columns
+ * @param {object[]} columns
+ * @returns {GridChenNS.MatrixView}
  */
 export function createColumnMatrixView(schema, columns) {
     let schemas = schema.columnSchemas;

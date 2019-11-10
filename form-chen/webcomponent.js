@@ -116,6 +116,9 @@ export class TypedValue {
     /** @type {boolean} */
     readOnly = false;
 
+    /** @type{GridChenNS.GridChen} */
+    grid;
+
     /**
      * @param {Graph} graph
      * @param {string | number} key
@@ -207,10 +210,6 @@ export class TypedValue {
                         detailNode.key = gridNode.path + '/' + index + '/3';
                         node = this.graph.getNode('/measurements/' + index + '/3/foo');
                         gridNode.grid.select(patch.details.selectedRange);
-                        
-                        //node.foo = function() {
-                        //    if (!node.obj[index][3]) node.obj[index][3] = node.obj;
-                        //}
                     }
                     node._setValue(op.value);
                 }
@@ -222,6 +221,7 @@ export class TypedValue {
         let n = this;
         while(n) {
             if (n.grid) {
+                // TODO: This does not handle multi-master-detail cases!
                 patch.details = { selectedRange: n.grid.selectedRange };
                 break;
             }
@@ -457,29 +457,32 @@ export function createFormChen(topSchema, topObj) {
         node.schema.pathPrefix = node.path;
         node.grid = grid;
         const gridSchema = Object.assign({}, node.schema);
-        // TODO: How to select master?
-        const detailSchema = /**@type{GridChenNS.JSONSchema}*/(gridSchema.items).items.pop();
+
         const view = createView(gridSchema, node.obj);
         grid.resetFromView(view, transactionManager);
         view.updateHolder = function() {
             return node.setValue(view.getModel())
         };
 
-        const detailNode = createProxyNode(undefined, detailSchema, null);
-        detailNode.grid = grid;
-        bindNode(detailNode, containerElement);
+        if (view.schema.detailSchemas.length) {
+            const detailSchema = view.schema.detailSchemas[0];
+            const detailNode = createProxyNode(undefined, detailSchema, null);
+            detailNode.grid = grid;
+            bindNode(detailNode, containerElement);
 
-        grid.addEventListener('selectionChanged', function() {
-            const selection = grid.selectedRange;
-            const index = selection.rowIndex;
-            detailNode.obj = node.obj[index]?node.obj[index][3]:null;
-            detailNode.key = node.path + '/' + index + '/3';
-            detailNode.foo = function() {
-                if (!node.obj[index][3]) node.obj[index][3] = detailNode.obj;
-            }
-            for (const n of detailNode.children)
-                n.refreshUI();
-        });
+            grid.addEventListener('selectionChanged', function() {
+                const selection = grid.selectedRange;
+                const index = selection.rowIndex;
+                const {path, value} = view.getDetail(index, 0);
+                detailNode.obj = value;
+                detailNode.key = node.path + path;
+                detailNode.foo = function() {
+                    if (!value) view.setDetail(index, 0, detailNode.obj);
+                }
+                for (const n of detailNode.children)
+                    n.refreshUI();
+            });
+        }
 
         node.refreshUI = function() {
             view.applyJSONPatch([{op:'replace', path:'', value:node.obj}]);
@@ -491,7 +494,7 @@ export function createFormChen(topSchema, topObj) {
      * @param {ProxyNode} node
      * @param {HTMLElement} containerElement
      */
-    function bindArray(node, containerElement) {
+    function bindTuple(node, containerElement) {
         if (Array.isArray(node.schema.items)) {
             // Fixed length tuple.
             const tupleSchemas = /**@type{GridChenNS.JSONSchema[]}*/ (node.schema.items);
@@ -551,7 +554,7 @@ export function createFormChen(topSchema, topObj) {
             if (schema.format === 'grid') {
                 if (container) bindGrid(node, container);
             } else {
-                bindArray(/**@type{ProxyNode}*/(node), container);
+                bindTuple(/**@type{ProxyNode}*/(node), container);
             }
             return
         }

@@ -3,7 +3,6 @@ export let schema = {
         "measurements": {
             title: 'Measurements',
             type: 'array',
-            format: 'grid',
             items: {
                 type: 'array',
                 items: [  // tuple schema
