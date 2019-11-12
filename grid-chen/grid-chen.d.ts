@@ -9,7 +9,7 @@ declare module GridChenNS {
         description: string;
         pathPrefix: string,
         type: string;
-        format: string;
+        format?: string;
         /**
          * If properties is set, this schema describes an object.
          */
@@ -24,30 +24,24 @@ declare module GridChenNS {
         enum?: (string | number)[];
         readOnly?: boolean;
         height?: number;
-        converter: Converter;
         fractionDigits?: number;
+        // TODO: Rename according ISO
+        frequency?: string;
+        sortDirection?: number;
         unit: string;
     }
 
-    export interface ColumnSchema {
-        readonly type: string;
-        format?: string;
-        title: string;
+    export interface ColumnSchema extends JSONSchema {
         width: number;
-        fractionDigits?: number;
-        sortDirection?: number;
         converter?: Converter;
-        // TODO: Rename according ISO
-        frequency?: string;
-        enum?: (string|number)[];
-        readOnly?: boolean;
     }
 
     export interface GridSchema {
         pathPrefix: string,
         title: string;
         columnSchemas: ColumnSchema[];
-        ids: string[];
+        detailSchemas: ColumnSchema[],
+        ids?: string[];
         readOnly?: boolean;
     }
 

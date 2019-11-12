@@ -77,9 +77,9 @@ function getValueByPointer(obj, pointer) {
 
     /**
       * TODO: Move this to createFormChen()
-      * @param {GridChenNS.JSONSchema} schema
+      * @param {GridChenNS.ColumnSchema} schema
       * @param {string} path
-      * @returns {GridChenNS.JSONSchema}
+      * @returns {GridChenNS.ColumnSchema}
       */
     resolveSchema(schema, path) {
         if ('$ref' in schema) {
@@ -107,7 +107,7 @@ export class TypedValue {
      */
     key;
 
-    /** @type {GridChenNS.JSONSchema} */
+    /** @type {GridChenNS.ColumnSchema} */
     schema;
 
     /** @type {string} */
@@ -122,7 +122,7 @@ export class TypedValue {
     /**
      * @param {Graph} graph
      * @param {string | number} key
-     * @param {GridChenNS.JSONSchema} schema
+     * @param {GridChenNS.ColumnSchema} schema
      * @param {ProxyNode} parent
      */
     constructor(graph, key, schema, parent) {
@@ -218,7 +218,7 @@ export class TypedValue {
             pathPrefix: this.graph.rootSchema.pathPrefix || ''
         };
 
-        let n = this;
+        let n = /**@type{TypedValue}*/(this);
         while(n) {
             if (n.grid) {
                 // TODO: This does not handle multi-master-detail cases!
@@ -344,7 +344,7 @@ export class ProxyNode extends TypedValue {
     /**
      * @param {Graph} graph
      * @param {string | number} key
-     * @param {GridChenNS.JSONSchema} schema
+     * @param {GridChenNS.ColumnSchema} schema
      * @param {ProxyNode} parent
      */
     constructor(graph, key, schema, parent) {
@@ -367,7 +367,7 @@ export class ProxyNode extends TypedValue {
 
 
 /**
- * @param {GridChenNS.JSONSchema} topSchema
+ * @param {GridChenNS.ColumnSchema} topSchema
  * @param {object} topObj
  */
 export function createFormChen(topSchema, topObj) {
@@ -394,7 +394,7 @@ export function createFormChen(topSchema, topObj) {
 
     /**
      * @param {string | number} key
-     * @param {GridChenNS.JSONSchema} schema
+     * @param {GridChenNS.ColumnSchema} schema
      * @param {ProxyNode} parent
      */
     function createProxyNode(key, schema, parent) {
@@ -497,7 +497,7 @@ export function createFormChen(topSchema, topObj) {
     function bindTuple(node, containerElement) {
         if (Array.isArray(node.schema.items)) {
             // Fixed length tuple.
-            const tupleSchemas = /**@type{GridChenNS.JSONSchema[]}*/ (node.schema.items);
+            const tupleSchemas = /**@type{GridChenNS.ColumnSchema[]}*/ (node.schema.items);
             for (let [key, childSchema] of Object.entries(tupleSchemas)) {
                 const childNode = createProxyNode(key, childSchema, node);
                 //childNode.obj = node.obj ? node.obj[key] : undefined;
