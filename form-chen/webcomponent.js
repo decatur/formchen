@@ -43,6 +43,9 @@ function getValueByPointer(obj, pointer) {
  ------------------------              ------------------            ---------------
  */
 
+ /**
+  * @implements {FormChenNS.Graph}
+  */
  class Graph {
      /**
       * @param {GridChenNS.JSONSchema} rootSchema
@@ -53,6 +56,7 @@ function getValueByPointer(obj, pointer) {
         //this.nodesByPath = {};
         /** @type{TypedValue[]} */
         this.nodes = [];
+        this.nodesById = {};
      }
 
      /**
@@ -60,19 +64,28 @@ function getValueByPointer(obj, pointer) {
       */
      add(node) {
          this.nodes.push(node);
+         this.nodesById[node.id] = node;
      }
 
      /**
       * @param {string} path 
       * @returns {TypedValue}
       */
-     getNode(path) {
+     getNodeByPath(path) {
         for (const node of this.nodes) {
             if (node.path === path) {
                 return node
             }
         }
         return null;
+     }
+
+     /**
+      * @param {number} id 
+      * @returns {TypedValue}
+      */
+     getNodeById(id) {
+        return this.nodesById[id]
      }
 
     /**
@@ -93,39 +106,19 @@ function getValueByPointer(obj, pointer) {
     }
  }
 
+ let idSequence = 1;
+
+ /** @implements{FormChenNS.TypedValue} */
 export class TypedValue {
 
-    /**  @type {Graph} graph */
-    graph;
-
-    /** @type {ProxyNode} */
-    parent;
-
     /**
-     * The key in the parent object for this obj, i.e. node.parent.obj[node.key] = node.obj.
-     * @type {string|number}
-     */
-    key;
-
-    /** @type {GridChenNS.ColumnSchema} */
-    schema;
-
-    /** @type {string} */
-    title;
-
-    /** @type {boolean} */
-    readOnly = false;
-
-    /** @type{GridChenNS.GridChen} */
-    grid;
-
-    /**
-     * @param {Graph} graph
+     * @param {FormChenNS.Graph} graph
      * @param {string | number} key
      * @param {GridChenNS.ColumnSchema} schema
-     * @param {ProxyNode} parent
+     * @param {FormChenNS.ProxyNode} parent
      */
     constructor(graph, key, schema, parent) {
+        this.id = ++idSequence;
         this.graph = graph;
         this.parent = parent;
         this.key = key;
@@ -151,7 +144,7 @@ export class TypedValue {
      * @returns {string}
      */
     get path() {
-        /** @type{TypedValue} */
+        /** @type{FormChenNS.TypedValue} */
         let n = this;
         let parts = [];
         while (n) {
@@ -161,17 +154,17 @@ export class TypedValue {
         return parts.join('/');
     }
 
-    // /**
-    //  * @returns {TypedValue}
-    //  */
-    // get root() {
-    //     /** @type{TypedValue} */
-    //     let n = this;
-    //     while (n.parent) {
-    //         n = n.parent;
-    //     }
-    //     return n;
-    // }
+    /**
+     * @returns {FormChenNS.TypedValue}
+     */
+    get root() {
+        /** @type{FormChenNS.TypedValue} */
+        let n = this;
+        while (n.parent) {
+            n = n.parent;
+        }
+        return n;
+    }
 
     getValue() {
         if (this.parent.obj) {
@@ -180,10 +173,8 @@ export class TypedValue {
         return undefined;
     }
 
-    
-
     /**
-     * @param {object} obj
+     * @param {?} obj
      * @returns {GridChenNS.Patch}
      */
     setValue(obj) {
@@ -199,30 +190,27 @@ export class TypedValue {
         const patch = /** @type {GridChenNS.Patch} */ {
             apply: (patch) => {
                 for (let op of patch.operations) {
-                    let node = this.graph.getNode(op.path);
-                    if (node == null) {
-                        const gridNode = this.graph.getNode('/measurements');
-                        let index = gridNode.grid.selectedRange.rowIndex;
-                        const detailNode = this.graph.getNode('/measurements/' + index + '/3');
-                        // TODO: Refactor...
-                        index = patch.details.selectedRange.rowIndex;
-                        detailNode.obj = gridNode.obj[index]?gridNode.obj[index][3]:null;
-                        detailNode.key = gridNode.path + '/' + index + '/3';
-                        node = this.graph.getNode('/measurements/' + index + '/3/foo');
-                        gridNode.grid.select(patch.details.selectedRange);
+                    let node = this.graph.getNodeById(patch.details.nodeId);
+                    const detailNode = /** @type{FormChenNS.DetailNode} */ (node.root);
+                    if (detailNode.masterNodeId) {
+                        const gridNode = this.graph.getNodeById(detailNode.masterNodeId);
+                        const index = patch.details.selectedRange.rowIndex;
+                        detailNode.setIndex(index);
+                        detailNode.grid.select(patch.details.selectedRange);
                     }
                     node._setValue(op.value);
                 }
             },
             operations: [],
-            pathPrefix: this.graph.rootSchema.pathPrefix || ''
+            pathPrefix: this.graph.rootSchema.pathPrefix || '',
+            details: {nodeId: this.id}
         };
 
-        let n = /**@type{TypedValue}*/(this);
+        let n = /**@type{FormChenNS.TypedValue}*/(this);
         while(n) {
-            if (n.grid) {
+            if ('grid' in n) {
                 // TODO: This does not handle multi-master-detail cases!
-                patch.details = { selectedRange: n.grid.selectedRange };
+                patch.details.selectedRange = /**@type{FormChenNS.DetailNode}*/(n).grid.selectedRange;
                 break;
             }
             n = n.parent;
@@ -250,6 +238,9 @@ export class TypedValue {
         return patch
     }
 
+    /**
+     * @param {?} obj
+     */
     _setValue(obj) {
         if (['object', 'array'].includes(this.schema.type)) {
             if (obj == null) {
@@ -278,17 +269,14 @@ export class TypedValue {
     createPathToRoot() {
         let operations = [];
         let n = this.parent;
-        /** @type{TypedValue} */
+        /** @type{FormChenNS.TypedValue} */
         let child = this;
         while (n && n.obj == null) {
-            let empty = n.schema.items ? [] : {};
-            operations.unshift({op: 'add', path: n.path, value: empty});
-            empty = n.schema.items ? [] : {};
-            n.obj = empty;
-            if (n.foo) n.foo();
-            if (child) {
-                n.obj[child.key] = child.obj;
-            }
+            let empty = n.schema.type === 'array' ? [[], []] : [{}, {}];
+            operations.unshift({op: 'add', path: n.path, value: empty[0]});
+            n.obj = empty[1];
+            n.onNewObjectReference(n.obj);
+            n.obj[child.key] = child.obj;
             child = n;
             n = n.parent;
         }
@@ -303,15 +291,16 @@ export class TypedValue {
      */
     clearPathToRoot() {
         let operations = [];
-        /** @type{TypedValue} */
-        let n = this;
+        /** @type{FormChenNS.ProxyNode} */
+        let n = this.parent;
         while (true) {
-            n = n.parent;
+            
             if (!n) break
             if (n.obj == null) break;
             if ((n.schema.type === 'object' ? Object.values(n.obj) : n.obj).length === 0) {
                 let oldValue = n.obj;
                 delete n.obj;
+                n.onNewObjectReference(null);
                 if (n.parent) {
                     oldValue = n.parent.obj[n.key];
                     delete n.parent.obj[n.key];
@@ -320,6 +309,7 @@ export class TypedValue {
             } else {
                 break;
             }
+            n = n.parent;
         }
 
         return operations
@@ -329,6 +319,7 @@ export class TypedValue {
     }
 }
 
+ /** @implements{FormChenNS.ProxyNode} */
 export class ProxyNode extends TypedValue {
     /**
      * Value in the object graph node or undefined if a leave node.
@@ -342,17 +333,15 @@ export class ProxyNode extends TypedValue {
     children;
 
     /**
-     * @param {Graph} graph
+     * @param {FormChenNS.Graph} graph
      * @param {string | number} key
      * @param {GridChenNS.ColumnSchema} schema
-     * @param {ProxyNode} parent
+     * @param {FormChenNS.ProxyNode} parent
      */
     constructor(graph, key, schema, parent) {
         super(graph, key, schema, parent)
         this.children = [];
     }
-
-    
 
     _setValue(obj) {
         super._setValue(obj);
@@ -362,9 +351,11 @@ export class ProxyNode extends TypedValue {
         }
     }
 
-    
+    onNewObjectReference(obj) {
+        // NoOp
+    }
+   
 }
-
 
 /**
  * @param {GridChenNS.ColumnSchema} topSchema
@@ -374,6 +365,7 @@ export function createFormChen(topSchema, topObj) {
     const containerByPath = {};
     const errors = [];
     const pathPrefix = topSchema.pathPrefix || '';
+    /** @type{FormChenNS.Graph} */
     const graph = new Graph(topSchema);
 
     for (const _elem of document.body.querySelectorAll('[data-path]')) {
@@ -395,7 +387,7 @@ export function createFormChen(topSchema, topObj) {
     /**
      * @param {string | number} key
      * @param {GridChenNS.ColumnSchema} schema
-     * @param {ProxyNode} parent
+     * @param {FormChenNS.ProxyNode} parent
      */
     function createProxyNode(key, schema, parent) {
         const node = new ProxyNode(graph, key, schema, parent);
@@ -406,16 +398,16 @@ export function createFormChen(topSchema, topObj) {
     const rootNode = createProxyNode('', topSchema, null);
     const transactionManager = registerGlobalTransactionManager();
 
-    /**
-     * @param {GridChenNS.Patch} patch
-     */
-    function apply(patch) {
-        rootNode.obj = applyJSONPatch(rootNode.obj, patch.operations);
-        for (let op of patch.operations) {
-            const node = graph.getNode(op.path);
-            node.refreshUI();
-        }
-    }
+    // /**
+    //  * @param {GridChenNS.Patch} patch
+    //  */
+    // function apply(patch) {
+    //     rootNode.obj = applyJSONPatch(rootNode.obj, patch.operations);
+    //     for (let op of patch.operations) {
+    //         const node = graph.getNode(op.path);
+    //         node.refreshUI();
+    //     }
+    // }
 
     bindNode(rootNode, undefined);
 
@@ -455,7 +447,7 @@ export function createFormChen(topSchema, topObj) {
         label.appendChild(grid);
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
         node.schema.pathPrefix = node.path;
-        node.grid = grid;
+        //node.grid = grid;
         const gridSchema = Object.assign({}, node.schema);
 
         const view = createView(gridSchema, node.obj);
@@ -466,19 +458,25 @@ export function createFormChen(topSchema, topObj) {
 
         if (view.schema.detailSchemas.length) {
             const detailSchema = view.schema.detailSchemas[0];
-            const detailNode = createProxyNode(undefined, detailSchema, null);
+            const detailNode = /** @type{FormChenNS.DetailNode} *//** @type{any} */ (createProxyNode(undefined, detailSchema, null));
             detailNode.grid = grid;
+            detailNode.masterNodeId = node.id;
+            detailNode.setIndex = function(index) {
+                const {path, value} = view.getDetail(index, 0);
+                this.obj = value;
+                this.key = node.path + path;
+                this.rowIndex = index;
+                return value
+            }
+            detailNode.onNewObjectReference = function(obj) {
+                view.setDetail(this.rowIndex, 0, obj);
+            }
             bindNode(detailNode, containerElement);
 
             grid.addEventListener('selectionChanged', function() {
                 const selection = grid.selectedRange;
-                const index = selection.rowIndex;
-                const {path, value} = view.getDetail(index, 0);
-                detailNode.obj = value;
-                detailNode.key = node.path + path;
-                detailNode.foo = function() {
-                    if (!value) view.setDetail(index, 0, detailNode.obj);
-                }
+                detailNode.setIndex(selection.rowIndex);
+                
                 for (const n of detailNode.children)
                     n.refreshUI();
             });
@@ -686,10 +684,10 @@ export function createFormChen(topSchema, topObj) {
 
         /**
          * @param {string} path
-         * @returns {TypedValue}
+         * @returns {FormChenNS.TypedValue}
          */
         getNode(path) {
-            return graph.getNode(path);
+            return graph._getNodeByPath(path);
         }
     }
 

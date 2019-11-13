@@ -139,6 +139,8 @@ declare module GridChenNS {
         // TODO: Return the patched object as of getModel()?
         applyJSONPatch: (patch: JSONPatch) => void;
         updateHolder: () => Patch;
+        getDetail: (rowIndex: number, detailIndex: number) => {path: string, value: any};
+        setDetail: (rowIndex: number, detailIndex: number, obj: any) => void;
     }
 
     export interface Transaction {
