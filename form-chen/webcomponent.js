@@ -54,13 +54,13 @@ function getValueByPointer(obj, pointer) {
         this.rootSchema = rootSchema;
         /** @type{{[key: string]: TypedValue}} */
         //this.nodesByPath = {};
-        /** @type{TypedValue[]} */
+        /** @type{FormChenNS.TypedValue[]} */
         this.nodes = [];
         this.nodesById = {};
      }
 
      /**
-      * @param {TypedValue} node 
+      * @param {FormChenNS.TypedValue} node 
       */
      add(node) {
          this.nodes.push(node);
@@ -69,9 +69,9 @@ function getValueByPointer(obj, pointer) {
 
      /**
       * @param {string} path 
-      * @returns {TypedValue}
+      * @returns {FormChenNS.TypedValue}
       */
-     getNodeByPath(path) {
+     _getNodeByPath(path) {
         for (const node of this.nodes) {
             if (node.path === path) {
                 return node
@@ -82,7 +82,7 @@ function getValueByPointer(obj, pointer) {
 
      /**
       * @param {number} id 
-      * @returns {TypedValue}
+      * @returns {FormChenNS.TypedValue}
       */
      getNodeById(id) {
         return this.nodesById[id]
@@ -192,10 +192,9 @@ export class TypedValue {
                 for (let op of patch.operations) {
                     let node = this.graph.getNodeById(patch.details.nodeId);
                     const detailNode = /** @type{FormChenNS.DetailNode} */ (node.root);
-                    if (detailNode.masterNodeId) {
-                        const gridNode = this.graph.getNodeById(detailNode.masterNodeId);
-                        const index = patch.details.selectedRange.rowIndex;
-                        detailNode.setIndex(index);
+                    if (detailNode.grid) {
+                        const rowIndex = patch.details.selectedRange.rowIndex;
+                        detailNode.setRowIndex(rowIndex);
                         detailNode.grid.select(patch.details.selectedRange);
                     }
                     node._setValue(op.value);
@@ -206,14 +205,9 @@ export class TypedValue {
             details: {nodeId: this.id}
         };
 
-        let n = /**@type{FormChenNS.TypedValue}*/(this);
-        while(n) {
-            if ('grid' in n) {
-                // TODO: This does not handle multi-master-detail cases!
-                patch.details.selectedRange = /**@type{FormChenNS.DetailNode}*/(n).grid.selectedRange;
-                break;
-            }
-            n = n.parent;
+        const detailNode = /** @type{FormChenNS.DetailNode} */ (this.root);
+        if (detailNode.grid) {
+            patch.details.selectedRange = /**@type{FormChenNS.DetailNode}*/detailNode.grid.selectedRange;
         }
 
         if (obj == oldValue) {
@@ -268,6 +262,7 @@ export class TypedValue {
      */
     createPathToRoot() {
         let operations = [];
+        /** @type{FormChenNS.ProxyNode} */
         let n = this.parent;
         /** @type{FormChenNS.TypedValue} */
         let child = this;
@@ -321,17 +316,6 @@ export class TypedValue {
 
  /** @implements{FormChenNS.ProxyNode} */
 export class ProxyNode extends TypedValue {
-    /**
-     * Value in the object graph node or undefined if a leave node.
-     * @type {*}
-     */
-    obj;
-
-    /**
-     * @type {TypedValue[]}
-     */
-    children;
-
     /**
      * @param {FormChenNS.Graph} graph
      * @param {string | number} key
@@ -418,7 +402,7 @@ export function createFormChen(topSchema, topObj) {
     rootNode.setValue(topObj);
 
     /**
-     * @param {ProxyNode} node
+     * @param {FormChenNS.ProxyNode} node
      * @param {Element} containerElement
      */
     function bindObject(node, containerElement) {
@@ -431,8 +415,43 @@ export function createFormChen(topSchema, topObj) {
     }
 
     /**
-     * @param {TypedValue} node
-     * @param {Element} containerElement
+     * @param {FormChenNS.ProxyNode} masterNode 
+     * @param {GridChenNS.MatrixView} view 
+     * @param {GridChenNS.GridChen} grid 
+     * @param {HTMLElement} container 
+     * @param {number} detailIndex 
+     * @param {GridChenNS.ColumnSchema} detailSchema 
+     */
+    function bindDetail(masterNode, view, grid, container, detailIndex, detailSchema) {
+        const detailNode = /** @type{FormChenNS.DetailNode} *//** @type{any} */ (createProxyNode(undefined, detailSchema, null));
+        detailNode.grid = grid;
+        detailNode.masterNode = masterNode;
+        detailNode.setRowIndex = function(rowIndex) {
+            const {path, value} = view.getDetail(rowIndex, detailIndex);
+            this.obj = value;
+            this.key = masterNode.path + path;
+            this.rowIndex = rowIndex;
+            return value
+        }
+        detailNode.onNewObjectReference = function(obj) {
+            view.setDetail(this.rowIndex, detailIndex, obj);
+        }
+
+        bindNode(detailNode, container);
+
+        grid.addEventListener('selectionChanged', function() {
+            const selection = grid.selectedRange;
+            detailNode.setRowIndex(selection.rowIndex);
+            const isEmptyRow = view.getRow(selection.rowIndex).every(item => item == null);
+            
+            for (const n of detailNode.children)
+                n.refreshUI(isEmptyRow);
+        });
+    }
+
+    /**
+     * @param {FormChenNS.ProxyNode} node
+     * @param {HTMLElement} containerElement
      */
     function bindGrid(node, containerElement) {
         const label = document.createElement('label');
@@ -456,30 +475,8 @@ export function createFormChen(topSchema, topObj) {
             return node.setValue(view.getModel())
         };
 
-        if (view.schema.detailSchemas.length) {
-            const detailSchema = view.schema.detailSchemas[0];
-            const detailNode = /** @type{FormChenNS.DetailNode} *//** @type{any} */ (createProxyNode(undefined, detailSchema, null));
-            detailNode.grid = grid;
-            detailNode.masterNodeId = node.id;
-            detailNode.setIndex = function(index) {
-                const {path, value} = view.getDetail(index, 0);
-                this.obj = value;
-                this.key = node.path + path;
-                this.rowIndex = index;
-                return value
-            }
-            detailNode.onNewObjectReference = function(obj) {
-                view.setDetail(this.rowIndex, 0, obj);
-            }
-            bindNode(detailNode, containerElement);
-
-            grid.addEventListener('selectionChanged', function() {
-                const selection = grid.selectedRange;
-                detailNode.setIndex(selection.rowIndex);
-                
-                for (const n of detailNode.children)
-                    n.refreshUI();
-            });
+        for (const [detailIndex, detailSchema] of view.schema.detailSchemas.entries()) {
+            bindDetail(node, view, grid, containerElement, detailIndex, detailSchema);
         }
 
         node.refreshUI = function() {
@@ -489,7 +486,7 @@ export function createFormChen(topSchema, topObj) {
     }
 
     /**
-     * @param {ProxyNode} node
+     * @param {FormChenNS.ProxyNode} node
      * @param {HTMLElement} containerElement
      */
     function bindTuple(node, containerElement) {
@@ -531,7 +528,7 @@ export function createFormChen(topSchema, topObj) {
 
     /**
      * 
-     * @param {TypedValue} node 
+     * @param {FormChenNS.TypedValue} node 
      * @param {HTMLElement} container 
      */
     function bindNodeFailSafe(node, container) {
@@ -541,18 +538,16 @@ export function createFormChen(topSchema, topObj) {
 
         console.log('bind: ' + path);
 
-        
-
         if (schema.type === 'object') {
-            bindObject(/**@type{ProxyNode}*/(node), container);
+            bindObject(/**@type{FormChenNS.ProxyNode}*/(node), container);
             return
         }
 
         if (schema.type === 'array') {
             if (schema.format === 'grid') {
-                if (container) bindGrid(node, container);
+                if (container) bindGrid(/**@type{FormChenNS.ProxyNode}*/(node), container);
             } else {
-                bindTuple(/**@type{ProxyNode}*/(node), container);
+                bindTuple(/**@type{FormChenNS.ProxyNode}*/(node), container);
             }
             return
         }
@@ -565,9 +560,10 @@ export function createFormChen(topSchema, topObj) {
         if (schema.type === 'boolean') {
             input = document.createElement('input');
             input.type = 'checkbox';
-            node.refreshUI = function () {
+            node.refreshUI = function (disabled) {
                 const value = this.getValue();
                 input.checked = (value == null ? false : value);
+                input.disabled = node.readOnly || disabled;
             };
         } else if (schema.enum) {
             input = document.createElement('select');
@@ -576,18 +572,20 @@ export function createFormChen(topSchema, topObj) {
                 option.textContent = String(optionName);
                 input.appendChild(option);
             });
-            node.refreshUI = function () {
+            node.refreshUI = function (disabled) {
                 input.value = this.getValue();
+                input.disabled = node.readOnly || disabled;
             };
         } else {
             input = document.createElement('input');
-            node.refreshUI = function () {
+            node.refreshUI = function (disabled) {
                 const value = this.getValue();
                 if (value == null) {
                     input.defaultValue = input.value = '';
                 } else {
                     input.defaultValue = input.value = this.schema.converter.toEditable(value);
                 }
+                input.disabled = node.readOnly || disabled;
             };
 
             if (schema.type === 'integer') {
@@ -624,9 +622,9 @@ export function createFormChen(topSchema, topObj) {
             }
         }
 
-        if (node.readOnly && !(value == null)) {
-            input.disabled = true;
-        }
+        // if (node.readOnly && !(value == null)) {
+        //     input.disabled = true;
+        // }
 
         input.onchange = function () {
             let value;

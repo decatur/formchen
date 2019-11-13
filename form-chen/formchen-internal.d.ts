@@ -28,19 +28,25 @@ declare module FormChenNS {
         getValue: () => any;
         setValue: (any) => GridChenNS.Patch;
         _setValue: (any) => void;
-        refreshUI: () => void;
+        refreshUI: (disabled: boolean) => void;
     }
 
+    export interface LeafNode extends TypedValue {
+        obj: number | string | boolean;
+        onNewObjectReference: (obj: object | Array) => void;
+    }
+    
     export interface ProxyNode extends TypedValue {
+        obj: object | Array;
         children: TypedValue[];
         onNewObjectReference: (obj: object | Array) => void;
     }
     
     export interface DetailNode extends ProxyNode {
         grid: GridChenNS.GridChen;
-        masterNodeId: number;
+        masterNode: ProxyNode;
         rowIndex: number;
-        setIndex: (rowIndex: number) => void;
+        setRowIndex: (rowIndex: number) => void;
     }
 }
 
