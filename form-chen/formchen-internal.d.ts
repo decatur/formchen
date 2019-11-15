@@ -15,7 +15,7 @@ declare module FormChenNS {
     
     export interface TypedValue {
         id: number;
-        obj: any;
+        //obj: any;
         graph: Graph;
         parent: ProxyNode;
         schema: GridChenNS.ColumnSchema;
@@ -32,8 +32,6 @@ declare module FormChenNS {
     }
 
     export interface LeafNode extends TypedValue {
-        obj: number | string | boolean;
-        onNewObjectReference: (obj: object | Array) => void;
     }
     
     export interface ProxyNode extends TypedValue {

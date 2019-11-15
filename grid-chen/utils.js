@@ -128,7 +128,7 @@ function createLocalDateParser(locale) {
             if (dateSeparator) {
                 parts = s.split(dateSeparator);
                 if (parts.length === 3) {
-                    return [parts[yearIndex], parts[monthIndex] - 1, parts[dateIndex]]
+                    return [parts[yearIndex], Number(parts[monthIndex]) - 1, parts[dateIndex]]
                 }
                 if (dateSeparator === '-') {
                     return [NaN]
@@ -137,7 +137,7 @@ function createLocalDateParser(locale) {
 
             // Fall back to ISO.
             parts = s.split('-');
-            return [parts[0], parts[1] - 1, parts[2]]
+            return [parts[0], Number(parts[1]) - 1, parts[2]]
         }
 
         const numericParts = stringParts().map(p => Number(p));
@@ -231,19 +231,24 @@ function createLocalDateParser(locale) {
  * @param {GridChenNS.JSONPatchOperation} op
  */
 function reverseOp(op) {
+    let reversedOp = Object.assign({}, op);
+    delete reversedOp.value
+    delete reversedOp.oldValue
+
     if (op.op === 'replace') {
         // {"op":"replace","path":"/0/1"}
-        return {op: op.op, path: op.path, value: op.oldValue, oldValue: op.value}
+        return Object.assign(reversedOp, {value: op.oldValue, oldValue: op.value});
     } else if (op.op === 'add') {
         // {"op":"add","path":"/-","value":null}
         // {"op":"add","path":"/1"}
-        return {op: 'remove', path: op.path}
+        return Object.assign(reversedOp, {op: 'remove'});
     } else if (op.op === 'remove') {
         // {"op":"remove","path":"/1","oldValue":["2020-01-01",2]}
-        return {op: 'add', path: op.path, value: op.oldValue}
-    }
+        return Object.assign(reversedOp, {op: 'add', value: op.oldValue});
+    } 
+    
     // No need to support move, copy, or test.
-    throw new RangeError(op.op)
+    throw new RangeError(op.op) 
 }
 
 /**

@@ -3,9 +3,39 @@ import {createFormChen} from '../form-chen/webcomponent.js'
 import {schema, data} from '../demos/sample2.mjs'
 import * as u from "../grid-chen/utils.js";
 
+/**
+ * @param {any} a 
+ * @param {any} b
+ * @param {string} path
+ */
+function diff(a, b, path) {
+    path = path || '';
+    console.log(path);
+    assert.equal(typeof a, typeof b);
+    assert.equal(Array.isArray(a), Array.isArray(b));
+    if (Array.isArray(a)) {
+        assert.equal(a.length, b.length);
+        for (let i=0; i<a.length; i++) {
+            diff(a[i], b[i], path + '/' + i);
+        }
+    } else if (typeof a === 'object') {
+        assert.equal(Object.keys(a).sort(), Object.keys(b).sort());
+        for (let key in a) {
+            diff(a[key], b[key], path + '/' + key);
+        }
+    } else {
+        assert.equal(a, b);
+    }
+}
+
 const container = document.createElement('div');
 container.dataset.path = '';
 document.body.appendChild(container);
+
+test('atomic', () => {
+    const fc = createFormChen({type: 'string'}, 'foobar');
+    assert.equal('foobar', fc.value)
+})
 
 test('FormChen', () => {
     const fc = createFormChen(schema, data);
@@ -84,6 +114,7 @@ test('FormChen', () => {
 
     const actual = tm.patch;
     actual.forEach(function(op) {delete op.oldValue});
+    diff(expected, actual);
     assert.equal(expected, actual);
 });
 

@@ -364,7 +364,7 @@ export class FullDateStringConverter {
         }
         /**@type{number[]}*/
         const foo =  /**@type{number[]}*/ (parts);
-        return u.toUTCDateString(new Date(Date.UTC(foo[0], foo[1], ...foo)))
+        return u.toUTCDateString(new Date(Date.UTC(foo[0], foo[1], ...foo.slice(2))))
     }
 
     /**
