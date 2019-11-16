@@ -336,8 +336,7 @@ export function registerGlobalTransactionManager() {
      */
     function listener(evt) {
         if (evt.code === 'KeyY' && evt.ctrlKey) {
-            /** type{HTMLElement} */
-            const target = evt.target;
+            const target = /** @type{HTMLElement} */(evt.target);
             if (target.tagName === 'INPUT' && target.value !== target.defaultValue) {
                 // Let the default browser undo action be performed on this input element.
             } else {
@@ -476,7 +475,14 @@ export function createTransactionManager() {
             for (let trans of this.transactions) {
                 allPatches.push(...trans.operations);
             }
-            return allPatches;
+            // TODO: Remove all non-JSOn-Patch properties?
+            return allPatches.map(function(op) {
+                if ('nodeId' in op) {
+                    op = Object.assign({}, op);
+                    delete op['nodeId']
+                }
+                return op
+            })
         }
     }
 

@@ -12,14 +12,6 @@ import {
 } from "../grid-chen/converter.js";
 import { registerGlobalTransactionManager, applyJSONPatch } from "../grid-chen/utils.js";
 
-class CompositeError extends Error {
-    name = 'CompositeError';
-
-    constructor(errors) {
-        super();
-        this.errors = errors;
-    }
-}
 
 /**
  * Example:
@@ -138,6 +130,8 @@ export class TypedValue {
         if (parent) {
             parent.children.push(this);
         }
+
+        graph.add(this);
     }
 
     /**
@@ -180,7 +174,8 @@ export class TypedValue {
     setValue(obj) {
         let oldValue = this.getValue();
 
-        const patch = /** @type {GridChenNS.Patch} */ {
+        /** @type {GridChenNS.Patch} */
+        const patch =  {
             apply: (patch) => {
                 for (let op of patch.operations) {
                     let node = this.graph.getNodeById(op.nodeId); //this.graph._getNodeByPath(op.path); // TODO: this.graph.getNodeById(patch.details.nodeId);
@@ -194,8 +189,7 @@ export class TypedValue {
                 }
             },
             operations: [],
-            pathPrefix: this.graph.rootSchema.pathPrefix || '',
-            details: { nodeId: this.id }
+            pathPrefix: this.graph.rootSchema.pathPrefix || ''
         };
 
         const detailNode = /** @type{FormChenNS.DetailNode} */ (this.root);
@@ -207,16 +201,21 @@ export class TypedValue {
             return patch
         }
 
+        /** @type{GridChenNS.JSONPatchOperation} */
+        let op;
         if (obj == null) {
-            patch.operations.push({ op: 'remove', path: this.path, oldValue });
+            op = { op: 'remove', path: this.path, oldValue };
         } else if (oldValue == null) {
             patch.operations.push(...this.createPathToRoot(obj));
-            patch.operations.push({ op: 'add', path: this.path, value: obj });
+            op = { op: 'add', path: this.path, value: obj };
         } else {
-            patch.operations.push({ op: 'replace', path: this.path, value: obj, oldValue });
+            op = { op: 'replace', path: this.path, value: obj, oldValue };
         }
 
-        patch.operations[patch.operations.length-1].nodeId = this.id;
+        op['nodeId'] = this.id;
+        patch.operations.push(op);
+
+        
 
         this._setValue(obj);
 
@@ -250,6 +249,7 @@ export class TypedValue {
      * @returns {GridChenNS.JSONPatchOperation[]}
      */
     createPathToRoot(value) {
+        /** @type{GridChenNS.JSONPatchOperation[]} */
         let operations = [];
         /** @type{FormChenNS.ProxyNode} */
         let n = this.parent;
@@ -257,7 +257,7 @@ export class TypedValue {
         let key = this.key;
         while (n && n.obj == null) {
             let empty = n.schema.type === 'array' ? [[], []] : [{}, {}];
-            operations.unshift({ op: 'add', path: n.path, value: empty[0] });
+            operations.unshift({ op: 'add', path: n.path, value: empty[0], nodeId: n.id });
             n.obj = empty[1];
             n.onNewObjectReference(n.obj);
             n.obj[key] = value;
@@ -290,7 +290,7 @@ export class TypedValue {
                     oldValue = n.parent.obj[n.key];
                     delete n.parent.obj[n.key];
                 }
-                operations.push({ op: 'remove', path: n.path, oldValue });
+                operations.push({ op: 'remove', path: n.path, oldValue, nodeId: n.id });
             } else {
                 break;
             }
@@ -316,6 +316,7 @@ export class ProxyNode extends TypedValue {
      */
     constructor(graph, key, schema, parent) {
         super(graph, key, schema, parent)
+        /** @type{FormChenNS.TypedValue[]} */
         this.children = [];
     }
 
@@ -349,7 +350,6 @@ export class ProxyNode extends TypedValue {
  */
 export function createFormChen(topSchema, topObj) {
     const containerByPath = {};
-    const errors = [];
     const pathPrefix = topSchema.pathPrefix || '';
     /** @type{FormChenNS.Graph} */
     const graph = new Graph(topSchema);
@@ -370,65 +370,28 @@ export function createFormChen(topSchema, topObj) {
         }
     }
 
-    /**
-     * @param {string | number} key
-     * @param {GridChenNS.ColumnSchema} schema
-     * @param {FormChenNS.ProxyNode} parent
-     */
-    function createProxyNode(key, schema, parent) {
-        schema = graph.resolveSchema(schema, String(key))
-
-        /** @type{FormChenNS.TypedValue} */
-        let node;
-        if (['object', 'array'].includes(schema.type)) {
-            node = new ProxyNode(graph, key, schema, parent);
-        } else {
-            node = new TypedValue(graph, key, schema, parent);
-        }
-        graph.add(node);
-        return node;
-    }
-
-    /**@type{FormChenNS.ProxyNode} */
     let holder;
     if (['object', 'array'].includes(topSchema.type)) {
         holder = null;
     } else {
         // A leaf node always needs a composit parent.
-        holder = createProxyNode('', {type: 'object'}, null);
+        holder = new ProxyNode(graph, '', { type: 'object' }, null);
         holder.obj = {};
     }
-    const rootNode = createProxyNode('', topSchema, holder);
+
     const transactionManager = registerGlobalTransactionManager();
-
-    // /**
-    //  * @param {GridChenNS.Patch} patch
-    //  */
-    // function apply(patch) {
-    //     rootNode.obj = applyJSONPatch(rootNode.obj, patch.operations);
-    //     for (let op of patch.operations) {
-    //         const node = graph.getNode(op.path);
-    //         node.refreshUI();
-    //     }
-    // }
-
-    bindNode(rootNode, undefined);
-
-    if (errors.length) {
-        throw new CompositeError(errors);
-    }
+    const rootNode = bindNode('', topSchema, holder, undefined);
 
     rootNode.setValue(topObj);
 
     /**
      * @param {FormChenNS.ProxyNode} node
-     * @param {Element} containerElement
+     * @param {HTMLElement} container
      */
-    function bindObject(node, containerElement) {
+    function bindObject(node, container) {
         const properties = node.schema.properties || [];
         for (let [key, childSchema] of Object.entries(properties)) {
-            const childNode = createProxyNode(key, childSchema, node);
-            bindNode(childNode, containerElement);
+            bindNode(key, childSchema, node, container);
         }
     }
 
@@ -441,21 +404,26 @@ export function createFormChen(topSchema, topObj) {
      * @param {GridChenNS.ColumnSchema} detailSchema 
      */
     function bindDetail(masterNode, view, grid, container, detailIndex, detailSchema) {
-        const detailNode = /** @type{FormChenNS.DetailNode} *//** @type{any} */ (createProxyNode(undefined, detailSchema, null));
-        detailNode.grid = grid;
-        detailNode.masterNode = masterNode;
-        detailNode.setRowIndex = function (rowIndex) {
-            const { path, value } = view.getDetail(rowIndex, detailIndex);
-            this.obj = value;
-            this.key = masterNode.path + path;
-            this.rowIndex = rowIndex;
-            return value
-        }
-        detailNode.onNewObjectReference = function (obj) {
-            view.setDetail(this.rowIndex, detailIndex, obj);
-        }
+        const proxyNode = /** @type{FormChenNS.ProxyNode} */ (bindNode(undefined, detailSchema, null, container));
 
-        bindNode(detailNode, container);
+        /** @type{FormChenNS.DetailNode} */
+        const detailNode = Object.assign(proxyNode,
+            {
+                grid,
+                masterNode,
+                rowIndex: undefined,
+                setRowIndex(rowIndex) {
+                    const { path, value } = view.getDetail(rowIndex, detailIndex);
+                    proxyNode.obj = value;
+                    proxyNode.key = masterNode.path + path;
+                    this.rowIndex = rowIndex;
+                    return value
+                },
+                onNewObjectReference(obj) {
+                    view.setDetail(this.rowIndex, detailIndex, obj);
+                }
+            }
+        );
 
         grid.addEventListener('selectionChanged', function () {
             const selection = grid.selectedRange;
@@ -505,63 +473,67 @@ export function createFormChen(topSchema, topObj) {
 
     /**
      * @param {FormChenNS.ProxyNode} node
-     * @param {HTMLElement} containerElement
+     * @param {HTMLElement} container
      */
-    function bindTuple(node, containerElement) {
+    function bindTuple(node, container) {
         if (Array.isArray(node.schema.items)) {
             // Fixed length tuple.
             const tupleSchemas = /**@type{GridChenNS.ColumnSchema[]}*/ (node.schema.items);
             for (let [key, childSchema] of Object.entries(tupleSchemas)) {
-                const childNode = createProxyNode(key, childSchema, node);
-                bindNode(childNode, containerElement);
+                bindNode(key, childSchema, node, container);
             }
         }
     }
 
-    function bindNode(node, container) {
-        const path = node.path;
+    /**
+     * 
+     * @param {string} key 
+     * @param {GridChenNS.ColumnSchema} schema 
+     * @param {FormChenNS.ProxyNode} parent 
+     * @param {HTMLElement} container
+     * @returns {FormChenNS.TypedValue}
+     */
+    function bindNode(key, schema, parent, container) {
+        schema = graph.resolveSchema(schema, String(key));
 
+        if (schema.type === 'object' || schema.type === 'array') {
+            const node = new ProxyNode(graph, key, schema, parent);
+            const path = node.path;
+            if (path in containerByPath) {
+                // Note: No need to find the best match of path in containerByPath, the recursive call to bindNode() takes
+                // care of that.
+                container = containerByPath[path];
+            }
+
+            console.log('bind: ' + path);
+
+            if (schema.type === 'object') {
+                bindObject(/**@type{FormChenNS.ProxyNode}*/(node), container);
+                return node
+            }
+
+            if (schema.type === 'array') {
+                if (schema.format === 'grid') {
+                    if (container) bindGrid(/**@type{FormChenNS.ProxyNode}*/(node), container);
+                } else {
+                    bindTuple(/**@type{FormChenNS.ProxyNode}*/(node), container);
+                }
+                return node
+            }
+
+        }
+
+        const node = new TypedValue(graph, key, schema, parent);
+        const path = node.path;
         if (path in containerByPath) {
             // Note: No need to find the best match of path in containerByPath, the recursive call to bindNode() takes
             // care of that.
             container = containerByPath[path];
         }
 
-        try {
-            bindNodeFailSafe(node, container)
-        } catch (e) {
-            console.error(e);
-            errors.push(e);
-        }
-    }
-
-    /**
-     * 
-     * @param {FormChenNS.TypedValue} node 
-     * @param {HTMLElement} container 
-     */
-    function bindNodeFailSafe(node, container) {
-        const schema = node.schema;
-
-        const path = node.path;
-
         console.log('bind: ' + path);
 
-        if (schema.type === 'object') {
-            bindObject(/**@type{FormChenNS.ProxyNode}*/(node), container);
-            return
-        }
-
-        if (schema.type === 'array') {
-            if (schema.format === 'grid') {
-                if (container) bindGrid(/**@type{FormChenNS.ProxyNode}*/(node), container);
-            } else {
-                bindTuple(/**@type{FormChenNS.ProxyNode}*/(node), container);
-            }
-            return
-        }
-
-        if (!container) return;
+        if (!container) return node;
 
         const label = document.createElement('label');
         let input;
@@ -675,6 +647,8 @@ export function createFormChen(topSchema, topObj) {
         input.id = node.path;
         container.appendChild(label);
         container.appendChild(input);
+
+        return node;
     }
 
     /**

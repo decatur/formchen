@@ -5,9 +5,9 @@
 declare module GridChenNS {
 
     export interface JSONSchema {
-        title: string;
-        description: string;
-        pathPrefix: string,
+        title?: string;
+        description?: string;
+        pathPrefix?: string,
         type: string;
         format?: string;
         /**
@@ -28,11 +28,11 @@ declare module GridChenNS {
         // TODO: Rename according ISO
         frequency?: string;
         sortDirection?: number;
-        unit: string;
+        unit?: string;
     }
 
     export interface ColumnSchema extends JSONSchema {
-        width: number;
+        width?: number;
         converter?: Converter;
     }
 
@@ -109,13 +109,14 @@ declare module GridChenNS {
         path: string;
         value?: any;
         oldValue?: any;
+        nodeId?: number; // TODO: Move to details?
     }
 
     export interface Patch {
         apply: (Patch) => void;
         pathPrefix: string;
         operations: JSONPatchOperation[];
-        detail?: object;
+        details?: any;
     }
 
     export type JSONPatch = JSONPatchOperation[];
