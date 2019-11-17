@@ -30,7 +30,7 @@ export let schema = {
         someEnum: {
             title: 'Some Enum',
             type: 'string',
-            enum: ['Frida Krum', 'Tilda Swift']
+            enum: ['Frida Krum', 'Tilda Swift', 'Mona Lisa']
         },
         someDate: {
             title: 'Some Date',
@@ -90,14 +90,14 @@ export let schema = {
 export let data = {
     someString: 'Rubus idaeus',
     someURI: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
-    someEnum: 'Frida Krum',
+    someEnum: 'Mona Lisa',
     someDate: '2019-01-01',
     someDateTime: '2019-01-01T00:00Z',
     someDatePartialTime: '2019-01-01T00:00',
-    somePercentValue: 0.5,
     someBoolean: true,
     someInteger: 7,
     someFloat: 3.14,
+    somePercentValue: 0.5,
     someMatrix: [
         ['2019-01-01 00:00Z', 1, 2],
         ['2019-01-01 00:00Z', 3, 4],

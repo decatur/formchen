@@ -576,6 +576,9 @@ export function createFormChen(topSchema, topObj) {
             } else if (schema.type === 'number') {
                 if (!schema.converter) {
                     schema.converter = new NumberConverter(schema.fractionDigits || 2);
+                    if (schema.format === '%') {
+                        schema.converter.isPercent = true;
+                    }
                 }
             } else if (schema.format === 'date-time') {
                 if (!schema.converter) {
