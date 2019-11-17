@@ -105,15 +105,23 @@ export class TypedValue {
 
     /**
      * @param {FormChenNS.Graph} graph
+     * @param {string} relId
      * @param {string | number} key
      * @param {GridChenNS.ColumnSchema} schema
      * @param {FormChenNS.ProxyNode} parent
      */
-    constructor(graph, key, schema, parent) {
-        this.id = ++idSequence;
+    constructor(graph, relId, key, schema, parent) {
+        if (!parent && relId === '') {
+            this.id = schema.pathPrefix;
+        } else {
+            this.id = relId[0]==='/'?relId:((parent?parent.id:'') + '/' + String(relId));
+        }
         this.graph = graph;
         this.parent = parent;
         this.key = key;
+        if (this.key !== undefined) {
+            this.path = (this.parent?this.parent.path + '/' + key:String(key));
+        }
         if (typeof schema.readOnly === 'boolean') {
             this.readOnly = schema.readOnly
         } else if (parent) {
@@ -122,7 +130,7 @@ export class TypedValue {
         }
         this.schema = schema;
         if (schema.title == null) {
-            this.title = this.schema.title || String(key);
+            this.title = this.schema.title || String(relId);
         } else {
             this.title = schema.title;
         }
@@ -134,19 +142,19 @@ export class TypedValue {
         graph.add(this);
     }
 
-    /**
-     * @returns {string}
-     */
-    get path() {
-        /** @type{FormChenNS.TypedValue} */
-        let n = this;
-        let parts = [];
-        while (n) {
-            parts.unshift(String(n.key));
-            n = n.parent;
-        }
-        return parts.join('/');
-    }
+    // /**
+    //  * @returns {string}
+    //  */
+    // get path() {
+    //     /** @type{FormChenNS.TypedValue} */
+    //     let n = this;
+    //     let parts = [];
+    //     while (n) {
+    //         parts.unshift(String(n.key));
+    //         n = n.parent;
+    //     }
+    //     return parts.join('/');
+    // }
 
     /**
      * @returns {FormChenNS.TypedValue}
@@ -194,7 +202,7 @@ export class TypedValue {
 
         const detailNode = /** @type{FormChenNS.DetailNode} */ (this.root);
         if (detailNode.grid) {
-            patch.details.selectedRange = /**@type{FormChenNS.DetailNode}*/detailNode.grid.selectedRange;
+            patch.details = {selectedRange: /**@type{FormChenNS.DetailNode}*/detailNode.grid.selectedRange};
         }
 
         if (obj == oldValue) {
@@ -214,8 +222,6 @@ export class TypedValue {
 
         op['nodeId'] = this.id;
         patch.operations.push(op);
-
-        
 
         this._setValue(obj);
 
@@ -241,7 +247,7 @@ export class TypedValue {
             throw Error('Value lost')
         }
 
-        this.refreshUI();
+        this.refreshUI(false);
     }
 
     /**
@@ -300,7 +306,10 @@ export class TypedValue {
         return operations
     }
 
-    refreshUI() {
+    /**
+     * @param {boolean} disabled 
+     */
+    refreshUI(disabled) {
     }
 }
 
@@ -310,12 +319,13 @@ export class TypedValue {
 export class ProxyNode extends TypedValue {
     /**
      * @param {FormChenNS.Graph} graph
+     * @param {string} relId
      * @param {string | number} key
      * @param {GridChenNS.ColumnSchema} schema
      * @param {FormChenNS.ProxyNode} parent
      */
-    constructor(graph, key, schema, parent) {
-        super(graph, key, schema, parent)
+    constructor(graph, relId, key, schema, parent) {
+        super(graph, relId, key, schema, parent)
         /** @type{FormChenNS.TypedValue[]} */
         this.children = [];
     }
@@ -379,8 +389,25 @@ export function createFormChen(topSchema, topObj) {
         holder.obj = {};
     }
 
+     /**
+     * @param {string} relId 
+     * @param {string | number} key 
+     * @param {GridChenNS.ColumnSchema} schema 
+     * @param {FormChenNS.ProxyNode} parent 
+     * @returns {FormChenNS.TypedValue}
+     */
+    function createNode(relId, key, schema, parent) {
+        schema = graph.resolveSchema(schema, String(key));
+        if (schema.type === 'object' || schema.type === 'array') {
+            return new ProxyNode(graph, relId, key, schema, parent);
+        } else {
+            return new TypedValue(graph, relId, key, schema, parent);
+        }
+    }
+
     const transactionManager = registerGlobalTransactionManager();
-    const rootNode = bindNode('', topSchema, holder, undefined);
+    const rootNode = createNode('', '', topSchema, holder);
+    bindNode(rootNode, undefined);
 
     rootNode.setValue(topObj);
 
@@ -391,7 +418,8 @@ export function createFormChen(topSchema, topObj) {
     function bindObject(node, container) {
         const properties = node.schema.properties || [];
         for (let [key, childSchema] of Object.entries(properties)) {
-            bindNode(key, childSchema, node, container);
+            const childNode = createNode(key, key, childSchema, node);
+            bindNode(childNode, container);
         }
     }
 
@@ -404,34 +432,44 @@ export function createFormChen(topSchema, topObj) {
      * @param {GridChenNS.ColumnSchema} detailSchema 
      */
     function bindDetail(masterNode, view, grid, container, detailIndex, detailSchema) {
-        const proxyNode = /** @type{FormChenNS.ProxyNode} */ (bindNode(undefined, detailSchema, null, container));
+        const id = masterNode.id + view.getDetailId(detailIndex);
+        detailSchema = graph.resolveSchema(detailSchema, id);
 
-        /** @type{FormChenNS.DetailNode} */
-        const detailNode = Object.assign(proxyNode,
-            {
-                grid,
-                masterNode,
-                rowIndex: undefined,
-                setRowIndex(rowIndex) {
-                    const { path, value } = view.getDetail(rowIndex, detailIndex);
-                    proxyNode.obj = value;
-                    proxyNode.key = masterNode.path + path;
-                    this.rowIndex = rowIndex;
-                    return value
-                },
-                onNewObjectReference(obj) {
-                    view.setDetail(this.rowIndex, detailIndex, obj);
-                }
+        class DetailNode extends ProxyNode {
+            constructor(graph, relId, key, schema, parent) {
+                super(graph, relId, key, schema, parent);
+                this.grid = grid;
+                this.masterNode = masterNode;
+                this.rowIndex = 0;
             }
-        );
+            setRowIndex(rowIndex) {
+                const { path, value } = view.getDetail(rowIndex, detailIndex);
+                this.obj = value;
+                this.path = masterNode.path + path;
+                this.rowIndex = rowIndex;
+                return value
+            }
+            onNewObjectReference(obj) {
+                view.setDetail(this.rowIndex, detailIndex, obj);
+            }
+        }
+
+        const detailNode = new DetailNode(graph, id, undefined, detailSchema, null);
+
+        bindNode(detailNode, container);        
 
         grid.addEventListener('selectionChanged', function () {
             const selection = grid.selectedRange;
             detailNode.setRowIndex(selection.rowIndex);
             const isEmptyRow = view.getRow(selection.rowIndex).every(item => item == null);
 
-            for (const n of detailNode.children)
+            for (const n of detailNode.children) {
+                if (n.constructor !== TypedValue) {
+                    throw new Error('TODO: Allow nested details');
+                }
+                n.path = detailNode.path + '/' + n.key; 
                 n.refreshUI(isEmptyRow);
+            }
         });
     }
 
@@ -480,36 +518,33 @@ export function createFormChen(topSchema, topObj) {
             // Fixed length tuple.
             const tupleSchemas = /**@type{GridChenNS.ColumnSchema[]}*/ (node.schema.items);
             for (let [key, childSchema] of Object.entries(tupleSchemas)) {
-                bindNode(key, childSchema, node, container);
+                const childNode = createNode(key, key, childSchema, node);
+                bindNode(childNode, container);
             }
         }
     }
 
     /**
      * 
-     * @param {string} key 
-     * @param {GridChenNS.ColumnSchema} schema 
-     * @param {FormChenNS.ProxyNode} parent 
+     * @param {FormChenNS.TypedValue} node 
      * @param {HTMLElement} container
-     * @returns {FormChenNS.TypedValue}
      */
-    function bindNode(key, schema, parent, container) {
-        schema = graph.resolveSchema(schema, String(key));
+    function bindNode(node, container) {
+        const schema = node.schema;
+        const path = node.path;
+
+        if (path in containerByPath) {
+            // Note: No need to find the best match of path in containerByPath, the recursive call to bindNode() takes
+            // care of that.
+            container = containerByPath[path];
+        }
 
         if (schema.type === 'object' || schema.type === 'array') {
-            const node = new ProxyNode(graph, key, schema, parent);
-            const path = node.path;
-            if (path in containerByPath) {
-                // Note: No need to find the best match of path in containerByPath, the recursive call to bindNode() takes
-                // care of that.
-                container = containerByPath[path];
-            }
-
             console.log('bind: ' + path);
 
             if (schema.type === 'object') {
                 bindObject(/**@type{FormChenNS.ProxyNode}*/(node), container);
-                return node
+                return
             }
 
             if (schema.type === 'array') {
@@ -518,22 +553,14 @@ export function createFormChen(topSchema, topObj) {
                 } else {
                     bindTuple(/**@type{FormChenNS.ProxyNode}*/(node), container);
                 }
-                return node
+                return
             }
 
         }
 
-        const node = new TypedValue(graph, key, schema, parent);
-        const path = node.path;
-        if (path in containerByPath) {
-            // Note: No need to find the best match of path in containerByPath, the recursive call to bindNode() takes
-            // care of that.
-            container = containerByPath[path];
-        }
-
         console.log('bind: ' + path);
 
-        if (!container) return node;
+        if (!container) return
 
         const label = document.createElement('label');
         let input;
@@ -646,12 +673,10 @@ export function createFormChen(topSchema, topObj) {
         }
 
 
-        label.setAttribute('for', node.path);
-        input.id = node.path;
+        label.setAttribute('for', node.id);
+        input.id = node.id;
         container.appendChild(label);
         container.appendChild(input);
-
-        return node;
     }
 
     /**

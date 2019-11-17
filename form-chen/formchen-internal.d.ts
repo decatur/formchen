@@ -14,13 +14,13 @@ declare module FormChenNS {
     }
     
     export interface TypedValue {
-        id: number;
+        id: string;
         //obj: any;
         graph: Graph;
         parent: ProxyNode;
         schema: GridChenNS.ColumnSchema;
         key: string | number;
-        readonly path: string;
+        path: string;
         title: string;
         readOnly: boolean;
         readonly root: TypedValue;

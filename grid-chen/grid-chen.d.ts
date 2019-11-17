@@ -109,7 +109,7 @@ declare module GridChenNS {
         path: string;
         value?: any;
         oldValue?: any;
-        nodeId?: number; // TODO: Move to details?
+        nodeId?: string; // TODO: Move to details?
     }
 
     export interface Patch {

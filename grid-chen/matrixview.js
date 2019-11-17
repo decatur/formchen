@@ -345,6 +345,10 @@ export function createRowMatrixView(jsonSchema, rows) {
             }
         }
 
+        getDetailId(detailIndex) {
+            return '/*/' + detailIndices[detailIndex]
+        }
+
         setDetail(rowIndex, detailIndex, value) {
             // Note: rowIndex should never be out of range, i.e. for this detail there must already be a master.
             const colIndex = detailIndices[detailIndex];
