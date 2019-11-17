@@ -9,7 +9,7 @@ declare module FormChenNS {
         add: (node: TypedValue) => void;
         getNodeById: (id: number) => TypedValue;
         // This is a slow method and should only be used for unit testing
-        _getNodeByPath: (path: string) => TypedValue;
+        //_getNodeByPath: (path: string) => TypedValue;
         resolveSchema: (schema: GridChenNS.ColumnSchema, path: string) => GridChenNS.ColumnSchema;
     }
     

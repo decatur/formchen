@@ -14,7 +14,7 @@ export let schema = {
             }
         }
     },
-
+    pathPrefix: '/sample2',
     title: 'FieldObservation',
     type: 'object',
     properties: {

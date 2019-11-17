@@ -3,11 +3,12 @@ import {createFormChen} from '../form-chen/webcomponent.js'
 import * as u from "../grid-chen/utils.js";
 
 const container = document.createElement('div');
-container.dataset.path = '';
+container.id = '/test';
 document.body.appendChild(container);
 
 test('Empty Object one Level', () => {
     const schema = {
+        pathPrefix: '/test',
         type: 'object',
         properties: {
             foo: {
@@ -20,22 +21,13 @@ test('Empty Object one Level', () => {
     const fc = createFormChen(schema, undefined);
     const tm = u.globalTransactionManager;
 
-    function* inputGenerator() {
-        const inputs = Array.from(container.getElementsByTagName('input'));
-        for (const input of inputs) yield input;
-    }
-
-    const inputs = inputGenerator();
-    const nextInput = () => inputs.next().value;
-
-    let input;
-    input = nextInput();
+    let input = document.getElementById('/test/foo');
 
     input.value = 'foo';
     input.onchange(null);
     let expected = [
-        {op: 'add', path: "", value: {}},
-        {op: 'add', path: "/foo", value: "foo"}
+        {op: 'add', path: "/test", value: {}},
+        {op: 'add', path: "/test/foo", value: "foo"}
     ];
 
     assert.equal(expected, tm.patch);
@@ -43,13 +35,14 @@ test('Empty Object one Level', () => {
 
     input.value = 'foobar';
     input.onchange(null);
-    expected.push({op: 'replace', path: "/foo", value: "foobar", oldValue: 'foo'});
+    expected.push({op: 'replace', path: "/test/foo", value: "foobar", oldValue: 'foo'});
     assert.equal(expected, tm.patch);
     assert.equal({foo: 'foobar'}, fc.value);
 });
 
 test('Empty Object two Levels', () => {
     const schema = {
+        pathPrefix: '/test',
         type: 'object',
         properties: {
             foo: {
@@ -70,42 +63,35 @@ test('Empty Object two Levels', () => {
     const fc = createFormChen(schema, undefined);
     const tm = u.globalTransactionManager;
 
-    function* inputGenerator() {
-        const inputs = Array.from(container.getElementsByTagName('input'));
-        for (const input of inputs) yield input;
-    }
-
-    const inputs = inputGenerator();
-    const nextInput = () => inputs.next().value;
-
-    let fooInput = nextInput();
-    let foobarInput = nextInput();
+    let fooInput = document.getElementById('/test/foo');
+    let foobarInput = document.getElementById('/test/bar/foobar');
 
     foobarInput.value = 'bar';
     foobarInput.onchange(null);
     let expected = [
-        {op: 'add', path: "", value: {}},
-        {op: 'add', path: "/bar", value: {}},
-        {op: 'add', path: "/bar/foobar", value: "bar"}
+        {op: 'add', path: "/test", value: {}},
+        {op: 'add', path: "/test/bar", value: {}},
+        {op: 'add', path: "/test/bar/foobar", value: "bar"}
     ];
     assert.equal(expected, tm.patch);
     assert.equal({bar: {foobar: 'bar'}}, fc.value);
 
     foobarInput.value = 'foobar';
     foobarInput.onchange(null);
-    expected.push({op: 'replace', path: "/bar/foobar", value: "foobar", "oldValue":"bar"});
+    expected.push({op: 'replace', path: "/test/bar/foobar", value: "foobar", "oldValue":"bar"});
     assert.equal(expected, tm.patch);
     assert.equal({bar: {foobar: 'foobar'}}, fc.value);
 
     fooInput.value = 'foo';
     fooInput.onchange(null);
-    expected.push({op: 'add', path: "/foo", value: "foo"});
+    expected.push({op: 'add', path: "/test/foo", value: "foo"});
     assert.equal(expected, tm.patch);
     assert.equal({bar: {foobar: 'foobar'}, foo: 'foo'}, fc.value);
 });
 
 test('delete', () => {
     const schema = {
+        pathPrefix: '/test',
         type: 'object',
         properties: {
             foo: {
@@ -126,23 +112,15 @@ test('delete', () => {
     const fc = createFormChen(schema, {bar:{foobar:'foobar'}});
     const tm = u.globalTransactionManager;
 
-    function* inputGenerator() {
-        const inputs = Array.from(container.getElementsByTagName('input'));
-        for (const input of inputs) yield input;
-    }
-
-    const inputs = inputGenerator();
-    const nextInput = () => inputs.next().value;
-
-    let fooInput = nextInput();
-    let foobarInput = nextInput();
+    //let fooInput = document.getElementById('/test/foo');
+    let foobarInput = document.getElementById('/test/bar/foobar');
 
     foobarInput.value = '';
     foobarInput.onchange(null);
     let expected = [
-        {op: 'remove', path: "/bar/foobar", oldValue: "foobar"},
-        {op: 'remove', path: "/bar", oldValue: {}},
-        {op: 'remove', path: "", oldValue: {}},
+        {op: 'remove', path: "/test/bar/foobar", oldValue: "foobar"},
+        {op: 'remove', path: "/test/bar", oldValue: {}},
+        {op: 'remove', path: "/test", oldValue: {}},
     ];
     assert.equal(expected, tm.patch);
     assert.equal(undefined, fc.value);
@@ -150,6 +128,7 @@ test('delete', () => {
 
 test('delete subtree', () => {
     const schema = {
+        pathPrefix: '/test',
         type: 'object',
         properties: {
             foo: {
@@ -170,21 +149,13 @@ test('delete subtree', () => {
     const fc = createFormChen(schema, {bar:{foobar:'foobar'}});
     const tm = u.globalTransactionManager;
 
-    function* inputGenerator() {
-        const inputs = Array.from(container.getElementsByTagName('input'));
-        for (const input of inputs) yield input;
-    }
+    let fooInput = document.getElementById('/test/foo');
+    let foobarInput = document.getElementById('/test/bar/foobar');
 
-    const inputs = inputGenerator();
-    const nextInput = () => inputs.next().value;
-
-    let fooInput = nextInput();
-    let foobarInput = nextInput();
-
-    fc.getNode('/bar').setValue(undefined);
+    fc.getNodeById('/test/bar').setValue(undefined);
     assert.equal('', foobarInput.value);
 
-    fc.getNode('/foo').setValue(undefined);
+    fc.getNodeById('/test/foo').setValue(undefined);
     assert.equal('', fooInput.value);
     assert.equal(undefined, fc.value);
 });
@@ -206,6 +177,7 @@ test('Empty object with grid', () => {
                 }
             }
         },
+        pathPrefix: '/test',
         type: 'object',
         properties: {
             foo: {
@@ -228,8 +200,8 @@ test('Empty object with grid', () => {
     assert.equal({foo:[['2020-01-01T01:00+01:00']]}, value);
 
     let patch = tm.patch;
-    assert.equal({op: 'add', path: "", value: {}}, patch[0]);
-    assert.equal({op: 'add', path: "/foo", value:[['2020-01-01T01:00+01:00']]}, patch[1]);
+    assert.equal({op: 'add', path: "/test", value: {}}, patch[0]);
+    assert.equal({op: 'add', path: "/test/foo", value:[['2020-01-01T01:00+01:00']]}, patch[1]);
     assert.equal(2, patch.length);
     //assert.equal({op: 'replace', path: "/foo/0", value: Array(1), oldValue: null}, patch[2]);
     //assert.equal({op: 'replace', path: "/foo/0/0", value: "2020-01-01T01:00+01:00", oldValue: null}, patch[3]);
@@ -237,10 +209,10 @@ test('Empty object with grid', () => {
     gc._click(0, 0);
     gc._keyboard('keydown', {code: 'Delete'});
     patch = tm.patch;
-    assert.equal({op: 'replace', path: "/foo/0/0", value: null, oldValue: "2020-01-01T01:00+01:00"}, patch[2]);
-    assert.equal({op: 'remove', path: "/foo/0", oldValue: Array(1)}, patch[3]);
-    assert.equal({op: 'remove', path: "/foo", oldValue: Array(0)}, patch[4]);
-    assert.equal({op: 'remove', path: "", "oldValue":{}}, patch[5]);
+    assert.equal({op: 'replace', path: "/test/foo/0/0", value: null, oldValue: "2020-01-01T01:00+01:00"}, patch[2]);
+    assert.equal({op: 'remove', path: "/test/foo/0", oldValue: Array(1)}, patch[3]);
+    assert.equal({op: 'remove', path: "/test/foo", oldValue: Array(0)}, patch[4]);
+    assert.equal({op: 'remove', path: "/test", "oldValue":{}}, patch[5]);
 
     value = fc.value;
     assert.equal(undefined, value);

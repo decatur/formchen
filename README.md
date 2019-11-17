@@ -15,9 +15,9 @@ Also see usage.html.
 ```html
 <div class="form-chen">
     <!-- JSON Path to root element -->
-    <div data-path="person"></div>
+    <div id="/person"></div>
     <!-- JSON Path to root vip property -->
-    <span style="font-size: x-large" data-path="person/vip"></span>
+    <span style="font-size: x-large" id="/person/vip"></span>
 </div>
 ```
 
@@ -26,7 +26,7 @@ Also see usage.html.
 
     const schema = {
         title: 'Person',
-        pathPrefix: 'person',
+        pathPrefix: '/person',
         type: 'object',
         properties: {
             name: {

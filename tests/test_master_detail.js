@@ -5,7 +5,7 @@ import { createFormChen } from '../form-chen/webcomponent.js'
 import * as u from "../grid-chen/utils.js";
 
 const container = document.createElement('div');
-container.dataset.path = '/md';
+container.id = '/md';
 document.body.appendChild(container);
 
 test('FormChen', () => {

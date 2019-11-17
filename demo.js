@@ -14,7 +14,7 @@ export function init(schema, data) {
 
 function rebind() {
     patchElement.value = '';
-    const rootElement = document.querySelector('[data-path="myPrefix"]');
+    const rootElement = document.getElementById('/myPrefix');
     let schema;
 
     try {
