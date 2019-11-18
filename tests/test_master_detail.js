@@ -5,10 +5,9 @@ import { createFormChen } from '../form-chen/webcomponent.js'
 import * as u from "../grid-chen/utils.js";
 
 const container = document.createElement('div');
-container.id = '/md';
 document.body.appendChild(container);
 
-test('FormChen', () => {
+test('master-detail', () => {
     const schema = {
         definitions: {
             "measurements": {
@@ -45,7 +44,7 @@ test('FormChen', () => {
                 title: 'Plant',
                 description: 'The name of the plant',
                 type: 'string'
-            }, 
+            },
             measurements: {
                 title: 'Daylight Measurements',
                 $ref: '#/definitions/measurements'
@@ -60,32 +59,64 @@ test('FormChen', () => {
     const data = {
         plant: 'Rubus idaeus',
         measurements: [
-            ["2019-01-01T00:00Z", 0, 0, { bar: 'Some Bar' }],
+            ["2019-01-01T00:00Z", 0, 0, { bar: 'Column 3' }, { bar: 'Column 4' }],
             ["2019-02-01T00:00Z", 1, 2],
-            ["2019-03-01T00:00Z", 2, 4, { foo: 'Some Foo' }]
+            ["2019-03-01T00:00Z", 2, 4, { foo: 'Some Foo' }, { foo: 'Some Foo' }]
         ],
         isCompleted: true
     };
 
+    const orgData = JSON.parse(JSON.stringify(data));
 
+    container.id = schema.pathPrefix;
     const fc = createFormChen(schema, data);
     const tm = u.globalTransactionManager;
 
-    /** @type{HTMLInputElement} */
-    let input;
+    /** @returns {HTMLInputElement} */
+    function getInput(id) {
+        return /** @type{HTMLInputElement} */ (document.getElementById(id))
+    }
 
-    input = /** @type{HTMLInputElement} */ (document.getElementById('/md/plant'));
-    assert.equal('Rubus idaeus', input.value);
+    let plantInput = getInput('/md/plant');
+    assert.equal('Rubus idaeus', plantInput.value);
+    plantInput.value = 'Oak';
+    plantInput.onchange(null);
+    assert.equal('Oak', plantInput.value);
 
-    input = /** @type{HTMLInputElement} */ (document.getElementById('/md/measurements/*/3/bar'));
-    assert.equal('Some Bar', input.value);
+    // We test that master-detail is initially displayed with the details from the first row.
+    // Then we change that detail and check that patch and data conforms.
+    // Then we select second row and check that the corresponding detail shows.
+    // Then we undo and check that again first row is selected and the detail is rolled back.
+    // We do all of this for both detail columns.
 
-    input = /** @type{HTMLInputElement} */ (document.getElementById('/md/measurements/*/3/foo'));
-    input.value = 'foo';
-    input.onchange(null);
+    for (const columnIndex of [3, 4]) {
+        // Default is active cell (0, 0), so first row is selected.
+        let barInput = getInput(`/md/measurements/*/${columnIndex}/bar`);
+        assert.equal(`Column ${columnIndex}`, barInput.value);
 
-    const patch = tm.patch;
-    assert.equal({op: "add", path: "/md/measurements/0/3/foo", value: "foo"}, patch.pop());
-    
+        let fooInput = getInput(`/md/measurements/*/${columnIndex}/foo`);
+        fooInput.value = 'new foo';
+        fooInput.onchange(null);
+
+        const patch = tm.patch;
+        assert.equal({ op: "add", path: `/md/measurements/0/${columnIndex}/foo`, value: "new foo" }, patch.pop());
+        assert.equal({ foo: 'new foo', bar: `Column ${columnIndex}` }, data.measurements[0][columnIndex]);
+
+        // Now select second row.
+        const gridChen = /** @type{GridChenNS.GridChen} */ (document.getElementById('/md/measurements'));
+        gridChen._click(1, 0);
+        assert.equal(1, gridChen.selectedRange.rowIndex);
+        assert.equal('', fooInput.value);
+
+        tm.undo();
+        assert.equal(0, gridChen.selectedRange.rowIndex);
+        assert.equal({ bar: `Column ${columnIndex}` }, data.measurements[0][columnIndex]);
+    }
+
+    // Now undo the initil transaction.
+    tm.undo();
+    assert.equal('Rubus idaeus', plantInput.value);
+    assert.equal(0, tm.patch.length);
+    assert.equal(orgData, data);
 });
 

@@ -250,9 +250,10 @@ export class BooleanStringConverter {
 export class NumberConverter {
     /**
      * @param {number} fractionDigits
-     * @param {string=} locale
+     * @param {string} locale
+     * @param {boolean} [isPercent]
      */
-    constructor(fractionDigits, locale) {
+    constructor(fractionDigits, locale, isPercent) {
         /** @type {Intl.NumberFormat} */
         this.nf = Intl.NumberFormat(locale, {
             minimumFractionDigits: fractionDigits,
@@ -264,7 +265,7 @@ export class NumberConverter {
         let testNumber = this.nf1.format(1000.5); // 1.000,50 in de-DE
         this.thousandSep = testNumber[1];
         this.decimalSep = testNumber[5];  // Will be undefined for fractionDigits=0
-        this.isPercent = false;
+        this.isPercent = isPercent || false;
     }
 
     /**

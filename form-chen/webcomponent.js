@@ -25,29 +25,17 @@ function getValueByPointer(obj, pointer) {
     return pointer.substr(2).split('/').reduce(((res, prop) => res[prop]), obj);
 }
 
-/**
- TypedValue decorates a (possibly nested) JavaScript value and its type (via schema).
- It also makes the type graph navigable from child to parent and from parent to child.
-
- ------------------------              ------------------            ---------------
- obj    | {foo: {bar: 'foobar'}} |   parent   | {bar: 'foobar'}} |  parent  | 'undefined     |
- key    | ''                     |     <-     | 'foo'            |    <-    | 'bar'         |
- ------------------------              ------------------            ---------------
- */
 
 /**
  * @implements {FormChenNS.Graph}
  */
-class Graph {
+export class Graph {
     /**
-     * @param {GridChenNS.JSONSchema} rootSchema
+     * @param {string} pathPrefix
      */
-    constructor(rootSchema) {
-        this.rootSchema = rootSchema;
-        /** @type{{[key: string]: TypedValue}} */
-        //this.nodesByPath = {};
-        /** @type{FormChenNS.TypedValue[]} */
-        this.nodes = [];
+    constructor(pathPrefix) {
+        this.pathPrefix = pathPrefix;
+        /** @type{{[key: string]: FormChenNS.TypedValue}} */
         this.nodesById = {};
     }
 
@@ -55,7 +43,6 @@ class Graph {
      * @param {FormChenNS.TypedValue} node 
      */
     add(node) {
-        this.nodes.push(node);
         this.nodesById[node.id] = node;
     }
 
@@ -73,34 +60,24 @@ class Graph {
     // }
 
     /**
-     * @param {number} id 
+     * @param {string} id 
      * @returns {FormChenNS.TypedValue}
      */
     getNodeById(id) {
         return this.nodesById[id]
     }
-
-    /**
-      * TODO: Move this to createFormChen()
-      * @param {GridChenNS.ColumnSchema} schema
-      * @param {string} path
-      * @returns {GridChenNS.ColumnSchema}
-      */
-    resolveSchema(schema, path) {
-        if ('$ref' in schema) {
-            const refSchema = getValueByPointer(this.rootSchema, schema['$ref']);
-            if (!refSchema) {
-                throw new Error('Undefined $ref at ' + path);
-            }
-            return refSchema
-        }
-        return schema
-    }
 }
 
-let idSequence = 0;
-
-/** @implements{FormChenNS.TypedValue} */
+/**
+ * TypedValue decorates a (possibly nested) JavaScript value and its type (via JSON Schema).
+ * It also makes the type graph navigable from child to parent and from parent to child.
+ *
+ *         ------------------------              ------------------            ---------------
+ * obj    | {foo: {bar: 'foobar'}} |   parent   | {bar: 'foobar'}} |  parent  |               |
+ * key    | ''                     |     <-     | 'foo'            |    <-    | 'bar'         |
+ *         ------------------------              ------------------            ---------------
+ * @implements{FormChenNS.TypedValue} 
+ */
 export class TypedValue {
 
     /**
@@ -197,7 +174,7 @@ export class TypedValue {
                 }
             },
             operations: [],
-            pathPrefix: this.graph.rootSchema.pathPrefix || ''
+            pathPrefix: this.graph.pathPrefix
         };
 
         const detailNode = /** @type{FormChenNS.DetailNode} */ (this.root);
@@ -265,7 +242,7 @@ export class TypedValue {
             let empty = n.schema.type === 'array' ? [[], []] : [{}, {}];
             operations.unshift({ op: 'add', path: n.path, value: empty[0], nodeId: n.id });
             n.obj = empty[1];
-            n.onNewObjectReference(n.obj);
+            n.onObjectReferenceChanged(n.obj);
             n.obj[key] = value;
             key = n.key;
             value = n.obj
@@ -291,7 +268,7 @@ export class TypedValue {
             if ((n.schema.type === 'object' ? Object.values(n.obj) : n.obj).length === 0) {
                 let oldValue = n.obj;
                 delete n.obj;
-                n.onNewObjectReference(null);
+                n.onObjectReferenceChanged(null);
                 if (n.parent) {
                     oldValue = n.parent.obj[n.key];
                     delete n.parent.obj[n.key];
@@ -325,6 +302,9 @@ export class ProxyNode extends TypedValue {
      * @param {FormChenNS.ProxyNode} parent
      */
     constructor(graph, relId, key, schema, parent) {
+        if (!['object', 'array'].includes(schema.type)) {
+            throw new Error('Invalid schema type: ' + schema.type);
+        }
         super(graph, relId, key, schema, parent)
         /** @type{FormChenNS.TypedValue[]} */
         this.children = [];
@@ -348,10 +328,9 @@ export class ProxyNode extends TypedValue {
         }
     }
 
-    onNewObjectReference(obj) {
+    onObjectReferenceChanged(obj) {
         // NoOp
     }
-
 }
 
 /**
@@ -362,24 +341,7 @@ export function createFormChen(topSchema, topObj) {
     
     const pathPrefix = topSchema.pathPrefix || '';
     /** @type{FormChenNS.Graph} */
-    const graph = new Graph(topSchema);
-
-    // const containerByPath = {};
-    // for (const _elem of document.body.querySelectorAll('[data-path]')) {
-    //     const elem = /**@type{HTMLElement}*/ (_elem);
-    //     const prefixedJsonPath = elem.dataset.path.trim();
-    //     if (prefixedJsonPath === pathPrefix || prefixedJsonPath.startsWith(pathPrefix + '/')) {
-    //         const jsonPath = prefixedJsonPath.substr(pathPrefix.length);
-    //         containerByPath[jsonPath] = elem;
-    //         elem.textContent = '';
-    //         // /** @param {KeyboardEvent} evt */
-    //         // elem.onkeydown = function (evt) {
-    //         //     if (evt.code === 'KeyA' && evt.ctrlKey) {
-    //         //         alert(evt.target.id)
-    //         //     }
-    //         // }
-    //     }
-    // }
+    const graph = new Graph(pathPrefix);
 
     let holder;
     if (['object', 'array'].includes(topSchema.type)) {
@@ -390,6 +352,22 @@ export function createFormChen(topSchema, topObj) {
         holder.obj = {};
     }
 
+    /**
+      * @param {GridChenNS.ColumnSchema} schema
+      * @param {string} path
+      * @returns {GridChenNS.ColumnSchema}
+      */
+     function resolveSchema(schema, path) {
+        if ('$ref' in schema) {
+            const refSchema = getValueByPointer(topSchema, schema['$ref']);
+            if (!refSchema) {
+                throw new Error('Undefined $ref at ' + path);
+            }
+            return refSchema
+        }
+        return schema
+    }
+
      /**
      * @param {string} relId 
      * @param {string | number} key 
@@ -398,7 +376,7 @@ export function createFormChen(topSchema, topObj) {
      * @returns {FormChenNS.TypedValue}
      */
     function createNode(relId, key, schema, parent) {
-        schema = graph.resolveSchema(schema, String(key));
+        schema = resolveSchema(schema, String(key));
         if (schema.type === 'object' || schema.type === 'array') {
             return new ProxyNode(graph, relId, key, schema, parent);
         } else {
@@ -434,28 +412,28 @@ export function createFormChen(topSchema, topObj) {
      */
     function bindDetail(masterNode, view, grid, container, detailIndex, detailSchema) {
         const id = masterNode.id + view.getDetailId(detailIndex);
-        detailSchema = graph.resolveSchema(detailSchema, id);
+        detailSchema = resolveSchema(detailSchema, id);
 
         class DetailNode extends ProxyNode {
-            constructor(graph, relId, key, schema, parent) {
-                super(graph, relId, key, schema, parent);
-                this.grid = grid;
+            constructor(graph, relId, key, schema) {
+                super(graph, relId, key, schema, null);
                 this.masterNode = masterNode;
+                this.grid = grid;
                 this.rowIndex = 0;
             }
             setRowIndex(rowIndex) {
+                this.rowIndex = rowIndex;
                 const { path, value } = view.getDetail(rowIndex, detailIndex);
                 this.obj = value;
                 this.path = masterNode.path + path;
-                this.rowIndex = rowIndex;
                 return value
             }
-            onNewObjectReference(obj) {
+            onObjectReferenceChanged(obj) {
                 view.setDetail(this.rowIndex, detailIndex, obj);
             }
         }
 
-        const detailNode = new DetailNode(graph, id, undefined, detailSchema, null);
+        const detailNode = new DetailNode(graph, id, undefined, detailSchema);
 
         bindNode(detailNode, container);        
 
@@ -466,7 +444,7 @@ export function createFormChen(topSchema, topObj) {
 
             for (const n of detailNode.children) {
                 if (n.constructor !== TypedValue) {
-                    throw new Error('TODO: Allow nested details');
+                    throw new Error('Nested details are not allowed');
                 }
                 n.path = detailNode.path + '/' + n.key; 
                 n.refreshUI(isEmptyRow);
@@ -485,6 +463,7 @@ export function createFormChen(topSchema, topObj) {
         containerElement.appendChild(label);
 
         const grid = /** @type{GridChenNS.GridChen} */ (document.createElement('grid-chen'));
+        grid.id = node.id;
         if (node.schema.height) {
             grid.style.height = node.schema.height + 'px';
         }
@@ -599,14 +578,11 @@ export function createFormChen(topSchema, topObj) {
 
             if (schema.type === 'integer') {
                 if (!schema.converter) {
-                    schema.converter = new NumberConverter(0);
+                    schema.converter = new NumberConverter(0, undefined);
                 }
             } else if (schema.type === 'number') {
                 if (!schema.converter) {
-                    schema.converter = new NumberConverter(schema.fractionDigits || 2);
-                    if (schema.format === '%') {
-                        schema.converter.isPercent = true;
-                    }
+                    schema.converter = new NumberConverter(schema.fractionDigits || 2, undefined, schema.format === '%');
                 }
             } else if (schema.format === 'date-time') {
                 if (!schema.converter) {

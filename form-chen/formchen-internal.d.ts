@@ -5,17 +5,13 @@
 declare module FormChenNS {
 
     export interface Graph {
-        rootSchema: GridChenNS.JSONSchema;
+        pathPrefix: string;
         add: (node: TypedValue) => void;
-        getNodeById: (id: number) => TypedValue;
-        // This is a slow method and should only be used for unit testing
-        //_getNodeByPath: (path: string) => TypedValue;
-        resolveSchema: (schema: GridChenNS.ColumnSchema, path: string) => GridChenNS.ColumnSchema;
+        getNodeById: (id: string) => TypedValue;
     }
     
     export interface TypedValue {
         id: string;
-        //obj: any;
         graph: Graph;
         parent: ProxyNode;
         schema: GridChenNS.ColumnSchema;
@@ -37,7 +33,7 @@ declare module FormChenNS {
     export interface ProxyNode extends TypedValue {
         obj: object | Array;
         children: TypedValue[];
-        onNewObjectReference: (obj: object | Array) => void;
+        onObjectReferenceChanged: (obj: object | Array) => void;
     }
     
     export interface DetailNode extends ProxyNode {

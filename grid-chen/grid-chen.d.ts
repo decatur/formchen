@@ -142,6 +142,7 @@ declare module GridChenNS {
         updateHolder: () => Patch;
         getDetail: (rowIndex: number, detailIndex: number) => {path: string, value: any};
         setDetail: (rowIndex: number, detailIndex: number, obj: any) => void;
+        getDetailId: (detailIndex: number) => string;
     }
 
     export interface Transaction {
