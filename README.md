@@ -1,13 +1,16 @@
 Generate HTML forms and bind hierarchical and tabular data with the help of [JSON Schema](https://json-schema.org).
 
-Form-Chen supports master-detail relationships and undo/redo management.
+Form-Chen supports master-detail relationships and undo/redo transaction management.
 
 It uses [grid-chen](https://github.com/decatur/grid-chen) to produce Excel-like web-components for
 tabular (aka table/grid/matrix) data. 
 
-Edits on the original object are emitted as standard [JSON Patch](https://tools.ietf.org/html/rfc6902).
+Edits on the original object are emitted as standard [JSON Patch](https://tools.ietf.org/html/rfc6902),
+which can be directly passed to the back end.
 
 Optionally, object properties can be specified by [JSON Pointers](https://tools.ietf.org/html/rfc6901) to be bound to given HTML-elements.
+
+Form-Chen is written in plain EcmaScript 2017 modules and can be directly imported as such with any modern browser.
 
 # Usage
 
@@ -81,3 +84,9 @@ Based on this flat list of paired elements, the layout can be tweaked using CSS 
 # JavaScript Api
 
 Please see the source code of the demos or [form-chen TypeScript Definitions](./form-chen/formchen.d.ts) for the public JavaScript Api.
+
+# Development
+
+Form-Chen is written in plain EcmaScript 2017 modules with JSDocs type hinting.
+There is no overhead related to transpiling or packing.
+As tool I recommend either vscode or one of the JetBrains IDEs (WebStorm, PyCharm).
