@@ -1,14 +1,15 @@
-Generate HTML forms and bind hierarchical data with the help of [JSON Schema](https://json-schema.org). 
+Generate HTML forms and bind hierarchical and tabular data with the help of [JSON Schema](https://json-schema.org).
 
-Uses [grid-chen](https://github.com/decatur/grid-chen) to produce Excel-like web-components for matrix-like data. 
+Form-Chen supports master-detail relationships and undo/redo management.
 
-Object attributes can be specified by [JSON Pointers](https://tools.ietf.org/html/rfc6901) to be bound to given HTML-elements.
+It uses [grid-chen](https://github.com/decatur/grid-chen) to produce Excel-like web-components for
+tabular (aka table/grid/matrix) data. 
 
-The diff between the edited and the original object can be retrieved as a [JSON Patch](https://tools.ietf.org/html/rfc6902).
+Edits on the original object are emitted as standard [JSON Patch](https://tools.ietf.org/html/rfc6902).
+
+Optionally, object properties can be specified by [JSON Pointers](https://tools.ietf.org/html/rfc6901) to be bound to given HTML-elements.
 
 # Usage
-
-Also see usage.html.
 
 ![usage](usage.png)
 
@@ -59,9 +60,9 @@ See https://decatur.github.io/form-chen
 At any level, the schema can be marked `readOnly:true|false`, the default value being `false`.
 The `readOnly` property is inherited by sub-schemas. 
 
-# Box Model and CSS Styling
+# DOM Api and CSS Styling
 
-The form is generated as a flat list of paired elements 
+The form is generated as a flat list of paired elements. The input elements are generated with the document ID corresponding to the JSON Pointer to its value.
 
 Pairs           | Semantic
 ----------------|-----------
@@ -75,9 +76,8 @@ In case a field has a unit, then the label will have a nested &lt;span class=uni
 
 No direct element style is applied.
 
-Based on this box model, the layout can be tweaked using CSS Column Layout, CSS Grid Layout or CSS Flex Layout.
-See the demos for examples.
+Based on this flat list of paired elements, the layout can be tweaked using CSS Column Layout, CSS Grid Layout or CSS Flex Layout, or whatever. See the demos for examples.
 
-# API
+# JavaScript Api
 
-Please see the source code of the demos or [form-chen TypeScript Definitions](./form-chen/formchen.d.ts)
+Please see the source code of the demos or [form-chen TypeScript Definitions](./form-chen/formchen.d.ts) for the public JavaScript Api.

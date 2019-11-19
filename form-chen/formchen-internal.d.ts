@@ -6,20 +6,20 @@ declare module FormChenNS {
 
     export interface Graph {
         pathPrefix: string;
-        add: (node: TypedValue) => void;
-        getNodeById: (id: string) => TypedValue;
+        add: (node: BaseNode) => void;
+        getNodeById: (id: string) => BaseNode;
     }
     
-    export interface TypedValue {
+    export interface BaseNode {
         id: string;
         graph: Graph;
-        parent: ProxyNode;
+        parent: HolderNode;
         schema: GridChenNS.ColumnSchema;
         key: string | number;
         path: string;
         title: string;
         readOnly: boolean;
-        readonly root: TypedValue;
+        readonly root: BaseNode;
 
         getValue: () => any;
         setValue: (any) => GridChenNS.Patch;
@@ -27,18 +27,18 @@ declare module FormChenNS {
         refreshUI: (disabled: boolean) => void;
     }
 
-    export interface LeafNode extends TypedValue {
+    export interface LeafNode extends TypeBaseNodedValue {
     }
     
-    export interface ProxyNode extends TypedValue {
+    export interface HolderNode extends BaseNode {
         obj: object | Array;
-        children: TypedValue[];
+        children: BaseNode[];
         onObjectReferenceChanged: (obj: object | Array) => void;
     }
     
-    export interface DetailNode extends ProxyNode {
+    export interface DetailNode extends HolderNode {
         grid: GridChenNS.GridChen;
-        masterNode: ProxyNode;
+        masterNode: HolderNode;
         rowIndex: number;
         setRowIndex: (rowIndex: number) => void;
     }

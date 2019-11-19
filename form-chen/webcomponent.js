@@ -35,12 +35,12 @@ export class Graph {
      */
     constructor(pathPrefix) {
         this.pathPrefix = pathPrefix;
-        /** @type{{[key: string]: FormChenNS.TypedValue}} */
+        /** @type{{[key: string]: FormChenNS.BaseNode}} */
         this.nodesById = {};
     }
 
     /**
-     * @param {FormChenNS.TypedValue} node 
+     * @param {FormChenNS.BaseNode} node 
      */
     add(node) {
         this.nodesById[node.id] = node;
@@ -48,7 +48,7 @@ export class Graph {
 
     // /**
     //  * @param {string} path 
-    //  * @returns {FormChenNS.TypedValue}
+    //  * @returns {FormChenNS.BaseNode}
     //  */
     // _getNodeByPath(path) {
     //     for (const node of this.nodes) {
@@ -61,7 +61,7 @@ export class Graph {
 
     /**
      * @param {string} id 
-     * @returns {FormChenNS.TypedValue}
+     * @returns {FormChenNS.BaseNode}
      */
     getNodeById(id) {
         return this.nodesById[id]
@@ -69,23 +69,23 @@ export class Graph {
 }
 
 /**
- * TypedValue decorates a (possibly nested) JavaScript value and its type (via JSON Schema).
+ * BaseNode decorates a (possibly nested) JavaScript value and its type (via JSON Schema).
  * It also makes the type graph navigable from child to parent and from parent to child.
  *
  *         ------------------------              ------------------            ---------------
  * obj    | {foo: {bar: 'foobar'}} |   parent   | {bar: 'foobar'}} |  parent  |               |
  * key    | ''                     |     <-     | 'foo'            |    <-    | 'bar'         |
  *         ------------------------              ------------------            ---------------
- * @implements{FormChenNS.TypedValue} 
+ * @implements{FormChenNS.BaseNode} 
  */
-export class TypedValue {
+export class BaseNode {
 
     /**
      * @param {FormChenNS.Graph} graph
      * @param {string} relId
      * @param {string | number} key
      * @param {GridChenNS.ColumnSchema} schema
-     * @param {FormChenNS.ProxyNode} parent
+     * @param {FormChenNS.HolderNode} parent
      */
     constructor(graph, relId, key, schema, parent) {
         if (!parent && relId === '') {
@@ -123,7 +123,7 @@ export class TypedValue {
     //  * @returns {string}
     //  */
     // get path() {
-    //     /** @type{FormChenNS.TypedValue} */
+    //     /** @type{FormChenNS.BaseNode} */
     //     let n = this;
     //     let parts = [];
     //     while (n) {
@@ -134,10 +134,10 @@ export class TypedValue {
     // }
 
     /**
-     * @returns {FormChenNS.TypedValue}
+     * @returns {FormChenNS.BaseNode}
      */
     get root() {
-        /** @type{FormChenNS.TypedValue} */
+        /** @type{FormChenNS.BaseNode} */
         let n = this;
         while (n.parent) {
             n = n.parent;
@@ -220,7 +220,7 @@ export class TypedValue {
             } else {
                 this.parent.obj[this.key] = obj;
             }
-        } else if (obj !== undefined && this.constructor === TypedValue) {
+        } else if (obj !== undefined && this.constructor === BaseNode) {
             throw Error('Value lost')
         }
 
@@ -234,7 +234,7 @@ export class TypedValue {
     createPathToRoot(value) {
         /** @type{GridChenNS.JSONPatchOperation[]} */
         let operations = [];
-        /** @type{FormChenNS.ProxyNode} */
+        /** @type{FormChenNS.HolderNode} */
         let n = this.parent;
         /** @type{string | number} */
         let key = this.key;
@@ -259,7 +259,7 @@ export class TypedValue {
      */
     clearPathToRoot() {
         let operations = [];
-        /** @type{FormChenNS.ProxyNode} */
+        /** @type{FormChenNS.HolderNode} */
         let n = this.parent;
         while (true) {
 
@@ -291,22 +291,22 @@ export class TypedValue {
 }
 
 /** 
- * @implements{FormChenNS.ProxyNode} 
+ * @implements{FormChenNS.HolderNode} 
  */
-export class ProxyNode extends TypedValue {
+export class HolderNode extends BaseNode {
     /**
      * @param {FormChenNS.Graph} graph
      * @param {string} relId
      * @param {string | number} key
      * @param {GridChenNS.ColumnSchema} schema
-     * @param {FormChenNS.ProxyNode} parent
+     * @param {FormChenNS.HolderNode} parent
      */
     constructor(graph, relId, key, schema, parent) {
         if (!['object', 'array'].includes(schema.type)) {
             throw new Error('Invalid schema type: ' + schema.type);
         }
         super(graph, relId, key, schema, parent)
-        /** @type{FormChenNS.TypedValue[]} */
+        /** @type{FormChenNS.BaseNode[]} */
         this.children = [];
     }
 
@@ -348,7 +348,7 @@ export function createFormChen(topSchema, topObj) {
         holder = null;
     } else {
         // A leaf node always needs a composit parent.
-        holder = new ProxyNode(graph, '', '', { type: 'object' }, null);
+        holder = new HolderNode(graph, '', '', { type: 'object' }, null);
         holder.obj = {};
     }
 
@@ -372,15 +372,15 @@ export function createFormChen(topSchema, topObj) {
      * @param {string} relId 
      * @param {string | number} key 
      * @param {GridChenNS.ColumnSchema} schema 
-     * @param {FormChenNS.ProxyNode} parent 
-     * @returns {FormChenNS.TypedValue}
+     * @param {FormChenNS.HolderNode} parent 
+     * @returns {FormChenNS.BaseNode}
      */
     function createNode(relId, key, schema, parent) {
         schema = resolveSchema(schema, String(key));
         if (schema.type === 'object' || schema.type === 'array') {
-            return new ProxyNode(graph, relId, key, schema, parent);
+            return new HolderNode(graph, relId, key, schema, parent);
         } else {
-            return new TypedValue(graph, relId, key, schema, parent);
+            return new BaseNode(graph, relId, key, schema, parent);
         }
     }
 
@@ -391,7 +391,7 @@ export function createFormChen(topSchema, topObj) {
     rootNode.setValue(topObj);
 
     /**
-     * @param {FormChenNS.ProxyNode} node
+     * @param {FormChenNS.HolderNode} node
      * @param {HTMLElement} container
      */
     function bindObject(node, container) {
@@ -403,7 +403,7 @@ export function createFormChen(topSchema, topObj) {
     }
 
     /**
-     * @param {FormChenNS.ProxyNode} masterNode 
+     * @param {FormChenNS.HolderNode} masterNode 
      * @param {GridChenNS.MatrixView} view 
      * @param {GridChenNS.GridChen} grid 
      * @param {HTMLElement} container 
@@ -414,7 +414,7 @@ export function createFormChen(topSchema, topObj) {
         const id = masterNode.id + view.getDetailId(detailIndex);
         detailSchema = resolveSchema(detailSchema, id);
 
-        class DetailNode extends ProxyNode {
+        class DetailNode extends HolderNode {
             constructor(graph, relId, key, schema) {
                 super(graph, relId, key, schema, null);
                 this.masterNode = masterNode;
@@ -443,7 +443,7 @@ export function createFormChen(topSchema, topObj) {
             const isEmptyRow = view.getRow(selection.rowIndex).every(item => item == null);
 
             for (const n of detailNode.children) {
-                if (n.constructor !== TypedValue) {
+                if (n.constructor !== BaseNode) {
                     throw new Error('Nested details are not allowed');
                 }
                 n.path = detailNode.path + '/' + n.key; 
@@ -453,7 +453,7 @@ export function createFormChen(topSchema, topObj) {
     }
 
     /**
-     * @param {FormChenNS.ProxyNode} node
+     * @param {FormChenNS.HolderNode} node
      * @param {HTMLElement} containerElement
      */
     function bindGrid(node, containerElement) {
@@ -490,7 +490,7 @@ export function createFormChen(topSchema, topObj) {
     }
 
     /**
-     * @param {FormChenNS.ProxyNode} node
+     * @param {FormChenNS.HolderNode} node
      * @param {HTMLElement} container
      */
     function bindTuple(node, container) {
@@ -506,7 +506,7 @@ export function createFormChen(topSchema, topObj) {
 
     /**
      * 
-     * @param {FormChenNS.TypedValue} node 
+     * @param {FormChenNS.BaseNode} node 
      * @param {HTMLElement} container
      */
     function bindNode(node, container) {
@@ -523,15 +523,15 @@ export function createFormChen(topSchema, topObj) {
             console.log('bind: ' + path);
 
             if (schema.type === 'object') {
-                bindObject(/**@type{FormChenNS.ProxyNode}*/(node), container);
+                bindObject(/**@type{FormChenNS.HolderNode}*/(node), container);
                 return
             }
 
             if (schema.type === 'array') {
                 if (schema.format === 'grid') {
-                    if (container) bindGrid(/**@type{FormChenNS.ProxyNode}*/(node), container);
+                    if (container) bindGrid(/**@type{FormChenNS.HolderNode}*/(node), container);
                 } else {
-                    bindTuple(/**@type{FormChenNS.ProxyNode}*/(node), container);
+                    bindTuple(/**@type{FormChenNS.HolderNode}*/(node), container);
                 }
                 return
             }
@@ -670,7 +670,7 @@ export function createFormChen(topSchema, topObj) {
 
         /**
          * @param {string} id
-         * @returns {FormChenNS.TypedValue}
+         * @returns {FormChenNS.BaseNode}
          */
         getNodeById(id) {
             return graph.getNodeById(id);

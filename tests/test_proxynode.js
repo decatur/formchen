@@ -1,5 +1,5 @@
 import { test, assert } from './grid-chen/utils.js'
-import { ProxyNode, TypedValue, Graph } from "../form-chen/webcomponent.js";
+import { HolderNode, BaseNode, Graph } from "../form-chen/webcomponent.js";
 
 test('graph', () => {
     const schema = {
@@ -15,9 +15,9 @@ test('graph', () => {
     };
 
     const graph = new Graph(schema);
-    const node1 = new ProxyNode(graph, '', '', schema, null);
-    const node2 = new ProxyNode(graph, 'foo', 'foo', schema.properties.foo, node1);
-    const node3 = new TypedValue(graph, 'bar', 'bar', schema.properties.foo.properties.bar, node2);
+    const node1 = new HolderNode(graph, '', '', schema, null);
+    const node2 = new HolderNode(graph, 'foo', 'foo', schema.properties.foo, node1);
+    const node3 = new BaseNode(graph, 'bar', 'bar', schema.properties.foo.properties.bar, node2);
 
     let patch = node3.setValue('foobar');
     patch.operations.forEach(op => { delete op.nodeId });

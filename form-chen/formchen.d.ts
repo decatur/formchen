@@ -9,6 +9,6 @@ declare module FormChenNS {
          * The current value of the bound object.
          */
         readonly value: object;
-        getNodeById: (id: string) => TypedValue;
+        getNodeById: (id: string) => BaseNode;
     }
 }
