@@ -201,6 +201,7 @@ class ScrollBar {
  */
 function createGrid(container, viewModel, gridchenElement, tm) {
     tm = tm || registerGlobalTransactionManager();
+    let pathPrefix = undefined;
     const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
     const totalHeight = parseInt(container.style.height);
@@ -303,7 +304,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
     //let lastRefreshMillis = -100;
 
-    function refresh() {
+    function refresh(path) {
+        pathPrefix = path;
         rowCount = viewModel.rowCount();
         // TODO: Can we do better, i.e. send event to selection.grid?
         gridAbstraction.rowCount = rowCount;
@@ -696,7 +698,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     function createPatch(operations) {
         return /** @type{GridChenNS.Patch} */ {
             operations: operations || [],
-            pathPrefix: schema.pathPrefix,
+            pathPrefix, //: schema.pathPrefix,
             apply: tmListener,
             detail: { rowIndex: selection.active.rowIndex, columnIndex: selection.active.columnIndex }
         };

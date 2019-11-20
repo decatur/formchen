@@ -96,9 +96,9 @@ export class BaseNode {
         this.graph = graph;
         this.parent = parent;
         this.key = key;
-        if (this.key !== undefined) {
-            this.path = (this.parent?this.parent.path + '/' + key:String(key));
-        }
+        //if (this.key !== undefined) {
+        //    this.path = (this.parent?this.parent.path + '/' + key:String(key));
+        //}
         if (typeof schema.readOnly === 'boolean') {
             this.readOnly = schema.readOnly
         } else if (parent) {
@@ -165,10 +165,8 @@ export class BaseNode {
                 for (let op of patch.operations) {
                     let node = this.graph.getNodeById(op.nodeId);
                     const detailNode = /** @type{FormChenNS.DetailNode} */ (node.root);
-                    if (detailNode.grid) {
-                        const rowIndex = patch.details.selectedRange.rowIndex;
-                        detailNode.setRowIndex(rowIndex);
-                        detailNode.grid.select(patch.details.selectedRange);
+                    if (detailNode.select) {
+                        detailNode.select(patch.details.selectedRange);
                     }
                     node._setValue(op.value);
                 }
@@ -214,6 +212,8 @@ export class BaseNode {
      * @param {?} obj
      */
     _setValue(obj) {
+        this.path = (this.parent?this.parent.path + '/' + this.key:String(this.key));
+
         if (this.parent && this.parent.obj) {
             if (obj == null) {
                 delete this.parent.obj[this.key];
@@ -424,9 +424,13 @@ export function createFormChen(topSchema, topObj) {
             setRowIndex(rowIndex) {
                 this.rowIndex = rowIndex;
                 const { path, value } = view.getDetail(rowIndex, detailIndex);
-                this.obj = value;
-                this.path = masterNode.path + path;
+                this.key = masterNode.path + path;
+                this._setValue(value);
                 return value
+            }
+            select(range) {
+                this.setRowIndex(range.rowIndex);
+                this.grid.select(range);
             }
             onObjectReferenceChanged(obj) {
                 view.setDetail(this.rowIndex, detailIndex, obj);
@@ -439,16 +443,16 @@ export function createFormChen(topSchema, topObj) {
 
         grid.addEventListener('selectionChanged', function () {
             const selection = grid.selectedRange;
+            //const isEmptyRow = view.getRow(selection.rowIndex).every(item => item == null);
             detailNode.setRowIndex(selection.rowIndex);
-            const isEmptyRow = view.getRow(selection.rowIndex).every(item => item == null);
-
-            for (const n of detailNode.children) {
-                if (n.constructor !== BaseNode) {
-                    throw new Error('Nested details are not allowed');
-                }
-                n.path = detailNode.path + '/' + n.key; 
-                n.refreshUI(isEmptyRow);
-            }
+            
+            // for (const n of detailNode.children) {
+            //     if (n.constructor !== BaseNode) {
+            //         throw new Error('Nested details are not allowed');
+            //     }
+            //     n.path = detailNode.path + '/' + n.key; 
+            //     n.refreshUI(isEmptyRow);
+            // }
         });
     }
 
@@ -469,11 +473,9 @@ export function createFormChen(topSchema, topObj) {
         }
         label.appendChild(grid);
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
-        node.schema.pathPrefix = rootNode.schema.pathPrefix + node.path;
-        //node.grid = grid;
         const gridSchema = Object.assign({}, node.schema);
 
-        const view = createView(gridSchema, node.obj);
+        const view = createView(gridSchema, null);
         grid.resetFromView(view, transactionManager);
         view.updateHolder = function () {
             return node.setValue(view.getModel())
@@ -485,7 +487,7 @@ export function createFormChen(topSchema, topObj) {
 
         node.refreshUI = function () {
             view.applyJSONPatch([{ op: 'replace', path: '', value: node.obj }]);
-            grid._refresh();
+            grid._refresh(rootNode.schema.pathPrefix + this.path);
         }
     }
 

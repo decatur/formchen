@@ -37,10 +37,10 @@ declare module GridChenNS {
     }
 
     export interface GridSchema {
-        pathPrefix: string,
+        //pathPrefix: string,
         title: string;
         columnSchemas: ColumnSchema[];
-        detailSchemas: ColumnSchema[],
+        detailSchemas: ColumnSchema[];
         ids?: string[];
         readOnly?: boolean;
     }
@@ -88,7 +88,7 @@ declare module GridChenNS {
         readonly selectedRange: Range;
 
         select: (Range) => void;
-        _refresh: () => void;
+        _refresh: (path: string) => void;
     }
 
     interface SelectionChanged extends Event {

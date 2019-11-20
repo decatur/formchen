@@ -319,8 +319,7 @@ export function createRowMatrixView(jsonSchema, rows) {
         title: jsonSchema.title,
         columnSchemas: schemas,
         detailSchemas,
-        readOnly: readOnly(jsonSchema),
-        pathPrefix: jsonSchema.pathPrefix || ''
+        readOnly: readOnly(jsonSchema)
     };
 
     /**
@@ -508,8 +507,7 @@ export function createRowObjectsView(jsonSchema, rows) {
         columnSchemas: schemas,
         detailSchemas: [],
         ids,
-        readOnly: readOnly(jsonSchema),
-        pathPrefix: jsonSchema.pathPrefix || ''
+        readOnly: readOnly(jsonSchema)
     }
 
     /**
@@ -647,8 +645,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
         title: jsonSchema.title,
         columnSchemas: schemas,
         detailSchemas: [],
-        readOnly: readOnly(jsonSchema),
-        pathPrefix: jsonSchema.pathPrefix || ''
+        readOnly: readOnly(jsonSchema)
     }
 
     function getRowCount() {
@@ -822,8 +819,7 @@ export function createColumnObjectView(jsonSchema, columns) {
         columnSchemas: schemas,
         ids,
         detailSchemas: [],
-        readOnly: readOnly(jsonSchema),
-        pathPrefix: jsonSchema.pathPrefix || ''
+        readOnly: readOnly(jsonSchema)
     };
 
     function getRowCount() {
@@ -1000,8 +996,7 @@ export function createColumnVectorView(jsonSchema, column) {
         title: title,
         columnSchemas: schemas,
         detailSchemas: [],
-        readOnly: readOnly(jsonSchema),
-        pathPrefix: jsonSchema.pathPrefix || ''
+        readOnly: readOnly(jsonSchema)
     }
 
     function getRowCount() {

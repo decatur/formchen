@@ -41,6 +41,7 @@ declare module FormChenNS {
         masterNode: HolderNode;
         rowIndex: number;
         setRowIndex: (rowIndex: number) => void;
+        select: (range: GridChenNS.Range) => void;
     }
 }
 
