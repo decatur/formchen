@@ -430,7 +430,8 @@ export function createTransactionManager() {
                         }
                     }
                     return flattend;
-                }
+                },
+                context() {}
             };
         }
 
@@ -439,6 +440,7 @@ export function createTransactionManager() {
             if (!trans) return;
             this.redoTransactions.push(trans);
             const reversedTransaction = /**@type{GridChenNS.Transaction}*/ Object.assign({}, trans);
+            if (reversedTransaction.context) reversedTransaction.context(trans);
             reversedTransaction.patches = [];
             for (let patch of Object.assign([], trans.patches).reverse()) {
                 const reversedPatch = /**@type{GridChenNS.Patch}*/ Object.assign({}, patch);
@@ -446,7 +448,6 @@ export function createTransactionManager() {
                 reversedTransaction.patches.push(reversedPatch);
                 reversedPatch.apply(reversedPatch);
             }
-
             fireChange(reversedTransaction);
         }
 

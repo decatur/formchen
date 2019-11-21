@@ -91,7 +91,7 @@ export class BaseNode {
         if (!parent && relId === '') {
             this.id = schema.pathPrefix;
         } else {
-            this.id = relId[0]==='/'?relId:((parent?parent.id:'') + '/' + String(relId));
+            this.id = relId[0] === '/' ? relId : ((parent ? parent.id : '') + '/' + String(relId));
         }
         this.graph = graph;
         this.parent = parent;
@@ -160,7 +160,7 @@ export class BaseNode {
         let oldValue = this.getValue();
 
         /** @type {GridChenNS.Patch} */
-        const patch =  {
+        const patch = {
             apply: (patch) => {
                 for (let op of patch.operations) {
                     let node = this.graph.getNodeById(op.nodeId);
@@ -177,7 +177,7 @@ export class BaseNode {
 
         const detailNode = /** @type{FormChenNS.DetailNode} */ (this.root);
         if (detailNode.grid) {
-            patch.details = {selectedRange: /**@type{FormChenNS.DetailNode}*/detailNode.grid.selectedRange};
+            patch.details = { selectedRange: /**@type{FormChenNS.DetailNode}*/detailNode.grid.selectedRange };
         }
 
         if (obj == oldValue) {
@@ -212,7 +212,7 @@ export class BaseNode {
      * @param {?} obj
      */
     _setValue(obj) {
-        this.path = (this.parent?this.parent.path + '/' + this.key:String(this.key));
+        this.path = (this.parent ? this.parent.path + '/' + this.key : String(this.key));
 
         if (this.parent && this.parent.obj) {
             if (obj == null) {
@@ -338,7 +338,7 @@ export class HolderNode extends BaseNode {
  * @param {object} topObj
  */
 export function createFormChen(topSchema, topObj) {
-    
+
     const pathPrefix = topSchema.pathPrefix || '';
     /** @type{FormChenNS.Graph} */
     const graph = new Graph(pathPrefix);
@@ -357,7 +357,7 @@ export function createFormChen(topSchema, topObj) {
       * @param {string} path
       * @returns {GridChenNS.ColumnSchema}
       */
-     function resolveSchema(schema, path) {
+    function resolveSchema(schema, path) {
         if ('$ref' in schema) {
             const refSchema = getValueByPointer(topSchema, schema['$ref']);
             if (!refSchema) {
@@ -368,13 +368,13 @@ export function createFormChen(topSchema, topObj) {
         return schema
     }
 
-     /**
-     * @param {string} relId 
-     * @param {string | number} key 
-     * @param {GridChenNS.ColumnSchema} schema 
-     * @param {FormChenNS.HolderNode} parent 
-     * @returns {FormChenNS.BaseNode}
-     */
+    /**
+    * @param {string} relId 
+    * @param {string | number} key 
+    * @param {GridChenNS.ColumnSchema} schema 
+    * @param {FormChenNS.HolderNode} parent 
+    * @returns {FormChenNS.BaseNode}
+    */
     function createNode(relId, key, schema, parent) {
         schema = resolveSchema(schema, String(key));
         if (schema.type === 'object' || schema.type === 'array') {
@@ -439,13 +439,30 @@ export function createFormChen(topSchema, topObj) {
 
         const detailNode = new DetailNode(graph, id, undefined, detailSchema);
 
-        bindNode(detailNode, container);        
+        bindNode(detailNode, container);
 
         grid.addEventListener('selectionChanged', function () {
             const selection = grid.selectedRange;
             //const isEmptyRow = view.getRow(selection.rowIndex).every(item => item == null);
             detailNode.setRowIndex(selection.rowIndex);
-            
+            // const trans = transactionManager.openTransaction();
+            // const patch =  {
+            //     apply: (patch) => {
+            //         for (let op of patch.operations) {
+            //             let node = this.graph.getNodeById(op.nodeId);
+            //             const detailNode = /** @type{FormChenNS.DetailNode} */ (node.root);
+            //             if (detailNode.select) {
+            //                 detailNode.select(patch.details.selectedRange);
+            //             }
+            //             node._setValue(op.value);
+            //         }
+            //     },
+            //     operations: [{op: 'select', value: selection, oldValue:}],
+            //     pathPrefix: this.graph.pathPrefix
+            // };
+            // trans.patches.push(patch);
+            // trans.commit();
+
             // for (const n of detailNode.children) {
             //     if (n.constructor !== BaseNode) {
             //         throw new Error('Nested details are not allowed');
@@ -476,7 +493,22 @@ export function createFormChen(topSchema, topObj) {
         const gridSchema = Object.assign({}, node.schema);
 
         const view = createView(gridSchema, null);
-        grid.resetFromView(view, transactionManager);
+        let tm = transactionManager;
+        if (node.root.select) {
+            tm = Object.create(tm);
+            tm.openTransaction = function () {
+                const transaction = transactionManager.openTransaction();
+                const selection = node.root.grid.selectedRange;
+                transaction.context = function () {
+                    console.log(selection); // -> /measurements/1/3
+                    console.log(node.path); // -> /measurements/1/3
+                    const detailNode = node.root; //graph.getNodeById('/myPrefix/measurements/*/3');
+                    detailNode.select(selection);
+                }
+                return transaction
+            }
+        }
+        grid.resetFromView(view, tm);
         view.updateHolder = function () {
             return node.setValue(view.getModel())
         };
