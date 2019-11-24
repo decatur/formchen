@@ -36,12 +36,19 @@ declare module FormChenNS {
         onObjectReferenceChanged: (obj: object | Array) => void;
     }
     
+    export interface MasterNode extends HolderNode {
+        master: boolean; // TODO: Use duck typing
+        selectedRowIndex: number;
+        tm: GridChenNS.TransactionManager;
+        children: DetailNode[];
+    }
+    
     export interface DetailNode extends HolderNode {
         grid: GridChenNS.GridChen;
         masterNode: HolderNode;
         rowIndex: number;
         setRowIndex: (rowIndex: number) => void;
-        select: (range: GridChenNS.Range) => void;
+        //select: (range: GridChenNS.Range) => void;
     }
 }
 

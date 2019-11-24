@@ -438,9 +438,9 @@ export function createTransactionManager() {
         undo() {
             const trans = this.transactions.pop();
             if (!trans) return;
+            trans.context();
             this.redoTransactions.push(trans);
             const reversedTransaction = /**@type{GridChenNS.Transaction}*/ Object.assign({}, trans);
-            if (reversedTransaction.context) reversedTransaction.context(trans);
             reversedTransaction.patches = [];
             for (let patch of Object.assign([], trans.patches).reverse()) {
                 const reversedPatch = /**@type{GridChenNS.Patch}*/ Object.assign({}, patch);
@@ -454,6 +454,7 @@ export function createTransactionManager() {
         redo() {
             const trans = this.redoTransactions.pop();
             if (!trans) return;
+            trans.context();
             this.transactions.push(trans);
             for (let patch of trans.patches) {
                 patch.apply(patch);
