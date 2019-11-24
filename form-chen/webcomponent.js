@@ -10,7 +10,7 @@ import {
     DatePartialTimeStringConverter,
     StringConverter
 } from "../grid-chen/converter.js";
-import { registerGlobalTransactionManager, applyJSONPatch } from "../grid-chen/utils.js";
+import { registerGlobalTransactionManager, globalTransactionManager, applyJSONPatch } from "../grid-chen/utils.js";
 
 
 /**
@@ -94,7 +94,12 @@ export class BaseNode {
             this.id = relId[0] === '/' ? relId : ((parent ? parent.id : '') + '/' + String(relId));
         }
         this.graph = graph;
-        this.parent = parent;
+        if ( parent) {
+            this.parent = parent;
+            this.tm = parent.tm || globalTransactionManager;
+        } else {
+            // this.tm = globalTransactionManager;
+        }
         this.key = key;
         //if (this.key !== undefined) {
         //    this.path = (this.parent?this.parent.path + '/' + key:String(key));
@@ -164,10 +169,6 @@ export class BaseNode {
             apply: (patch) => {
                 for (let op of patch.operations) {
                     let node = this.graph.getNodeById(op.nodeId);
-                    const detailNode = /** @type{FormChenNS.DetailNode} */ (node.root);
-                    if (detailNode.select) {
-                        detailNode.select(patch.details.selectedRange);
-                    }
                     node._setValue(op.value);
                 }
             },
@@ -177,7 +178,7 @@ export class BaseNode {
 
         const detailNode = /** @type{FormChenNS.DetailNode} */ (this.root);
         if (detailNode.grid) {
-            patch.details = { selectedRange: /**@type{FormChenNS.DetailNode}*/detailNode.grid.selectedRange };
+            //patch.details = { selectedRange: /**@type{FormChenNS.DetailNode}*/detailNode.grid.selectedRange };
         }
 
         if (obj == oldValue) {
@@ -338,6 +339,32 @@ export class HolderNode extends BaseNode {
     }
 }
 
+class DetailNode extends HolderNode {
+    constructor(graph, relId, key, schema, detailIndex, masterNode, grid, view) {
+        super(graph, relId, key, schema, null);
+        this.masterNode = masterNode;
+        this.detailIndex = detailIndex;
+        this.grid = grid;
+        this.view = view;
+        this.rowIndex = 0;
+        this.tm = masterNode.tm;
+    }
+    setRowIndex(rowIndex) {
+        this.rowIndex = rowIndex;
+        const { path, value } = this.view.getDetail(rowIndex, this.detailIndex);
+        this.key = this.masterNode.path + path;
+        this._setValue(value);
+        return value
+    }
+    // select(range) {
+    //     this.setRowIndex(range.rowIndex);
+    //     this.grid.select(range);
+    // }
+    onObjectReferenceChanged(obj) {
+        this.view.setDetail(this.rowIndex, this.detailIndex, obj);
+    }
+}
+
 /**
  * @param {GridChenNS.ColumnSchema} topSchema
  * @param {object} topObj
@@ -389,7 +416,7 @@ export function createFormChen(topSchema, topObj) {
         }
     }
 
-    const transactionManager = registerGlobalTransactionManager();
+    registerGlobalTransactionManager();
     const rootNode = createNode('', '', topSchema, holder);
     bindNode(rootNode, undefined); //document.getElementById(rootNode.id));
 
@@ -418,32 +445,7 @@ export function createFormChen(topSchema, topObj) {
     function bindDetail(masterNode, view, grid, container, detailIndex, detailSchema) {
         const id = masterNode.id + view.getDetailId(detailIndex);
         detailSchema = resolveSchema(detailSchema, id);
-
-        class DetailNode extends HolderNode {
-            constructor(graph, relId, key, schema) {
-                super(graph, relId, key, schema, null);
-                this.masterNode = masterNode;
-                this.grid = grid;
-                this.rowIndex = 0;
-                this.tm = masterNode.tm;
-            }
-            setRowIndex(rowIndex) {
-                this.rowIndex = rowIndex;
-                const { path, value } = view.getDetail(rowIndex, detailIndex);
-                this.key = masterNode.path + path;
-                this._setValue(value);
-                return value
-            }
-            // select(range) {
-            //     this.setRowIndex(range.rowIndex);
-            //     this.grid.select(range);
-            // }
-            onObjectReferenceChanged(obj) {
-                view.setDetail(this.rowIndex, detailIndex, obj);
-            }
-        }
-
-        const detailNode = new DetailNode(graph, id, undefined, detailSchema);
+        const detailNode = new DetailNode(graph, id, undefined, detailSchema, detailIndex, masterNode, grid, view);
 
         bindNode(detailNode, container);
 
@@ -472,7 +474,7 @@ export function createFormChen(topSchema, topObj) {
         const gridSchema = Object.assign({}, node.schema);
 
         const view = createView(gridSchema, null);
-        let tm = node.tm || transactionManager;
+        let tm = node.tm;
 
         grid.resetFromView(view, tm);
         grid.addEventListener('selectionChanged', function () {
@@ -488,9 +490,9 @@ export function createFormChen(topSchema, topObj) {
         };
 
         if (view.schema.detailSchemas.length) {
-            tm = Object.create(tm);
-            tm.openTransaction = function () {
-                const transaction = transactionManager.openTransaction();
+            node.tm = Object.create(tm);
+            node.tm.openTransaction = function () {
+                const transaction = tm.openTransaction();  // Invoke super method.
                 const selection = grid.selectedRange;
                 transaction.context = function () {
                     for (const detailNode of node.children) {
@@ -500,8 +502,6 @@ export function createFormChen(topSchema, topObj) {
                 }
                 return transaction
             }
-
-            node.tm = tm;
 
             for (const [detailIndex, detailSchema] of view.schema.detailSchemas.entries()) {
                 node.children.push(bindDetail(node, view, grid, containerElement, detailIndex, detailSchema));
@@ -635,10 +635,6 @@ export function createFormChen(topSchema, topObj) {
             }
         }
 
-        // if (node.readOnly && !(value == null)) {
-        //     input.disabled = true;
-        // }
-
         input.onchange = function () {
             let value;
 
@@ -656,7 +652,7 @@ export function createFormChen(topSchema, topObj) {
             }
 
             const patch = node.setValue(value);
-            const trans = transactionManager.openTransaction();
+            const trans = node.tm.openTransaction();
             trans.patches.push(patch);
             trans.commit();
         };

@@ -19,7 +19,8 @@ declare module FormChenNS {
         path: string;
         title: string;
         readOnly: boolean;
-        readonly root: BaseNode;
+        // readonly root: BaseNode;
+        tm: GridChenNS.TransactionManager;
 
         getValue: () => any;
         setValue: (any) => GridChenNS.Patch;

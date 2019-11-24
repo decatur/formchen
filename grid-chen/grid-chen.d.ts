@@ -148,6 +148,7 @@ declare module GridChenNS {
     export interface Transaction {
         patches: Patch[];
         commit: () => void;
+        context: () => void;
         readonly operations: JSONPatchOperation[]
     }
 
