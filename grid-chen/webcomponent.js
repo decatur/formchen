@@ -643,7 +643,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                     }
                 })
                 .catch(err => {
-                    logger.error('Failed to read clipboard contents: ', err);
+                    alert('Failed to read clipboard contents: ' + String(err));
+                    logger.error('Failed to read clipboard contents', err);
                 })
         } else if (evt.code === 'Delete') {
             evt.preventDefault();

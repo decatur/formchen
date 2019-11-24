@@ -138,17 +138,17 @@ export class BaseNode {
     //     return parts.join('/');
     // }
 
-    /**
-     * @returns {FormChenNS.BaseNode}
-     */
-    get root() {
-        /** @type{FormChenNS.BaseNode} */
-        let n = this;
-        while (n.parent) {
-            n = n.parent;
-        }
-        return n;
-    }
+    // /**
+    //  * @returns {FormChenNS.BaseNode}
+    //  */
+    // get root() {
+    //     /** @type{FormChenNS.BaseNode} */
+    //     let n = this;
+    //     while (n.parent) {
+    //         n = n.parent;
+    //     }
+    //     return n;
+    // }
 
     getValue() {
         if (this.parent && this.parent.obj) {
@@ -175,11 +175,6 @@ export class BaseNode {
             operations: [],
             pathPrefix: this.graph.pathPrefix
         };
-
-        const detailNode = /** @type{FormChenNS.DetailNode} */ (this.root);
-        if (detailNode.grid) {
-            //patch.details = { selectedRange: /**@type{FormChenNS.DetailNode}*/detailNode.grid.selectedRange };
-        }
 
         if (obj == oldValue) {
             return patch
@@ -325,8 +320,8 @@ export class HolderNode extends BaseNode {
         super._setValue(obj);
 
         for (let child of this.children) {
-            // TODO: Create class MasterNode
-            if ('master' in this) {
+            // TODO: Move to MasterNode?
+            if (this.constructor === MasterNode) {
                 /**@type{FormChenNS.DetailNode}*/(child).setRowIndex(/**@type{FormChenNS.MasterNode}*/(this).selectedRowIndex);
             } else {
                 child._setValue((obj == null ? undefined : obj[child.key]));
@@ -339,27 +334,35 @@ export class HolderNode extends BaseNode {
     }
 }
 
+class MasterNode extends HolderNode {
+    /**
+     * @param {FormChenNS.Graph} graph
+     * @param {string} relId
+     * @param {string | number} key
+     * @param {GridChenNS.ColumnSchema} schema
+     * @param {FormChenNS.HolderNode} parent
+     */
+    constructor(graph, relId, key, schema, parent) {
+        super(graph, relId, key, schema, parent);
+        this.selectedRowIndex = 0;
+    }
+}
+
 class DetailNode extends HolderNode {
-    constructor(graph, relId, key, schema, detailIndex, masterNode, grid, view) {
-        super(graph, relId, key, schema, null);
-        this.masterNode = masterNode;
+    constructor(graph, relId, key, schema, masterNode, detailIndex, grid, view) {
+        super(graph, relId, key, schema, masterNode);
         this.detailIndex = detailIndex;
         this.grid = grid;
         this.view = view;
         this.rowIndex = 0;
-        this.tm = masterNode.tm;
     }
     setRowIndex(rowIndex) {
         this.rowIndex = rowIndex;
         const { path, value } = this.view.getDetail(rowIndex, this.detailIndex);
-        this.key = this.masterNode.path + path;
+        this.key = this.parent.path + path;
         this._setValue(value);
         return value
     }
-    // select(range) {
-    //     this.setRowIndex(range.rowIndex);
-    //     this.grid.select(range);
-    // }
     onObjectReferenceChanged(obj) {
         this.view.setDetail(this.rowIndex, this.detailIndex, obj);
     }
@@ -409,11 +412,13 @@ export function createFormChen(topSchema, topObj) {
     */
     function createNode(relId, key, schema, parent) {
         schema = resolveSchema(schema, String(key));
+        let constructor;
         if (schema.type === 'object' || schema.type === 'array') {
-            return new HolderNode(graph, relId, key, schema, parent);
+            constructor = schema.format === 'grid'?MasterNode:HolderNode;
         } else {
-            return new BaseNode(graph, relId, key, schema, parent);
+            constructor = BaseNode;
         }
+        return new constructor(graph, relId, key, schema, parent);
     }
 
     registerGlobalTransactionManager();
@@ -445,11 +450,8 @@ export function createFormChen(topSchema, topObj) {
     function bindDetail(masterNode, view, grid, container, detailIndex, detailSchema) {
         const id = masterNode.id + view.getDetailId(detailIndex);
         detailSchema = resolveSchema(detailSchema, id);
-        const detailNode = new DetailNode(graph, id, undefined, detailSchema, detailIndex, masterNode, grid, view);
-
+        const detailNode = new DetailNode(graph, id, undefined, detailSchema, masterNode, detailIndex, grid, view);
         bindNode(detailNode, container);
-
-        return detailNode
     }
 
     /**
@@ -457,8 +459,6 @@ export function createFormChen(topSchema, topObj) {
      * @param {HTMLElement} containerElement
      */
     function bindGrid(node, containerElement) {
-        node.master = true;
-        node.selectedRowIndex = 0;
         const label = document.createElement('label');
         label.className = 'grid-label';
         label.textContent = node.title;
@@ -504,7 +504,7 @@ export function createFormChen(topSchema, topObj) {
             }
 
             for (const [detailIndex, detailSchema] of view.schema.detailSchemas.entries()) {
-                node.children.push(bindDetail(node, view, grid, containerElement, detailIndex, detailSchema));
+                bindDetail(node, view, grid, containerElement, detailIndex, detailSchema);
             }
         }
 
@@ -549,18 +549,13 @@ export function createFormChen(topSchema, topObj) {
 
             if (schema.type === 'object') {
                 bindObject(/**@type{FormChenNS.HolderNode}*/(node), container);
-                return
+            } else if (schema.format === 'grid') {
+                if (container) bindGrid(/**@type{FormChenNS.MasterNode}*/(node), container);
+            } else if (schema.type === 'array') {
+                bindTuple(/**@type{FormChenNS.HolderNode}*/(node), container);
             }
 
-            if (schema.type === 'array') {
-                if (schema.format === 'grid') {
-                    if (container) bindGrid(/**@type{FormChenNS.MasterNode}*/(node), container);
-                } else {
-                    bindTuple(/**@type{FormChenNS.HolderNode}*/(node), container);
-                }
-                return
-            }
-
+            return
         }
 
         console.log('bind: ' + path);
