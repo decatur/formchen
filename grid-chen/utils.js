@@ -232,8 +232,8 @@ function createLocalDateParser(locale) {
  */
 function reverseOp(op) {
     let reversedOp = Object.assign({}, op);
-    delete reversedOp.value
-    delete reversedOp.oldValue
+    delete reversedOp.value;
+    delete reversedOp.oldValue;
 
     if (op.op === 'replace') {
         // {"op":"replace","path":"/0/1"}

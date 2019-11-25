@@ -339,8 +339,8 @@ export function createRowMatrixView(jsonSchema, rows) {
         getDetail(rowIndex, detailIndex) {
             const colIndex = detailIndices[detailIndex];
             return {
-                path: '/' + rowIndex + '/' + colIndex,
-                value: (rowIndex < rows.length ? rows[rowIndex][colIndex] : null)
+                path: rowIndex + '/' + colIndex,
+                value: (rows && rowIndex < rows.length ? rows[rowIndex][colIndex] : null)
             }
         }
 

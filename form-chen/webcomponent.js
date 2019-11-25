@@ -2,7 +2,6 @@
 
 import "../grid-chen/webcomponent.js"
 import { createView } from "../grid-chen/matrixview.js";
-import { Range } from "../grid-chen/selection.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
@@ -10,7 +9,7 @@ import {
     DatePartialTimeStringConverter,
     StringConverter
 } from "../grid-chen/converter.js";
-import { registerGlobalTransactionManager, globalTransactionManager, applyJSONPatch } from "../grid-chen/utils.js";
+import { registerGlobalTransactionManager, globalTransactionManager } from "../grid-chen/utils.js";
 
 
 /**
@@ -176,7 +175,7 @@ export class BaseNode {
             pathPrefix: this.graph.pathPrefix
         };
 
-        if (obj == oldValue) {
+        if (obj === oldValue) {
             return patch
         }
 
@@ -232,6 +231,7 @@ export class BaseNode {
         let operations = [];
         /** @type{FormChenNS.HolderNode} */
         let n = this.parent;
+        let v = value;
         /** @type{string | number} */
         let key = this.key;
         while (n && n.obj == null) {
@@ -239,9 +239,9 @@ export class BaseNode {
             operations.unshift({ op: 'add', path: n.path, value: empty[0], nodeId: n.id });
             n.obj = empty[1];
             n.onObjectReferenceChanged(n.obj);
-            n.obj[key] = value;
+            n.obj[key] = v;
             key = n.key;
-            value = n.obj
+            v = n.obj;
             n = n.parent;
         }
         return operations
@@ -259,7 +259,7 @@ export class BaseNode {
         let n = this.parent;
         while (true) {
 
-            if (!n) break
+            if (!n) break;
             if (n.obj == null) break;
             if ((n.schema.type === 'object' ? Object.values(n.obj) : n.obj).length === 0) {
                 let oldValue = n.obj;
@@ -301,7 +301,7 @@ export class HolderNode extends BaseNode {
         if (!['object', 'array'].includes(schema.type)) {
             throw new Error('Invalid schema type: ' + schema.type);
         }
-        super(graph, relId, key, schema, parent)
+        super(graph, relId, key, schema, parent);
         /** @type{FormChenNS.BaseNode[]} */
         this.children = [];
     }
@@ -359,7 +359,7 @@ class DetailNode extends HolderNode {
     setRowIndex(rowIndex) {
         this.rowIndex = rowIndex;
         const { path, value } = this.view.getDetail(rowIndex, this.detailIndex);
-        this.key = this.parent.path + path;
+        this.key = path; //this.parent.path + path;
         this._setValue(value);
         return value
     }
@@ -398,7 +398,7 @@ export function createFormChen(topSchema, topObj) {
             if (!refSchema) {
                 throw new Error('Undefined $ref at ' + path);
             }
-            return refSchema
+            return /**@type{GridChenNS.ColumnSchema}*/ refSchema
         }
         return schema
     }
@@ -413,8 +413,10 @@ export function createFormChen(topSchema, topObj) {
     function createNode(relId, key, schema, parent) {
         schema = resolveSchema(schema, String(key));
         let constructor;
-        if (schema.type === 'object' || schema.type === 'array') {
-            constructor = schema.format === 'grid'?MasterNode:HolderNode;
+        if (schema.format === 'grid') {
+            constructor = MasterNode
+        } else if (schema.type === 'object' || schema.type === 'array') {
+            constructor = HolderNode;
         } else {
             constructor = BaseNode;
         }
@@ -491,17 +493,26 @@ export function createFormChen(topSchema, topObj) {
 
         if (view.schema.detailSchemas.length) {
             node.tm = Object.create(tm);
+
             node.tm.openTransaction = function () {
                 const transaction = tm.openTransaction();  // Invoke super method.
+                if (!transaction.selections) transaction.selections = [];
                 const selection = grid.selectedRange;
-                transaction.context = function () {
+                transaction.selections.push(function () {
                     for (const detailNode of node.children) {
                         detailNode.setRowIndex(selection.rowIndex);
                     }
                     grid.select(selection);
-                }
+                });
+
+                // TODO: This must be the default impl
+                transaction.context = function () {
+                    for (let i = transaction.selections.length-1; i>=0; i--) {
+                        transaction.selections[i]();
+                    }
+                };
                 return transaction
-            }
+            };
 
             for (const [detailIndex, detailSchema] of view.schema.detailSchemas.entries()) {
                 bindDetail(node, view, grid, containerElement, detailIndex, detailSchema);
@@ -547,10 +558,10 @@ export function createFormChen(topSchema, topObj) {
         if (schema.type === 'object' || schema.type === 'array') {
             console.log('bind: ' + path);
 
-            if (schema.type === 'object') {
-                bindObject(/**@type{FormChenNS.HolderNode}*/(node), container);
-            } else if (schema.format === 'grid') {
+            if (schema.format === 'grid') {
                 if (container) bindGrid(/**@type{FormChenNS.MasterNode}*/(node), container);
+            } else if (schema.type === 'object') {
+                bindObject(/**@type{FormChenNS.HolderNode}*/(node), container);
             } else if (schema.type === 'array') {
                 bindTuple(/**@type{FormChenNS.HolderNode}*/(node), container);
             }
@@ -560,7 +571,9 @@ export function createFormChen(topSchema, topObj) {
 
         console.log('bind: ' + path);
 
-        if (!container) return
+        if (!container) {
+            return
+        }
 
         const label = document.createElement('label');
         let input;

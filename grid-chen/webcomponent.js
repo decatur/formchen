@@ -853,7 +853,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     let cellMatrix = Array(viewPortRowCount);
     let pageIncrement = Math.max(1, viewPortRowCount);
 
-    function setFirstRow(_firstRow, callerIsScrollbar) {
+    function setFirstRow(_firstRow) {
         refreshHeaders();
         selection.hide();
 

@@ -4,26 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <title>form-chen Basic</title>
-    <link rel="stylesheet" href="demo.css">
+    <link href="demo.css" rel="stylesheet">
     <script src="./theme.js"></script>
 </head>
 
 <body>
 
-    <h1><a href="index.html">form-chen</a> / Basic Demo</h1>
+<h1><a href="index.html">form-chen</a> / Basic Demo</h1>
 
-    Example showing Master-Detail relationships.
-    Select different measurements rows to display the corresponding detail.
+Example showing Master-Detail relationships.
+Select different measurements rows to display the corresponding detail.
 
-    <form style="display: grid;grid-template-columns: 33% 33% 33%;">
-        <label>Edit Live Schema <textarea class="schema"></textarea></label>
-        <label>Edit Live Data <textarea class="data"></textarea></label>
-        <label>View Generated Patch <textarea class="patch"></textarea></label>
-    </form>
+<form style="display: grid;grid-template-columns: 33% 33% 33%;">
+    <label>Edit Live Schema <textarea class="schema"></textarea></label>
+    <label>Edit Live Data <textarea class="data"></textarea></label>
+    <label>View Generated Patch <textarea class="patch"></textarea></label>
+</form>
 
-    <div class="form-chen">
-        <div id="/myPrefix"></div>
-    </div>
+<div class="form-chen">
+    <div id="/myPrefix"></div>
+</div>
 
 </body>
 <script nomodule>alert('Your browser is not supported')</script>
@@ -39,12 +39,23 @@
                 items: {
                     type: 'array',
                     items: [  // tuple schema
-                        { title: 'TimeStamp', width: 200, type: 'string', format: 'date-time' },
-                        { title: 'Age [d]', width: 100, type: 'number' },
-                        { title: 'Weight [g]', width: 100, type: 'number' },
+                        {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
+                        {title: 'Age [d]', width: 100, type: 'number'},
+                        {title: 'Weight [g]', width: 100, type: 'number'},
                         {
                             title: 'DetailA', type: 'array', format: 'grid', items: {
                                 type: 'number',
+                            },
+                        },
+                        {
+                            title: 'DetailB', type: 'array', format: 'grid',
+                            items: {
+                                type: 'array',
+
+                                items: [
+                                    {title: 'ColA', type: 'number'},
+                                    {title: 'ColB', type: 'object', properties: {foo: {type: 'string'}}}
+                                ]
                             },
                         }
                     ]
@@ -86,9 +97,9 @@
         reference: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
         observer: 'Frida Krum',
         measurements: [
-            ["2019-01-01T00:00Z", 0, 0, [1,2,3]],
+            ["2019-01-01T00:00Z", 0, 0, [1, 2, 3], [[1, {foo: 'bar'}]]],
             ["2019-02-01T00:00Z", 1, 2],
-            ["2019-03-01T00:00Z", 2, 4, [1,2,3]]
+            ["2019-03-01T00:00Z", 2, 4, [1, 2, 3]]
         ],
         isCompleted: true
     };
