@@ -24,7 +24,7 @@ declare module FormChenNS {
 
         getValue: () => any;
         setValue: (any) => GridChenNS.Patch;
-        _setValue: (any) => void;
+        _setValue: (any, disabled: boolean) => void;
         refreshUI: (disabled: boolean) => void;
     }
 

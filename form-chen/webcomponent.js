@@ -193,7 +193,7 @@ export class BaseNode {
         op['nodeId'] = this.id;
         patch.operations.push(op);
 
-        this._setValue(obj);
+        this._setValue(obj, false);
 
         if (obj == null) {
             patch.operations.push(...this.clearPathToRoot());
@@ -205,8 +205,9 @@ export class BaseNode {
     /**
      * TODO: What is this doing?
      * @param {?} obj
+     * @param {boolean} disabled
      */
-    _setValue(obj) {
+    _setValue(obj, disabled) {
         this.path = (this.parent ? this.parent.path + '/' + this.key : String(this.key));
 
         if (this.parent && this.parent.obj) {
@@ -219,7 +220,7 @@ export class BaseNode {
             throw Error('Value lost')
         }
 
-        this.refreshUI(false);
+        this.refreshUI(disabled);
     }
 
     /**
@@ -310,21 +311,26 @@ export class HolderNode extends BaseNode {
         return this.obj;
     }
 
-    _setValue(obj) {
+    /**
+     * TODO: What is this doing?
+     * @param {?} obj
+     * @param {boolean} disabled
+     */
+    _setValue(obj, disabled) {
         if (obj == null) {
             delete this.obj;
         } else {
             this.obj = obj;
         }
 
-        super._setValue(obj);
+        super._setValue(obj, disabled);
 
         for (let child of this.children) {
             // TODO: Move to MasterNode?
             if (this.constructor === MasterNode) {
                 /**@type{FormChenNS.DetailNode}*/(child).setRowIndex(/**@type{FormChenNS.MasterNode}*/(this).selectedRowIndex);
             } else {
-                child._setValue((obj == null ? undefined : obj[child.key]));
+                child._setValue((obj == null ? undefined : obj[child.key]), disabled);
             }
         }
     }
@@ -360,7 +366,8 @@ class DetailNode extends HolderNode {
         this.rowIndex = rowIndex;
         const { path, value } = this.view.getDetail(rowIndex, this.detailIndex);
         this.key = path; //this.parent.path + path;
-        this._setValue(value);
+        const isEmptyRow = this.view.getRow(rowIndex).every(item => item == null);
+        this._setValue(value, isEmptyRow);
         return value
     }
     onObjectReferenceChanged(obj) {
@@ -481,7 +488,7 @@ export function createFormChen(topSchema, topObj) {
         grid.resetFromView(view, tm);
         grid.addEventListener('selectionChanged', function () {
             node.selectedRowIndex = grid.selectedRange.rowIndex;
-            //const isEmptyRow = view.getRow(selection.rowIndex).every(item => item == null);
+            
             for (const detailNode of node.children) {
                 detailNode.setRowIndex(node.selectedRowIndex);
             }
