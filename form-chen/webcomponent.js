@@ -312,6 +312,16 @@ export class HolderNode extends BaseNode {
     }
 
     /**
+     * 
+     * @param {*} obj 
+     * @param {FormChenNS.BaseNode} child
+     * @param {boolean} disabled
+     */
+    visitChild(obj, child, disabled) {
+        child._setValue((obj == null ? undefined : obj[child.key]), disabled);
+    }
+
+    /**
      * TODO: What is this doing?
      * @param {?} obj
      * @param {boolean} disabled
@@ -326,12 +336,7 @@ export class HolderNode extends BaseNode {
         super._setValue(obj, disabled);
 
         for (let child of this.children) {
-            // TODO: Move to MasterNode?
-            if (this.constructor === MasterNode) {
-                /**@type{FormChenNS.DetailNode}*/(child).setRowIndex(/**@type{FormChenNS.MasterNode}*/(this).selectedRowIndex);
-            } else {
-                child._setValue((obj == null ? undefined : obj[child.key]), disabled);
-            }
+            this.visitChild(obj, child, disabled);
         }
     }
 
@@ -351,6 +356,16 @@ class MasterNode extends HolderNode {
     constructor(graph, relId, key, schema, parent) {
         super(graph, relId, key, schema, parent);
         this.selectedRowIndex = 0;
+    }
+
+    /**
+     * 
+     * @param {*} obj 
+     * @param {FormChenNS.DetailNode} child
+     * @param {boolean} disabled
+     */
+    visitChild(obj, child, disabled) {
+        child.setRowIndex(this.selectedRowIndex);
     }
 }
 
