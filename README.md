@@ -83,7 +83,7 @@ Based on this flat list of paired elements, the layout can be tweaked using CSS 
 
 # JavaScript Api
 
-Please see the source code of the demos or [form-chen TypeScript Definitions](./form-chen/formchen.d.ts) for the public JavaScript Api.
+Please see the source code of the demos or [form-chen TypeScript Definitions](formchen/formchen.d.ts) for the public JavaScript Api.
 
 # Development
 

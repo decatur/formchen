@@ -1,16 +1,14 @@
 //@ts-check
 
-import "../grid-chen/webcomponent.js"
-import { createView } from "../grid-chen/matrixview.js";
+import "/gridchen/webcomponent.js"
+import { createView } from "/gridchen/matrixview.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
-    FullDateStringConverter,
     DatePartialTimeStringConverter,
     StringConverter
-} from "../grid-chen/converter.js";
-import { registerGlobalTransactionManager, globalTransactionManager } from "../grid-chen/utils.js";
-
+} from "/gridchen/converter.js";
+import { registerGlobalTransactionManager, globalTransactionManager } from "/gridchen/utils.js";
 
 /**
  * Example:
@@ -513,7 +511,7 @@ export function createFormChen(topSchema, topObj) {
             return node.setValue(view.getModel())
         };
 
-        if (view.schema.detailSchemas.length) {
+        if (view.schema.detailSchemas && view.schema.detailSchemas.length) {
             node.tm = Object.create(tm);
 
             node.tm.openTransaction = function () {
@@ -543,7 +541,7 @@ export function createFormChen(topSchema, topObj) {
 
         node.refreshUI = function () {
             view.applyJSONPatch([{ op: 'replace', path: '', value: node.obj }]);
-            grid._refresh(rootNode.schema.pathPrefix + this.path);
+            grid.refresh();
         }
     }
 
@@ -649,7 +647,7 @@ export function createFormChen(topSchema, topObj) {
                 }
             } else if (schema.format === 'full-date') {
                 if (!schema.converter) {
-                    schema.converter = new FullDateStringConverter();
+                    schema.converter = new DatePartialTimeStringConverter();
                 }
             } else if (schema.type === 'string') {
                 if (!schema.converter) {

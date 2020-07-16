@@ -1,5 +1,5 @@
 import { test, assert } from './grid-chen/utils.js'
-import { HolderNode, BaseNode, Graph } from "../form-chen/webcomponent.js";
+import { HolderNode, BaseNode, Graph } from "../formchen/webcomponent.js";
 
 test('graph', () => {
     const schema = {

@@ -1,5 +1,5 @@
 /////////////////////////////
-/// form-chen JavaScript APIs
+/// formchen JavaScript APIs
 /////////////////////////////
 
 declare module FormChenNS {

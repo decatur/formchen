@@ -1,7 +1,7 @@
 //@ts-check
 
 import { test, assert } from './grid-chen/utils.js'
-import { createFormChen } from '../form-chen/webcomponent.js'
+import { createFormChen } from '../formchen/webcomponent.js'
 import * as u from "../grid-chen/utils.js";
 
 const container = document.createElement('div');
