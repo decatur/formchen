@@ -494,6 +494,7 @@ export function createFormChen(topSchema, topObj) {
         label.appendChild(grid);
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
         const gridSchema = Object.assign({}, node.schema);
+        gridSchema.pathPrefix = node.id;
 
         const view = createView(gridSchema, null);
         let tm = node.tm;
@@ -639,15 +640,15 @@ export function createFormChen(topSchema, topObj) {
                 }
             } else if (schema.format === 'date-time') {
                 if (!schema.converter) {
-                    schema.converter = new DateTimeStringConverter();
+                    schema.converter = new DateTimeStringConverter(schema.period ||'HOURS');
                 }
             } else if (schema.format === 'date-partial-time') {
                 if (!schema.converter) {
-                    schema.converter = new DatePartialTimeStringConverter();
+                    schema.converter = new DatePartialTimeStringConverter(schema.period ||'HOURS');
                 }
             } else if (schema.format === 'full-date') {
                 if (!schema.converter) {
-                    schema.converter = new DatePartialTimeStringConverter();
+                    schema.converter = new DatePartialTimeStringConverter(schema.period ||'HOURS');
                 }
             } else if (schema.type === 'string') {
                 if (!schema.converter) {
