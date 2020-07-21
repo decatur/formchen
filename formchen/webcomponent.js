@@ -494,7 +494,6 @@ export function createFormChen(topSchema, topObj) {
         label.appendChild(grid);
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
         const gridSchema = Object.assign({}, node.schema);
-        gridSchema.pathPrefix = node.id;
 
         const view = createView(gridSchema, null);
         let tm = node.tm;
@@ -542,7 +541,7 @@ export function createFormChen(topSchema, topObj) {
 
         node.refreshUI = function () {
             view.applyJSONPatch([{ op: 'replace', path: '', value: node.obj }]);
-            grid.refresh();
+            grid.refresh(node.id);
         }
     }
 

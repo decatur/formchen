@@ -10,5 +10,4 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.6"
-flask = "^1.1"
 gridchen = "^0.1.2"

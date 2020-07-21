@@ -38,6 +38,10 @@ function rebind() {
         }
     }
 
+    if (document.querySelector('.form-chen').childElementCount <= 1) {
+        document.querySelector('.form-chen').innerHTML = `<div id="${schema.pathPrefix}"/>`;
+    }
+
     let fc;
     try {
         fc = createFormChen(schema, data);
