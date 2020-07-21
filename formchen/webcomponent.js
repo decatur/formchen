@@ -8,7 +8,7 @@ import {
     DatePartialTimeStringConverter,
     StringConverter
 } from "/gridchen/converter.js";
-import { registerGlobalTransactionManager, globalTransactionManager } from "/gridchen/utils.js";
+import { globalTransactionManager, createTransactionManager } from "/gridchen/utils.js";
 
 /**
  * Example:
@@ -392,7 +392,7 @@ class DetailNode extends HolderNode {
  * @param {GridChenNS.ColumnSchema} topSchema
  * @param {object} topObj
  */
-export function createFormChen(topSchema, topObj) {
+export function createFormChen(topSchema, topObj, transactionManager) {
 
     const pathPrefix = topSchema.pathPrefix || '';
     /** @type{FormChenNS.Graph} */
@@ -443,8 +443,9 @@ export function createFormChen(topSchema, topObj) {
         return new constructor(graph, relId, key, schema, parent);
     }
 
-    registerGlobalTransactionManager();
+    // registerGlobalTransactionManager();
     const rootNode = createNode('', '', topSchema, holder);
+    rootNode.tm = transactionManager;
     bindNode(rootNode, undefined); //document.getElementById(rootNode.id));
 
     rootNode.setValue(topObj);
