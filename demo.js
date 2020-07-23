@@ -1,5 +1,5 @@
 import {createFormChen} from "./formchen/webcomponent.js"
-import * as u from "/gridchen/utils.js";
+import * as utils from "/gridchen/utils.js";
 
 const schemaElement = document.querySelector('.schema');
 const dataElement = document.querySelector('.data');
@@ -43,14 +43,15 @@ function rebind() {
     }
 
     let fc;
+    const tm = utils.createTransactionManager();
+    utils.registerUndo(document.body, tm);
     try {
-        fc = createFormChen(schema, data);
+        fc = createFormChen(schema, data, tm);
     } catch (e) {
         console.error(e);
         rootElement.textContent = String(e);
     }
 
-    const tm = u.globalTransactionManager;
     tm.addEventListener('change', function () {
         patchElement.value = JSON.stringify(tm.patch, null, 2);
         dataElement.value = JSON.stringify(fc.value, null, 2);

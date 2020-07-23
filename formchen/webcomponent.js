@@ -8,7 +8,6 @@ import {
     DatePartialTimeStringConverter,
     StringConverter
 } from "/gridchen/converter.js";
-import { globalTransactionManager, createTransactionManager } from "/gridchen/utils.js";
 
 /**
  * Example:
@@ -91,11 +90,9 @@ export class BaseNode {
             this.id = relId[0] === '/' ? relId : ((parent ? parent.id : '') + '/' + String(relId));
         }
         this.graph = graph;
-        if ( parent) {
+        if (parent) {
             this.parent = parent;
-            this.tm = parent.tm || globalTransactionManager;
-        } else {
-            // this.tm = globalTransactionManager;
+            this.tm = parent.tm;
         }
         this.key = key;
         //if (this.key !== undefined) {

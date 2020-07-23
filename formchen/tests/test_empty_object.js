@@ -1,6 +1,6 @@
-import {test, assert} from './grid-chen/utils.js'
-import {createFormChen} from '../formchen/webcomponent.js'
-import * as u from "../grid-chen/utils.js";
+import {test, assert} from '/gridchen/tests/gridchen/utils.js'
+import {createFormChen} from '/formchen/webcomponent.js'
+import * as u from "/gridchen/utils.js";
 
 const container = document.createElement('div');
 container.id = '/test';

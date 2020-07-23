@@ -1,9 +1,9 @@
 //@ts-check
 
-import { test, assert } from './grid-chen/utils.js'
-import { createFormChen } from '../formchen/webcomponent.js'
-import { schema, data } from '../demos/sample2.mjs'
-import * as u from "../grid-chen/utils.js";
+import { test, assert } from '/gridchen/tests/gridchen/utils.js'
+import { createFormChen } from '/formchen/webcomponent.js'
+import { schema, data } from '/static/demos/sample2.mjs'
+import * as utils from '/gridchen/utils.js';
 
 const container = document.createElement('div');
 container.id = '/sample2';
@@ -15,8 +15,10 @@ test('atomic', () => {
 })
 
 test('FormChen', () => {
-    const fc = createFormChen(schema, data);
-    const tm = u.globalTransactionManager;
+    const tm = utils.createTransactionManager();
+    utils.registerUndo(document.body, tm);
+    const fc = createFormChen(schema, data, tm);
+
 
     //const selects = Array.from(document.getElementsByTagName('select'));
 
