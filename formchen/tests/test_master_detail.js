@@ -1,6 +1,6 @@
 //@ts-check
 
-import { test, assert } from '/gridchen/tests/gridchen/utils.js'
+import { test, assert } from '/gridchen/testing/utils.js'
 import { createFormChen } from '/formchen/webcomponent.js'
 import * as u from "/gridchen/utils.js";
 
