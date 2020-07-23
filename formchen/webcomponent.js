@@ -100,6 +100,8 @@ export class BaseNode {
         //}
         if (typeof schema.readOnly === 'boolean') {
             this.readOnly = schema.readOnly
+        } else if (typeof schema.editable === 'boolean') {
+            this.readOnly = !schema.editable;
         } else if (parent) {
             // Inherit read only.
             this.readOnly = parent.readOnly;
