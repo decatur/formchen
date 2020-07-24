@@ -491,7 +491,8 @@ export function createFormChen(topSchema, topObj, transactionManager) {
         if (node.schema.height) {
             grid.style.height = node.schema.height + 'px';
         }
-        label.appendChild(grid);
+        // label.appendChild(grid);
+        containerElement.appendChild(grid);
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
         const gridSchema = Object.assign({}, node.schema);
 
