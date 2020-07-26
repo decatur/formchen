@@ -2,7 +2,7 @@
 
 import { test, assert } from '/gridchen/testing/utils.js'
 import { createFormChen } from '/formchen/webcomponent.js'
-import { schema, data } from '/static/demos/sample2.mjs'
+import { schema, data } from '/demos/sample2.mjs'
 import * as utils from '/gridchen/utils.js';
 
 const container = document.createElement('div');
@@ -54,22 +54,22 @@ test('FormChen', () => {
     assert.equal({ op: "replace", path: "/sample2/someEnum", value: "Tilda Swift", oldValue: 'Mona Lisa' }, tm.patch.pop());
 
     input = /** @type{HTMLInputElement} */ (document.getElementById('/sample2/someDate'));
-    assert.equal('2019-01-01', input.value);
+    assert.equal('2019-01-01 00', input.value);
     input.value = '2020-01-01';
     input.onchange(null);
-    assert.equal({ op: "replace", path: "/sample2/someDate", value: '2020-01-01', oldValue: '2019-01-01' }, tm.patch.pop());
+    assert.equal({ op: "replace", path: "/sample2/someDate", value: '2020-01-01T00', oldValue: '2019-01-01' }, tm.patch.pop());
 
     input = /** @type{HTMLInputElement} */ (document.getElementById('/sample2/someDateTime'));
-    assert.equal('2019-01-01 00:00Z', input.value);
+    assert.equal('2019-01-01 01+01:00', input.value);
     input.value = '2020-01-01T00:00Z';
     input.onchange(null);
-    assert.equal({ op: "replace", path: "/sample2/someDateTime", value: '2020-01-01T01:00+01:00', oldValue: '2019-01-01T00:00Z' }, tm.patch.pop());
+    assert.equal({ op: "replace", path: "/sample2/someDateTime", value: '2020-01-01T01+01:00', oldValue: '2019-01-01T00:00Z' }, tm.patch.pop());
 
     input = /** @type{HTMLInputElement} */ (document.getElementById('/sample2/someDatePartialTime'));
-    assert.equal('2019-01-01 00:00', input.value);
+    assert.equal('2019-01-01 00', input.value);
     input.value = '2020-01-01T00:00';
     input.onchange(null);
-    assert.equal({ op: "replace", path: "/sample2/someDatePartialTime", value: '2020-01-01T00:00', oldValue: '2019-01-01T00:00' }, tm.patch.pop());
+    assert.equal({ op: "replace", path: "/sample2/someDatePartialTime", value: '2020-01-01T00', oldValue: '2019-01-01T00:00' }, tm.patch.pop());
 
     input = /** @type{HTMLInputElement} */ (document.getElementById('/sample2/someBoolean'));
     assert.equal(true, input.checked);

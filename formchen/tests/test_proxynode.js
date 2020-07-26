@@ -14,11 +14,11 @@ test('graph', () => {
         }
     };
 
-    const graph = new Graph(schema);
+    schema.pathPrefix = '/prefix';
+    const graph = new Graph('');
     const node1 = new HolderNode(graph, '', '', schema, null);
     const node2 = new HolderNode(graph, 'foo', 'foo', schema.properties.foo, node1);
     const node3 = new BaseNode(graph, 'bar', 'bar', schema.properties.foo.properties.bar, node2);
-
     let patch = node3.setValue('foobar');
     patch.operations.forEach(op => { delete op.nodeId });
     assert.equal({ foo: { bar: 'foobar' } }, node1.obj);

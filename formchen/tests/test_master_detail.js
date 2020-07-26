@@ -1,8 +1,8 @@
 //@ts-check
 
-import { test, assert } from '/gridchen/testing/utils.js'
-import { createFormChen } from '/formchen/webcomponent.js'
-import * as u from "/gridchen/utils.js";
+import {test, assert} from '/gridchen/testing/utils.js'
+import {createFormChen} from '/formchen/webcomponent.js'
+import {createTransactionManager} from "/gridchen/utils.js";
 
 const container = document.createElement('div');
 document.body.appendChild(container);
@@ -17,19 +17,19 @@ test('master-detail', () => {
                 items: {
                     type: 'array',
                     items: [  // tuple schema
-                        { title: 'TimeStamp', width: 200, type: 'string', format: 'date-time' },
-                        { title: 'Age [d]', width: 100, type: 'number' },
-                        { title: 'Weight [g]', width: 100, type: 'number' },
+                        {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
+                        {title: 'Age [d]', width: 100, type: 'number'},
+                        {title: 'Weight [g]', width: 100, type: 'number'},
                         {
                             title: 'DetailA', type: 'object', properties: {
-                                foo: { type: 'string' },
-                                bar: { type: 'string' }
+                                foo: {type: 'string'},
+                                bar: {type: 'string'}
                             },
                         },
                         {
                             title: 'DetailB', type: 'object', properties: {
-                                foo: { type: 'string' },
-                                bar: { type: 'string' }
+                                foo: {type: 'string'},
+                                bar: {type: 'string'}
                             },
                         }
                     ]
@@ -59,9 +59,9 @@ test('master-detail', () => {
     const data = {
         plant: 'Rubus idaeus',
         measurements: [
-            ["2019-01-01T00:00Z", 0, 0, { bar: 'Column 3' }, { bar: 'Column 4' }],
+            ["2019-01-01T00:00Z", 0, 0, {bar: 'Column 3'}, {bar: 'Column 4'}],
             ["2019-02-01T00:00Z", 1, 2],
-            ["2019-03-01T00:00Z", 2, 4, { foo: 'Some Foo' }, { foo: 'Some Foo' }]
+            ["2019-03-01T00:00Z", 2, 4, {foo: 'Some Foo'}, {foo: 'Some Foo'}]
         ],
         isCompleted: true
     };
@@ -69,8 +69,8 @@ test('master-detail', () => {
     const orgData = JSON.parse(JSON.stringify(data));
 
     container.id = schema.pathPrefix;
-    const fc = createFormChen(schema, data);
-    const tm = u.globalTransactionManager;
+    const tm = createTransactionManager();
+    const fc = createFormChen(schema, data, tm);
 
     /** @returns {HTMLInputElement} */
     function getInput(id) {
@@ -99,8 +99,8 @@ test('master-detail', () => {
         fooInput.onchange(null);
 
         const patch = tm.patch;
-        assert.equal({ op: "add", path: `/md/measurements/0/${columnIndex}/foo`, value: "new foo" }, patch.pop());
-        assert.equal({ foo: 'new foo', bar: `Column ${columnIndex}` }, data.measurements[0][columnIndex]);
+        assert.equal({op: "add", path: `/md/measurements/0/${columnIndex}/foo`, value: "new foo"}, patch.pop());
+        assert.equal({foo: 'new foo', bar: `Column ${columnIndex}`}, data.measurements[0][columnIndex]);
 
         // Now select second row.
         const gridChen = /** @type{GridChenNS.GridChen} */ (document.getElementById('/md/measurements'));
@@ -110,7 +110,7 @@ test('master-detail', () => {
 
         tm.undo();
         assert.equal(0, gridChen.selectedRange.rowIndex);
-        assert.equal({ bar: `Column ${columnIndex}` }, data.measurements[0][columnIndex]);
+        assert.equal({bar: `Column ${columnIndex}`}, data.measurements[0][columnIndex]);
     }
 
     // Now undo the initil transaction.

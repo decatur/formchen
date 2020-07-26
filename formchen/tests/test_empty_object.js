@@ -1,6 +1,6 @@
 import {test, assert} from '/gridchen/testing/utils.js'
 import {createFormChen} from '/formchen/webcomponent.js'
-import * as u from "/gridchen/utils.js";
+import {createTransactionManager} from "/gridchen/utils.js";
 
 const container = document.createElement('div');
 container.id = '/test';
@@ -18,8 +18,8 @@ test('Empty Object one Level', () => {
     };
 
     container.textContent = '';
-    const fc = createFormChen(schema, undefined);
-    const tm = u.globalTransactionManager;
+    const tm = createTransactionManager();
+    const fc = createFormChen(schema, null, tm);
 
     let input = document.getElementById('/test/foo');
 
@@ -60,8 +60,8 @@ test('Empty Object two Levels', () => {
     };
 
     container.textContent = '';
-    const fc = createFormChen(schema, undefined);
-    const tm = u.globalTransactionManager;
+    const tm = createTransactionManager();
+    const fc = createFormChen(schema, null, tm);
 
     let fooInput = document.getElementById('/test/foo');
     let foobarInput = document.getElementById('/test/bar/foobar');
@@ -109,8 +109,8 @@ test('delete', () => {
     };
 
     container.textContent = '';
-    const fc = createFormChen(schema, {bar:{foobar:'foobar'}});
-    const tm = u.globalTransactionManager;
+    const tm = createTransactionManager();
+    const fc = createFormChen(schema, {bar:{foobar:'foobar'}}, tm);
 
     //let fooInput = document.getElementById('/test/foo');
     let foobarInput = document.getElementById('/test/bar/foobar');
@@ -146,8 +146,8 @@ test('delete subtree', () => {
     };
 
     container.textContent = '';
-    const fc = createFormChen(schema, {bar:{foobar:'foobar'}});
-    const tm = u.globalTransactionManager;
+    const tm = createTransactionManager();
+    const fc = createFormChen(schema, {bar:{foobar:'foobar'}}, tm);
 
     let fooInput = document.getElementById('/test/foo');
     let foobarInput = document.getElementById('/test/bar/foobar');
@@ -188,8 +188,8 @@ test('Empty object with grid', () => {
     };
 
     container.textContent = '';
-    const fc = createFormChen(schema, undefined);
-    const tm = u.globalTransactionManager;
+    const tm = createTransactionManager();
+    const fc = createFormChen(schema, null, tm);
 
     const gc = document.querySelector('grid-chen');
     gc._click(0, 0);  // NoOp because cell 0,0 is selected by default.

@@ -388,8 +388,10 @@ class DetailNode extends HolderNode {
 }
 
 /**
- * @param {GridChenNS.ColumnSchema} topSchema
+ * @param {GridChenNS.JSONSchema} topSchema
  * @param {object} topObj
+ * @param {GridChenNS.TransactionManager=} transactionManager
+ * @returns {FormChenNS.FormChen}
  */
 export function createFormChen(topSchema, topObj, transactionManager) {
 
@@ -636,7 +638,8 @@ export function createFormChen(topSchema, topObj, transactionManager) {
                 }
             } else if (schema.type === 'number') {
                 if (!schema.converter) {
-                    schema.converter = new NumberConverter(schema.fractionDigits || 2, undefined, schema.format === '%');
+                    schema.converter = new NumberConverter(schema.fractionDigits || 2, undefined);
+                    schema.converter.isPercent = (schema.format === '%');
                 }
             } else if (schema.format === 'date-time') {
                 if (!schema.converter) {
