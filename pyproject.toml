@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "formchen"
-version = "0.3.0"
+version = "0.1.0"
 description = "Generate HTML forms and bind hierarchical and tabular data."
 authors = ["Wolfgang Kühn"]
 homepage = "https://github.com/decatur/form-chen"
