@@ -1,13 +1,13 @@
 //@ts-check
 
-import "/gridchen/webcomponent.js"
-import { createView } from "/gridchen/matrixview.js";
+import "https://decatur.github.io/grid-chen/gridchen/webcomponent.js"
+import { createView } from "https://decatur.github.io/grid-chen/gridchen/matrixview.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
     DatePartialTimeStringConverter,
     StringConverter
-} from "/gridchen/converter.js";
+} from "https://decatur.github.io/grid-chen/gridchen/converter.js";
 
 /**
  * Example:
