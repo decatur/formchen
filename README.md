@@ -14,19 +14,18 @@ Form-Chen is written in plain EcmaScript 2017 modules and can be directly import
 
 # Usage
 
+This is a basic form which runs standalone or can be loaded from https://decatur.github.io/form-chen/usage.html.
 ![usage](usage.png)
 
+
 ```html
+<!DOCTYPE html>
 <div class="form-chen">
-    <!-- JSON Path to root element -->
     <div id="/person"></div>
-    <!-- JSON Path to root vip property -->
     <span style="font-size: x-large" id="/person/vip"></span>
 </div>
-```
-
-```javascript
-    import {createFormChen} from "./webcomponentwebcomponent.js"
+<script type="module">
+    import {createFormChen} from "https://decatur.github.io/form-chen/formchen/webcomponent.js"
 
     const schema = {
         title: 'Person',
@@ -52,11 +51,38 @@ Form-Chen is written in plain EcmaScript 2017 modules and can be directly import
     };
 
     createFormChen(schema, data);
+</script>
+
 ```
 
 # Demos
 
 See https://decatur.github.io/form-chen
+
+# Hosting Form-Chen
+
+Deploy both [formchen](https://github.com/decatur/form-chen/tree/master/formchen) and 
+[gridchen](https://github.com/decatur/grid-chen/tree/master/gridchen) directories from the respective git repositories. 
+formchen depends on gridchen to be at the relative URL ``/gridchen``, i.e. ``import "/gridchen/webcomponent.js"``
+So be sure your web server routes this URL to the install location of gridchen.
+
+## NPM Install
+
+⚠ Currently formchen is not registered with npmjs!
+
+## Python PyPI Install
+Using Python you can install the [formchen package](https://pypi.org/project/formchen/).
+A Python routing example can be found in the provided dev server.
+
+## Note on module resolving
+
+The old way of module resolution is via 
+[bare import specifiers](https://html.spec.whatwg.org/multipage/webappapis.html#resolve-a-module-specifier) 
+such as ``import "gridchen/webcomponent.js"``. Note the missing slash at the beginning. 
+This is usually handled by bundlers, which replace the bare import specifier with a relative path to the routed module location.
+As we do not want to rely on any bundler, and because currently there is no Web browser standard for module resolution of bare import
+specifiers, we opted for the relative URL approach.  
+
 
 # Read Only
 
@@ -90,3 +116,14 @@ Please see the source code of the demos or [form-chen TypeScript Definitions](fo
 Form-Chen is written in plain EcmaScript 2017 modules with JSDocs type hinting.
 There is no overhead related to transpiling or packing.
 As tool I recommend either vscode or one of the JetBrains IDEs (WebStorm, PyCharm).
+
+## Dev Server
+
+There is a FastAPI-based dev server in the dev_server directory.
+
+## Unit Testing
+
+After starting the dev server, navigate to
+http://localhost:8000/gridchen/testing/suiterunner.html?testpath=/formchen/tests/
+
+

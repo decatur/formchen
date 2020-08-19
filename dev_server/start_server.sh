@@ -1,2 +1,3 @@
+# This needs project root as working directory!
 . venv/Scripts/activate
-uvicorn formchen.main:app
+uvicorn dev_server.server:app

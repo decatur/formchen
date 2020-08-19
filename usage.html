@@ -1,25 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Usage</title>
-    <link rel="stylesheet" href="demo.css">
-    <script src="./theme.js"></script>
-</head>
-<body>
-
-<h1><a href="index.html">form-chen</a> / Usage for Readme</h1>
-
-Note that vip has extra CSS style.
-
 <div class="form-chen">
-    <!-- JSON Path to root element -->
     <div id="/person"></div>
-    <!-- JSON Path to vip property -->
     <span style="font-size: x-large" id="/person/vip"></span>
 </div>
 <script type="module">
-    import {createFormChen} from "./formchen/webcomponent.js"
+    import {createFormChen} from "https://decatur.github.io/form-chen/formchen/webcomponent.js"
 
     const schema = {
         title: 'Person',
@@ -46,5 +31,3 @@ Note that vip has extra CSS style.
 
     createFormChen(schema, data);
 </script>
-</body>
-</html>
