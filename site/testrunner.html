@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>module name</title>
+    <link id="favicon" rel="shortcut icon" type="image/png">
+    <script src="theme.js"></script>
+</head>
+<body>
+<h1><a href="index.html">Index</a> / Running Unit Test <span id="moduleName"/></h1>
+<p>
+    Open JavaScript console for details
+</p>
+
+</body>
+
+<script type="module">
+    import {create} from "https://decatur.github.io/grid-chen/gridchen/testing/runner.js"
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('module')) {
+        throw new Error('Page must be loaded with module query');
+    }
+    const moduleName = params.get('module');
+    const module = import(`${moduleName}.js`);
+    create(module, params.get('test'));
+</script>
+</html>

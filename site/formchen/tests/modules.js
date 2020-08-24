@@ -1,0 +1,1 @@
+export const modules =  ['test_Formchen', 'test_empty_object', 'test_master_detail', 'test_proxynode'];
