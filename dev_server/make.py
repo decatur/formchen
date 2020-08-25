@@ -6,6 +6,8 @@ from typing import List, Tuple
 
 def process_file(source: Path, target: Path):
     spec_mapping = [('gridchen/', 'https://decatur.github.io/grid-chen/gridchen/')]
+    if not target.parent.is_dir():
+        target.parent.mkdir(parents=True)
     if source.suffix in {'.html', '.js'}:
         t = read_file(source, spec_mapping)
         target.write_text(t, encoding='utf8')
@@ -21,12 +23,16 @@ def read_file(source: Path, spec_mapping: List[Tuple[str, str]]) -> str:
     return t
 
 
-def build():
-
-    for elem in Path('./').glob('*.*'):
-        p = Path('./') / elem
+def process_dir(source: Path):
+    for elem in source.glob('*.*'):
+        p = elem
         if p.is_file():
             process_file(p, target_root / elem)
+
+
+def build():
+    process_dir(Path('./'))
+    process_dir(Path('./demos'))
 
     for elem in Path('./formchen').rglob('*.*'):
         p = Path('./') / elem
