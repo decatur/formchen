@@ -128,12 +128,7 @@ http://localhost:8000/gridchen/testing/suiterunner.html?testpath=/formchen/tests
 
 ## Github Pages
 
-Github Pages are served from /root of the pages branch. The pages branch is modified so that gridchen is loaded from an absolute path.
-To update Github Pages, do
-````bash
-git checkout pages
-git merge master
-git push
-````
+Github Pages are served from /docs of the master branch. The /docs folder is generated from /root by substituting
+all import specifiers of the form '/gridchen/*' with 'https://decatur.github.io/grid-chen/gridchen/*'.
 
 

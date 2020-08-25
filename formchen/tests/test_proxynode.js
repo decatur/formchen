@@ -1,4 +1,4 @@
-import { test, assert } from '/gridchen/testing/utils.js'
+import { test, assert } from 'gridchen/testing/utils.js'
 import { HolderNode, BaseNode, Graph } from "/formchen/webcomponent.js";
 
 test('graph', () => {

@@ -15,7 +15,7 @@
 </body>
 
 <script type="module">
-    import {create} from "/gridchen/testing/runner.js"
+    import {create} from "gridchen/testing/runner.js"
     const params = new URLSearchParams(window.location.search);
     if (!params.has('module')) {
         throw new Error('Page must be loaded with module query');

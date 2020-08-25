@@ -22,7 +22,7 @@
 </body>
 
 <script type="module">
-    import {create} from "/gridchen/testing/suite.js"
+    import {create} from "gridchen/testing/suite.js"
     const modules =  ['test_Formchen', 'test_empty_object', 'test_master_detail', 'test_proxynode'];
     create(modules.map(m => './formchen/tests/' + m))
 </script>
