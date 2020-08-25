@@ -7,6 +7,9 @@ homepage = "https://github.com/decatur/form-chen"
 repository = "https://github.com/decatur/form-chen"
 license = "MIT"
 readme = "README.md"
+packages = [
+    { include = "formchen", from = "lib" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.6"

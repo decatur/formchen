@@ -1,11 +1,10 @@
 import re
 import shutil
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Generator
 
 
-def process_file(source: Path, target: Path):
-    spec_mapping = [('gridchen/', 'https://decatur.github.io/grid-chen/gridchen/')]
+def process_file(source: Path, target: Path, spec_mapping: List[Tuple[str, str]]):
     if not target.parent.is_dir():
         target.parent.mkdir(parents=True)
     if source.suffix in {'.html', '.js'}:
@@ -23,26 +22,30 @@ def read_file(source: Path, spec_mapping: List[Tuple[str, str]]) -> str:
     return t
 
 
-def process_dir(source: Path):
-    for elem in source.glob('*.*'):
-        p = elem
+def process_dir(source: Generator[Path, None, None], target_root: Path, spec_mapping: List[Tuple[str, str]]):
+    for elem in source:
+        if elem.is_file():
+            process_file(elem, target_root / elem, spec_mapping)
+
+
+def process_dir_recursive(source: Path, target_root: Path, spec_mapping: List[Tuple[str, str]]):
+    for elem in source.rglob('*.*'):
+        p = Path('./') / elem
         if p.is_file():
-            process_file(p, target_root / elem)
+            process_file(p, target_root / elem, spec_mapping)
 
 
 def build():
-    process_dir(Path('./'))
-    process_dir(Path('./demos'))
+    target_root = Path('./docs')
+    spec_mapping = [('gridchen/', 'https://decatur.github.io/grid-chen/gridchen/')]
+    process_dir(Path('./').glob('*.*'), target_root, spec_mapping)
+    process_dir(Path('./demos').glob('*.*'), target_root, spec_mapping)
+    process_dir(Path('./formchen').rglob('*.*'), target_root, spec_mapping)
 
-    for elem in Path('./formchen').rglob('*.*'):
-        p = Path('./') / elem
-        if p.is_file():
-            target = target_root / elem
-            if not target.parent.is_dir():
-                target.parent.mkdir(parents=True)
-            process_file(p, target_root / elem)
+    target_root = Path('./lib')
+    spec_mapping = [('gridchen/', '/gridchen/')]
+    process_dir(Path('./formchen').rglob('*.*'), target_root, spec_mapping)
 
 
 if __name__ == '__main__':
-    target_root = Path('./docs')
     build()
