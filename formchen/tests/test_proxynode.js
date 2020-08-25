@@ -1,5 +1,5 @@
 import { test, assert } from 'gridchen/testing/utils.js'
-import { HolderNode, BaseNode, Graph } from "/formchen/webcomponent.js";
+import { HolderNode, BaseNode, Graph } from "./formchen/webcomponent.js";
 
 test('graph', () => {
     const schema = {
