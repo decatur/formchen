@@ -1,8 +1,8 @@
 //@ts-check
 
 import { test, assert } from 'gridchen/testing/utils.js'
-import { createFormChen } from './formchen/webcomponent.js'
-import { schema, data } from '/demos/sample2.js'
+import { createFormChen } from '../webcomponent.js'
+import { schema, data } from '../../demos/sample2.js'
 import * as utils from 'gridchen/utils.js';
 
 const container = document.createElement('div');
