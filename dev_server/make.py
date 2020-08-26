@@ -25,6 +25,7 @@ def read_file(source: Path, spec_mapping: List[Tuple[str, str]]) -> str:
 def process_imports(src: str, imports: Dict[str, str], scopes: dict = dict()) -> Tuple[str, bool]:
     """
     Remaps the imports and exports in the specified Javascript module according the import map.
+    This is the Python equivalence to https://github.com/guybedford/es-module-shims for Javascript.
 
     :param src:
     :param imports: See https://github.com/WICG/import-maps
