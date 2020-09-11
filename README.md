@@ -63,8 +63,8 @@ See https://decatur.github.io/form-chen
 
 Deploy both [formchen](https://github.com/decatur/form-chen/tree/master/formchen) and 
 [gridchen](https://github.com/decatur/grid-chen/tree/master/gridchen) directories from the respective git repositories. 
-formchen depends on gridchen to be at the relative URL ``/gridchen``, i.e. ``import "/gridchen/webcomponent.js"``
-So be sure your web server routes this URL to the install location of gridchen.
+formchen depends on gridchen to be at the bare URL ``gridchen``, i.e. ``import "gridchen/webcomponent.js"``
+So be sure you bundle or inplace your imports.
 
 ## NPM Install
 
@@ -129,6 +129,6 @@ http://localhost:8000/gridchen/testing/suiterunner.html?testpath=/formchen/tests
 ## Github Pages
 
 Github Pages are served from /docs of the master branch. The /docs folder is generated from /root by substituting
-all import specifiers of the form '/gridchen/*' with 'https://decatur.github.io/grid-chen/gridchen/*'.
+all bare import specifiers of the form 'gridchen/*' with 'https://decatur.github.io/grid-chen/gridchen/*'.
 
 
