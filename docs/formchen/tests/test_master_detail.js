@@ -1,8 +1,8 @@
 //@ts-check
 
-import {test, assert} from 'https://decatur.github.io/grid-chen/gridchen/testing/utils.js'
+import {test, assert} from 'https://decatur.github.io/gridchen/gridchen/testing/utils.js'
 import {createFormChen} from '../webcomponent.js'
-import {createTransactionManager} from "https://decatur.github.io/grid-chen/gridchen/utils.js";
+import {createTransactionManager} from "https://decatur.github.io/gridchen/gridchen/utils.js";
 
 const container = document.createElement('div');
 document.body.appendChild(container);

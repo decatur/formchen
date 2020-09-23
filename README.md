@@ -2,7 +2,7 @@ Generate HTML forms and bind hierarchical and tabular data with the help of [JSO
 
 Form-Chen supports master-detail relationships and undo/redo transaction management.
 
-It uses [grid-chen](https://github.com/decatur/grid-chen) to produce Excel-like web-components for
+It uses [gridchen](https://github.com/decatur/gridchen) to produce Excel-like web-components for
 tabular (aka table/grid/matrix) data. 
 
 Edits on the original object are emitted as standard [JSON Patch](https://tools.ietf.org/html/rfc6902),
@@ -14,7 +14,7 @@ Form-Chen is written in plain EcmaScript 2017 modules and can be directly import
 
 # Usage
 
-This is a basic form which runs standalone or can be loaded from https://decatur.github.io/form-chen/usage.html.
+This is a basic form which runs standalone or can be loaded from https://decatur.github.io/formchen/usage.html.
 ![usage](usage.png)
 
 
@@ -25,7 +25,7 @@ This is a basic form which runs standalone or can be loaded from https://decatur
     <span style="font-size: x-large" id="/person/vip"></span>
 </div>
 <script type="module">
-    import {createFormChen} from "https://decatur.github.io/form-chen/formchen/webcomponent.js"
+    import {createFormChen} from "https://decatur.github.io/formchen/formchen/webcomponent.js"
 
     const schema = {
         title: 'Person',
@@ -57,12 +57,12 @@ This is a basic form which runs standalone or can be loaded from https://decatur
 
 # Demos
 
-See https://decatur.github.io/form-chen
+See https://decatur.github.io/formchen
 
 # Hosting Form-Chen
 
-Deploy both [formchen](https://github.com/decatur/form-chen/tree/master/formchen) and 
-[gridchen](https://github.com/decatur/grid-chen/tree/master/gridchen) directories from the respective git repositories. 
+Deploy both [formchen](https://github.com/decatur/formchen/tree/master/formchen) and 
+[gridchen](https://github.com/decatur/gridchen/tree/master/gridchen) directories from the respective git repositories. 
 formchen depends on gridchen to be at the bare URL ``gridchen``, i.e. ``import "gridchen/webcomponent.js"``
 So be sure you bundle or inplace your imports.
 
@@ -109,7 +109,7 @@ Based on this flat list of paired elements, the layout can be tweaked using CSS 
 
 # JavaScript Api
 
-Please see the source code of the demos or [form-chen TypeScript Definitions](formchen/formchen.d.ts) for the public JavaScript Api.
+Please see the source code of the demos or [formchen TypeScript Definitions](formchen/formchen.d.ts) for the public JavaScript Api.
 
 # Contribute
 
@@ -133,21 +133,21 @@ The /docs folder is generated from project root by running
 ````bash
 python build.py
 ````
-This will substitute the bare import specifier `gridchen/` with `https://decatur.github.io/grid-chen/gridchen/`.
+This will substitute the bare import specifier `gridchen/` with `https://decatur.github.io/gridchen/gridchen/`.
 
 Steps:
 1. `python build.py`
 2. Test web site locally by opening `./docs/index.html` (PyCharm: Open in browser) and navigating the site.
 3. `git push`
-4. Test web site on [Formchen Github Pages](https://decatur.github.io/form-chen/index.html) 
+4. Test web site on [Formchen Github Pages](https://decatur.github.io/formchen/index.html) 
 
-## Package
+## Python Package
 
 ````shell script
 poetry build
 ````
 
-## Publishing
+## Python Publish
 
 ````shell script
 poetry publish

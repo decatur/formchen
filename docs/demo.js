@@ -1,5 +1,5 @@
 import {createFormChen} from "./formchen/webcomponent.js"
-import * as utils from "https://decatur.github.io/grid-chen/gridchen/utils.js";
+import * as utils from "https://decatur.github.io/gridchen/gridchen/utils.js";
 
 const schemaElement = document.querySelector('.schema');
 const dataElement = document.querySelector('.data');

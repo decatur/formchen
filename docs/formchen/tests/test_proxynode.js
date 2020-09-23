@@ -1,4 +1,4 @@
-import { test, assert } from 'https://decatur.github.io/grid-chen/gridchen/testing/utils.js'
+import { test, assert } from 'https://decatur.github.io/gridchen/gridchen/testing/utils.js'
 import { HolderNode, BaseNode, Graph } from "../webcomponent.js";
 
 test('graph', () => {
