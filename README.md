@@ -134,8 +134,12 @@ The /docs folder is generated from project root by running
 python build.py
 ````
 This will substitute the bare import specifier `gridchen/` with `https://decatur.github.io/grid-chen/gridchen/`.
-Test the documentation by locally open `./docs/index.html` (PyCharm: Open in browser) and navigating through the
-pages.
+
+Steps:
+1. `python build.py`
+2. Test web site locally by opening `./docs/index.html` (PyCharm: Open in browser) and navigating the site.
+3. `git push`
+4. Test web site on [Formchen Github Pages](https://decatur.github.io/form-chen/index.html) 
 
 ## Package
 
