@@ -111,11 +111,11 @@ Based on this flat list of paired elements, the layout can be tweaked using CSS 
 
 Please see the source code of the demos or [form-chen TypeScript Definitions](formchen/formchen.d.ts) for the public JavaScript Api.
 
-# Development
+# Contribute
 
 Form-Chen is written in plain EcmaScript 2017 modules with JSDocs type hinting.
 There is no overhead related to transpiling or packing.
-As tool I recommend either vscode or one of the JetBrains IDEs (WebStorm, PyCharm).
+As tool I recommend either vscode or one of JetBrains IDEs (WebStorm, PyCharm).
 
 ## Dev Server
 
@@ -126,9 +126,27 @@ There is a FastAPI-based dev server in the dev_server directory.
 After starting the dev server, navigate to
 http://localhost:8000/gridchen/testing/suiterunner.html?testpath=/formchen/tests/
 
-## Github Pages
+## Project Website
 
-Github Pages are served from /docs of the master branch. The /docs folder is generated from /root by substituting
-all bare import specifiers of the form 'gridchen/*' with 'https://decatur.github.io/grid-chen/gridchen/*'.
+Formchen can be deployed to a static web server. We use Github Pages and serve from /docs of the master branch. 
+The /docs folder is generated from project root by running
+````bash
+python build.py
+````
+This will substitute the bare import specifier `gridchen/` with `https://decatur.github.io/grid-chen/gridchen/`.
+Test the documentation by locally open `./docs/index.html` (PyCharm: Open in browser) and navigating through the
+pages.
+
+## Package
+
+````shell script
+poetry build
+````
+
+## Publishing
+
+````shell script
+poetry publish
+````
 
 

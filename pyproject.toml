@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "formchen"
-version = "0.1.1"
+version = "0.1.4"
 description = "Generate HTML forms and bind hierarchical and tabular data."
 authors = ["Wolfgang Kühn"]
 homepage = "https://github.com/decatur/form-chen"
@@ -8,9 +8,13 @@ repository = "https://github.com/decatur/form-chen"
 license = "MIT"
 readme = "README.md"
 packages = [
-    { include = "formchen", from = "lib" }
+    { include = "formchen", from = "./" }
 ]
 
 [tool.poetry.dependencies]
 python = "^3.6"
 gridchen = "^0.1.3"
+
+[tool.poetry.dev-dependencies]
+fastapi = "^0.40"
+Flask = "^1.0"
