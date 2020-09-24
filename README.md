@@ -10,7 +10,21 @@ which can be directly passed to the back end.
 
 Optionally, object properties can be specified by [JSON Pointers](https://tools.ietf.org/html/rfc6901) to be bound to given HTML-elements.
 
-Form-Chen is written in plain EcmaScript 2017 modules and can be directly imported as such with any modern browser.
+Formchen is written in plain EcmaScript 2017 modules and can be directly imported as such with any modern browser.
+
+# Installation
+
+Either
+* Use a CDN such as
+    * https://unpkg.com/formchen@0.1.3/webcomponent.js?module
+    * or https://cdn.skypack.dev/formchen (a bit involved)
+    * or https://decatur.github.io/formchen/formchen
+* or git-clone a release
+* or copy the formchen module folder
+* or `pip install formchen`
+* or `npm install formchen`
+
+Note: cdn.jsdelivr.net currently does not support bare module specifiers.
 
 # Usage
 
@@ -151,6 +165,14 @@ poetry build
 
 ````shell script
 poetry publish
+````
+
+## Publish as npm Package
+
+Bump version in `fromchen/package.json` and `git tag`.
+
+````bash
+cd fromchen & npm publish
 ````
 
 
