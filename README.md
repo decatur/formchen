@@ -158,6 +158,10 @@ Steps:
 ## Python Package
 
 ````shell script
+vi pyproject.toml
+git add pyproject.toml
+git commit -m'bumped version'
+git tag x.y.z
 poetry build
 ````
 
