@@ -162,13 +162,13 @@ vi pyproject.toml
 git add pyproject.toml
 git commit -m'bumped version'
 git tag x.y.z
-poetry build
+python3 setup.py sdist bdist_wheel
 ````
 
 ## Python Publish
 
 ````shell script
-poetry publish
+python3 -m twine upload --repository testpypi dist/*
 ````
 
 ## Publish as npm Package
