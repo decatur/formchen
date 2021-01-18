@@ -690,10 +690,13 @@ export function createFormChen(topSchema, topObj, transactionManager) {
         };
 
         label.textContent = node.title;
-
-        if (schema.description) {
-            label.title = schema.description;
+        if (node.parent && node.parent.parent !== undefined) {
+            label.textContent = node.parent.title + ' ' + node.title;
         }
+
+        //if (schema.description) {
+        //    label.title = schema.description;
+        //}
 
         if (schema.unit) {
             const unit = document.createElement('span');
