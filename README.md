@@ -158,8 +158,8 @@ Steps:
 ## Python Package
 
 ````shell script
-vi pyproject.toml
-git add pyproject.toml
+vi setup.py
+git add setup.py
 git commit -m'bumped version'
 git tag x.y.z
 python3 setup.py sdist bdist_wheel
