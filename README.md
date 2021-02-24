@@ -159,16 +159,15 @@ Steps:
 
 ````shell script
 vi setup.py
-git add setup.py
-git commit -m'bumped version'
+git commit . -m'bumped version'
 git tag x.y.z
-python3 setup.py sdist bdist_wheel
+python setup.py sdist bdist_wheel
 ````
 
 ## Python Publish
 
 ````shell script
-python3 -m twine upload --repository testpypi dist/*
+python -m twine upload dist/*
 ````
 
 ## Publish as npm Package
