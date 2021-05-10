@@ -1,3 +1,6 @@
+build/
+formchen.egg-info/
+
 .idea/
 dist/
 lunatic/
