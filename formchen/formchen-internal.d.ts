@@ -11,10 +11,11 @@ declare module FormChenNS {
     }
     
     export interface BaseNode {
+        tooltip: string;
         id: string;
         graph: Graph;
         parent: HolderNode;
-        schema: GridChenNS.ColumnSchema;
+        schema: GridChenNS.JSONSchema;
         key: string | number;
         path: string;
         title: string;

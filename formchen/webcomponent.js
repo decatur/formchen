@@ -1,13 +1,17 @@
 //@ts-check
+/// <reference path="./formchen.d.ts"/>
+/// <reference path="../gridchen/gridchen.d.ts"/>
 
-import "gridchen/webcomponent.js"
-import { createView } from "gridchen/matrixview.js";
+import "../gridchen/webcomponent.js"
+//import { GridChenNS } from "gridchen/";
+//import { FormChenNS } from "formchen.d.ts";
+import { createView } from "../gridchen/matrixview.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
     DatePartialTimeStringConverter,
     StringConverter
-} from "gridchen/converter.js";
+} from "../gridchen/converter.js";
 
 /**
  * Example:
@@ -21,6 +25,27 @@ function getValueByPointer(obj, pointer) {
     return pointer.substr(2).split('/').reduce(((res, prop) => res[prop]), obj);
 }
 
+/**
+ * @param {string} id
+ * @returns {HTMLElement}
+ */
+function getElementById(id) {
+    let element = document.getElementById(id);
+    if (!element) throw Error(`No such element with id ${id}`);
+    return element;
+}
+
+/**
+ * @param {HTMLElement} parent
+ * @param {string} selector
+ * @returns {HTMLElement}
+ */
+function querySelector(parent, selector) {
+    /**@type{HTMLElement | null}*/
+    let element = parent.querySelector(selector);
+    if (!element) throw Error(`No such element with selector ${selector}`);
+    return element;
+}
 
 /**
  * @implements {FormChenNS.Graph}
@@ -31,7 +56,6 @@ export class Graph {
      */
     constructor(pathPrefix) {
         this.pathPrefix = pathPrefix;
-        /** @type{{[key: string]: FormChenNS.BaseNode}} */
         this.nodesById = {};
     }
 
@@ -72,7 +96,11 @@ export class Graph {
  * obj    | {foo: {bar: 'foobar'}} |   parent   | {bar: 'foobar'}} |  parent  |               |
  * key    | ''                     |     <-     | 'foo'            |    <-    | 'bar'         |
  *         ------------------------              ------------------            ---------------
- * @implements{FormChenNS.BaseNode} 
+ * @interface{FormChenNS.BaseNode}
+ */
+
+/**
+ * @implements{FormChenNS.BaseNode}
  */
 export class BaseNode {
 
@@ -80,7 +108,7 @@ export class BaseNode {
      * @param {FormChenNS.Graph} graph
      * @param {string} relId
      * @param {string | number} key
-     * @param {GridChenNS.ColumnSchema} schema
+     * @param {GridChenNS.JSONSchema} schema
      * @param {FormChenNS.HolderNode} parent
      */
     constructor(graph, relId, key, schema, parent) {
@@ -111,6 +139,9 @@ export class BaseNode {
             this.title = this.schema.title || String(relId);
         } else {
             this.title = schema.title;
+        }
+        if (schema.tooltip) {
+            this.tooltip = schema.tooltip;
         }
 
         if (parent) {
@@ -159,18 +190,25 @@ export class BaseNode {
      */
     setValue(obj) {
         let oldValue = this.getValue();
+        const graph = this.graph;
+
+        /** @implements {GridChenNS.Patch} */
+        class MyPatch {
+            constructor() {
+                this.operations = [];
+                this.pathPrefix = graph.pathPrefix;
+                this.detail = null;
+            }
+            apply() {
+                for (let op of this.operations) {
+                    let node = graph.getNodeById(op.nodeId);
+                    node._setValue(op.value, false);
+                }
+            }
+        }
 
         /** @type {GridChenNS.Patch} */
-        const patch = {
-            apply: (patch) => {
-                for (let op of patch.operations) {
-                    let node = this.graph.getNodeById(op.nodeId);
-                    node._setValue(op.value);
-                }
-            },
-            operations: [],
-            pathPrefix: this.graph.pathPrefix
-        };
+        const patch = new MyPatch();
 
         if (obj === oldValue) {
             return patch
@@ -259,7 +297,14 @@ export class BaseNode {
 
             if (!n) break;
             if (n.obj == null) break;
-            if ((n.schema.type === 'object' ? Object.values(n.obj) : n.obj).length === 0) {
+
+            let len;
+            if (n.schema.type === 'object') {
+                len = Object.values((/** @type{object} */ n.obj)).length
+            } else {
+                len = n.obj.length
+            }
+            if (len === 0) {
                 let oldValue = n.obj;
                 delete n.obj;
                 n.onObjectReferenceChanged(null);
@@ -292,12 +337,12 @@ export class HolderNode extends BaseNode {
      * @param {FormChenNS.Graph} graph
      * @param {string} relId
      * @param {string | number} key
-     * @param {GridChenNS.ColumnSchema} schema
+     * @param {GridChenNS.JSONSchema} schema
      * @param {FormChenNS.HolderNode} parent
      */
     constructor(graph, relId, key, schema, parent) {
         if (!['object', 'array'].includes(schema.type)) {
-            throw new Error('Invalid schema type: ' + schema.type);
+            throw Error('Invalid schema type: ' + schema.type);
         }
         super(graph, relId, key, schema, parent);
         /** @type{FormChenNS.BaseNode[]} */
@@ -347,7 +392,7 @@ class MasterNode extends HolderNode {
      * @param {FormChenNS.Graph} graph
      * @param {string} relId
      * @param {string | number} key
-     * @param {GridChenNS.ColumnSchema} schema
+     * @param {GridChenNS.JSONSchema} schema
      * @param {FormChenNS.HolderNode} parent
      */
     constructor(graph, relId, key, schema, parent) {
@@ -358,11 +403,12 @@ class MasterNode extends HolderNode {
     /**
      * 
      * @param {*} obj 
-     * @param {FormChenNS.DetailNode} child
+     * @param {FormChenNS.BaseNode} child
      * @param {boolean} disabled
      */
     visitChild(obj, child, disabled) {
-        child.setRowIndex(this.selectedRowIndex);
+        throw "todo";
+        //(/** @type{FormChenNS.DetailNode} */ child).setRowIndex(this.selectedRowIndex);
     }
 }
 
@@ -388,36 +434,31 @@ class DetailNode extends HolderNode {
 }
 
 /**
+ * @param {HTMLElement} rootElement
  * @param {GridChenNS.JSONSchema} topSchema
  * @param {object} topObj
  * @param {GridChenNS.TransactionManager=} transactionManager
  * @returns {FormChenNS.FormChen}
  */
-export function createFormChen(topSchema, topObj, transactionManager) {
+export function createFormChen(rootElement, topSchema, topObj, transactionManager) {
 
     const pathPrefix = topSchema.pathPrefix || '';
     /** @type{FormChenNS.Graph} */
     const graph = new Graph(pathPrefix);
 
-    let holder;
-    if (['object', 'array'].includes(topSchema.type)) {
-        holder = null;
-    } else {
-        // A leaf node always needs a composit parent.
-        holder = new HolderNode(graph, '', '', { type: 'object' }, null);
-        holder.obj = {};
-    }
+    let holder = null;
 
     /**
-      * @param {GridChenNS.ColumnSchema} schema
+      * @param {GridChenNS.JSONSchema} schema
       * @param {string} path
-      * @returns {GridChenNS.ColumnSchema}
+      * @returns {GridChenNS.JSONSchema}
       */
     function resolveSchema(schema, path) {
         if ('$ref' in schema) {
-            const refSchema = getValueByPointer(topSchema, schema['$ref']);
+            const ref = /**@type{string}*/ (schema['$ref']);
+            const refSchema = getValueByPointer(topSchema, ref);
             if (!refSchema) {
-                throw new Error('Undefined $ref at ' + path);
+                throw Error('Undefined $ref at ' + path);
             }
             return /**@type{GridChenNS.ColumnSchema}*/ refSchema
         }
@@ -427,7 +468,7 @@ export function createFormChen(topSchema, topObj, transactionManager) {
     /**
     * @param {string} relId 
     * @param {string | number} key 
-    * @param {GridChenNS.ColumnSchema} schema 
+    * @param {GridChenNS.JSONSchema} schema 
     * @param {FormChenNS.HolderNode} parent 
     * @returns {FormChenNS.BaseNode}
     */
@@ -447,7 +488,7 @@ export function createFormChen(topSchema, topObj, transactionManager) {
     // registerGlobalTransactionManager();
     const rootNode = createNode('', '', topSchema, holder);
     rootNode.tm = transactionManager;
-    bindNode(rootNode, undefined); //document.getElementById(rootNode.id));
+    bindNode(rootNode, rootElement);
 
     rootNode.setValue(topObj);
 
@@ -471,44 +512,35 @@ export function createFormChen(topSchema, topObj, transactionManager) {
      * @param {number} detailIndex 
      * @param {GridChenNS.ColumnSchema} detailSchema 
      */
-    function bindDetail(masterNode, view, grid, container, detailIndex, detailSchema) {
-        const id = masterNode.id + view.getDetailId(detailIndex);
-        detailSchema = resolveSchema(detailSchema, id);
-        const detailNode = new DetailNode(graph, id, undefined, detailSchema, masterNode, detailIndex, grid, view);
-        bindNode(detailNode, container);
-    }
+    // function bindDetail(masterNode, view, grid, container, detailIndex, detailSchema) {
+    //     const id = masterNode.id + view.getDetailId(detailIndex);
+    //     detailSchema = resolveSchema(detailSchema, id);
+    //     const detailNode = new DetailNode(graph, id, undefined, detailSchema, masterNode, detailIndex, grid, view);
+    //     bindNode(detailNode, container);
+    // }
 
     /**
      * @param {FormChenNS.MasterNode} node
      * @param {HTMLElement} containerElement
      */
     function bindGrid(node, containerElement) {
-        const label = document.createElement('label');
-        label.className = 'grid-label';
-        label.textContent = node.title;
-        containerElement.appendChild(label);
-
-        const grid = /** @type{GridChenNS.GridChen} */ (document.createElement('grid-chen'));
+        const grid = /** @type{GridChenNS.GridChen} */ (containerElement.querySelector('.data-value'));
         grid.id = node.id;
-        if (node.schema.height) {
-            grid.style.height = node.schema.height + 'px';
-        }
-        // label.appendChild(grid);
-        containerElement.appendChild(grid);
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
+        node.schema.pathPrefix = node.id;
         const gridSchema = Object.assign({}, node.schema);
 
         const view = createView(gridSchema, null);
         let tm = node.tm;
 
         grid.resetFromView(view, tm);
-        grid.addEventListener('selectionChanged', function () {
-            node.selectedRowIndex = grid.selectedRange.rowIndex;
-            
-            for (const detailNode of node.children) {
-                detailNode.setRowIndex(node.selectedRowIndex);
-            }
-        });
+        // grid.addEventListener('selectionChanged', function () {
+        //     node.selectedRowIndex = grid.selectedRange.rowIndex;
+
+        //     for (const detailNode of node.children) {
+        //         detailNode.setRowIndex(node.selectedRowIndex);
+        //     }
+        // });
 
         view.updateHolder = function () {
             return node.setValue(view.getModel())
@@ -519,26 +551,27 @@ export function createFormChen(topSchema, topObj, transactionManager) {
 
             node.tm.openTransaction = function () {
                 const transaction = tm.openTransaction();  // Invoke super method.
-                if (!transaction.selections) transaction.selections = [];
-                const selection = grid.selectedRange;
-                transaction.selections.push(function () {
-                    for (const detailNode of node.children) {
-                        detailNode.setRowIndex(selection.rowIndex);
-                    }
-                    grid.select(selection);
-                });
+                // if (!transaction.selections) transaction.selections = [];
+                // const selection = grid.selectedRange;
+                // transaction.selections.push(function () {
+                //     for (const detailNode of node.children) {
+                //         detailNode.setRowIndex(selection.rowIndex);
+                //     }
+                //     grid.select(selection);
+                // });
 
                 // TODO: This must be the default impl
                 transaction.context = function () {
-                    for (let i = transaction.selections.length-1; i>=0; i--) {
-                        transaction.selections[i]();
-                    }
+                    // for (let i = transaction.selections.length - 1; i >= 0; i--) {
+                    //     transaction.selections[i]();
+                    // }
                 };
                 return transaction
             };
 
             for (const [detailIndex, detailSchema] of view.schema.detailSchemas.entries()) {
-                bindDetail(node, view, grid, containerElement, detailIndex, detailSchema);
+                throw "TODO";
+                // bindDetail(node, view, grid, containerElement, detailIndex, detailSchema);
             }
         }
 
@@ -555,7 +588,7 @@ export function createFormChen(topSchema, topObj, transactionManager) {
     function bindTuple(node, container) {
         if (Array.isArray(node.schema.items)) {
             // Fixed length tuple.
-            const tupleSchemas = /**@type{GridChenNS.ColumnSchema[]}*/ (node.schema.items);
+            const tupleSchemas = /**@type{GridChenNS.JSONSchema[]}*/ (node.schema.items);
             for (let [key, childSchema] of Object.entries(tupleSchemas)) {
                 const childNode = createNode(key, key, childSchema, node);
                 bindNode(childNode, container);
@@ -570,19 +603,32 @@ export function createFormChen(topSchema, topObj, transactionManager) {
      */
     function bindNode(node, container) {
         const schema = node.schema;
-        const path = node.path;
 
-        const e = document.getElementById(node.id);
-        if (e) {
-            container = e;
-            container.textContent = '';
+        /** @type{?HTMLElement} */
+        let control = container.querySelector(`[data-path="${node.id}"]`);
+
+        if (control) {
+            let element = control.querySelector('.data-title');
+            
+            if (element) {
+                if (!(element instanceof HTMLElement)) throw Error(element.tagName);
+                let title = /**@type{HTMLElement}*/ (control.querySelector('.data-title'));
+                title.textContent = node.title;
+                //if (node.parent && node.parent.parent !== undefined) {
+                //    title.textContent = node.parent.title + ' ' + node.title;
+                // }
+                if (node.tooltip) {
+                    title.title = node.tooltip;
+                }
+
+            }
         }
 
         if (schema.type === 'object' || schema.type === 'array') {
-            console.log('bind: ' + path);
+            //console.log('bind: ' + path);
 
             if (schema.format === 'grid') {
-                if (container) bindGrid(/**@type{FormChenNS.MasterNode}*/(node), container);
+                if (control) bindGrid(/**@type{FormChenNS.MasterNode}*/(node), control);
             } else if (schema.type === 'object') {
                 bindObject(/**@type{FormChenNS.HolderNode}*/(node), container);
             } else if (schema.type === 'array') {
@@ -592,25 +638,37 @@ export function createFormChen(topSchema, topObj, transactionManager) {
             return
         }
 
-        console.log('bind: ' + path);
+        //console.log('bind: ' + path);
+        if (!control) {
+            console.error(`Cannot find control for ${node.id}`);
+            return
+            //throw new Error(`Cannot find control for ${node.id}`)
+        }
 
         if (!container) {
             return
         }
 
-        const label = document.createElement('label');
-        let input;
+        const element = /** @type{HTMLElement} */ (querySelector(control, '.data-value'));
 
         if (schema.type === 'boolean') {
-            input = document.createElement('input');
+            if (element.tagName != 'INPUT') throw Error(element.tagName);
+            const input = /**@type{HTMLInputElement} */ (element);
             input.type = 'checkbox';
             node.refreshUI = function (disabled) {
                 const value = this.getValue();
                 input.checked = (value == null ? false : value);
                 input.disabled = node.readOnly || disabled;
             };
+
+            input.onchange = function() {
+                let value = input.checked;
+                foo(value);
+            }
+            
         } else if (schema.enum) {
-            input = document.createElement('select');
+            if (element.tagName != 'SELECT') throw Error(element.tagName);
+            const input = /**@type{HTMLSelectElement} */ (element);
             schema.enum.forEach(function (optionName) {
                 const option = document.createElement('option');
                 option.textContent = String(optionName);
@@ -620,96 +678,83 @@ export function createFormChen(topSchema, topObj, transactionManager) {
                 input.value = this.getValue();
                 input.disabled = node.readOnly || disabled;
             };
+
+            input.onchange = function() {
+                let value = input.value;
+                foo(value);
+            }
         } else {
-            input = document.createElement('input');
+            if (element.tagName != 'INPUT') throw Error(element.tagName);
+            const input = /**@type{HTMLInputElement} */ (element);
+            let converter;
+
             node.refreshUI = function (disabled) {
                 const value = this.getValue();
                 if (value == null) {
                     input.defaultValue = input.value = '';
                 } else {
-                    input.defaultValue = input.value = this.schema.converter.toEditable(value);
+                    input.defaultValue = input.value = converter.toEditable(value);
                 }
                 input.disabled = node.readOnly || disabled;
             };
 
-            if (schema.type === 'integer') {
-                if (!schema.converter) {
-                    schema.converter = new NumberConverter(0, undefined);
+            if (schema.type === 'integer' || schema.type === 'number') {
+                input.type = 'number';
+                input.style.textAlign = "right";
+                if (typeof schema.multipleOf === 'number') {
+                    input.step = String(schema.multipleOf);
+                } else if (schema.type === 'number') {
+                    input.step = String(0.1);
                 }
-            } else if (schema.type === 'number') {
-                if (!schema.converter) {
-                    schema.converter = new NumberConverter(schema.fractionDigits || 2, undefined);
-                    schema.converter.isPercent = (schema.format === '%');
+                if (typeof schema.minimum === 'number') input.min = String(schema.minimum);
+                if (typeof schema.maximum === 'number') input.max = String(schema.maximum);
+
+                if (schema.type === 'integer') {
+                    converter = new NumberConverter(0, undefined);
+                } else {
+                    converter = new NumberConverter(schema.fractionDigits || 2, undefined);
+                    converter.isPercent = (schema.format === '%');
                 }
+                
             } else if (schema.format === 'date-time') {
-                if (!schema.converter) {
-                    schema.converter = new DateTimeStringConverter(schema.period ||'HOURS');
-                }
+                converter = new DateTimeStringConverter(schema.period || 'HOURS');
             } else if (schema.format === 'date-partial-time') {
-                if (!schema.converter) {
-                    schema.converter = new DatePartialTimeStringConverter(schema.period ||'HOURS');
-                }
+                converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
+                
             } else if (schema.format === 'full-date') {
-                if (!schema.converter) {
-                    schema.converter = new DatePartialTimeStringConverter(schema.period ||'HOURS');
-                }
+                converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
+                
             } else if (schema.type === 'string') {
-                if (!schema.converter) {
-                    schema.converter = new StringConverter();
-                }
+                converter = new StringConverter();
+                
                 if (schema.format === 'color') {
                     input.type = 'color';
                 } else {
                     input.type = 'string';
                 }
             } else {
-                throw Error('Invalid schema at ' + path);
+                throw Error('Invalid schema at ' + node.id);
+            }
+
+            input.onchange = function() {
+                const newValue = converter.fromEditable(input.value.trim());
+                let value = (newValue === '')?undefined:newValue;
+                foo(value);
             }
         }
 
-        input.onchange = function () {
-            let value;
-
-            if (schema.type === 'boolean') {
-                value = input.checked;
-            } else if (schema.enum) {
-                value = input.value;
-            } else {
-                const newValue = schema.converter.fromEditable(input.value.trim());
-                if (newValue === '') {
-                    value = undefined;
-                } else {
-                    value = newValue;
-                }
-            }
-
+        function foo(value) {
             const patch = node.setValue(value);
             const trans = node.tm.openTransaction();
             trans.patches.push(patch);
             trans.commit();
         };
 
-        label.textContent = node.title;
-        if (node.parent && node.parent.parent !== undefined) {
-            label.textContent = node.parent.title + ' ' + node.title;
+        let unit = control.querySelector('.data-unit');
+        if (unit && schema.unit) {
+            unit.textContent = `[${schema.unit}]`;
         }
 
-        //if (schema.description) {
-        //    label.title = schema.description;
-        //}
-
-        if (schema.unit) {
-            const unit = document.createElement('span');
-            unit.className += ' unit';
-            unit.textContent = schema.unit;
-            label.appendChild(unit);
-        }
-
-
-        label.setAttribute('for', node.id);
-        input.id = node.id;
-        container.appendChild(label);
-        container.appendChild(input);
     }
 
     /**
@@ -734,4 +779,38 @@ export function createFormChen(topSchema, topObj, transactionManager) {
     }
 
     return new FormChen();
+}
+
+
+// For replace operations on non-array fields only keep the lattest operation.
+// TODO: Consider using https://github.com/alshakero/json-squash
+export function squash_formchen_patch(patch) {
+    let scalar_fields = {};
+    let array_fields = {};
+    let squashed = [];
+    for (let op of patch) {
+        let m = op.path.match(/^(.*)\/\d/);
+        if (!m) {
+            console.assert(op.op == 'replace');
+            scalar_fields[op.path] = op;
+        } else {
+            let prefix = m[1];
+            if (!array_fields[prefix]) {
+                array_fields[prefix] = [];
+            }
+            array_fields[prefix].push(op);
+        }
+    }
+
+    for (const op of Object.values(scalar_fields)) {
+        squashed.push(op);
+    }
+
+    for (const [key, item_patch] of Object.entries(array_fields)) {
+        for (const op of Object.values(item_patch)) {
+            squashed.push(op);
+        }
+    }
+
+    return squashed;
 }
