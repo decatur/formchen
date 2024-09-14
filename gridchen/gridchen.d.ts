@@ -1,5 +1,5 @@
 /////////////////////////////
-// Author: Wolfgang Kühn 2019-2021
+// Author: Wolfgang Kühn 2019-2024
 // gridchen JavaScript APIs
 // Source located at https://github.com/decatur/gridchen/gridchen
 /////////////////////////////
@@ -7,6 +7,7 @@
 declare module GridChenNS {
 
     export interface JSONSchema {
+        width?: number;
         period?: string;
         multipleOf?: number;
         converter?: (any) => any;
@@ -71,6 +72,11 @@ declare module GridChenNS {
         render: (element: HTMLElement, value: any) => void;
     }
 
+    // export interface Interval {
+    //     min: number;
+    //     sup: number;
+    // }
+
     /**
      * A rectangular range of grid cells.
      */
@@ -111,7 +117,7 @@ declare module GridChenNS {
          * Resets this element with respect to its implicit dependencies, DOM dimensions and data view content.
          * Currently, this is implemented by calling resetFromView().
          */
-        reset: () => GridChen;
+        reset: () => void;
 
         /**
          * Rereads to data view content.
@@ -172,7 +178,7 @@ declare module GridChenNS {
         getColumn: (colIndex: number) => any;
         setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatchOperation[];
         splice: (rowIndex: number) => JSONPatch; // TODO: Rename to insertEmptyRow
-        sort: (colIndex: number) => number;
+        sort: (colIndex: number) => void;
         // TODO: Return the patched object as of getModel()?
         applyJSONPatch: (patch: JSONPatch) => void;
         updateHolder: () => Patch;

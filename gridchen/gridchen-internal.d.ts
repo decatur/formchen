@@ -1,4 +1,4 @@
-declare module GridChenNS {
+export declare module GridChenNS {
 
     export interface Interval {
         min: number;
@@ -6,9 +6,9 @@ declare module GridChenNS {
     }
 
     export interface LocalDateParser {
-        fullDate: (s: string) => {parts?:number[], error?:SyntaxError};
-        datePartialTime: (s: string) => {parts?:number[], error?:SyntaxError};
-        dateTime: (s: string) => {parts?:number[], error?:SyntaxError};
+        fullDate: (s: string) => { parts?: number[], error?: SyntaxError };
+        datePartialTime: (s: string) => { parts?: number[], error?: SyntaxError };
+        dateTime: (s: string) => { parts?: number[], error?: SyntaxError };
     }
 
     export interface Selection extends Range {
@@ -29,8 +29,8 @@ declare module GridChenNS {
     }
 
     export interface IndexToPixelMapper {
-        cellIndexToPixelCoords: (rowIndex: number, columnIndex: number) => {clientX: number, clientY: number};
-        pixelCoordsToCellIndex: (clientX: number, clientY: number) => {rowIndex: number, columnIndex: number}
+        cellIndexToPixelCoords: (rowIndex: number, columnIndex: number) => { clientX: number, clientY: number };
+        pixelCoordsToCellIndex: (clientX: number, clientY: number) => { rowIndex: number, columnIndex: number }
     }
 
     export interface GridSelectionAbstraction {
@@ -45,7 +45,7 @@ declare module GridChenNS {
     export interface PatchNode {
         children: Record<string, PatchNode>;
         items: PatchNode[];
-        splices: {op: string, index: number}[];
+        splices: { op: string, index: number }[];
         op: string;
         value: any;
     }

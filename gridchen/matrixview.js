@@ -61,11 +61,11 @@ function updateSortDirection(schemas, colIndex) {
 
 /**
  * @param {GridChenNS.JSONSchema[]} schemas
- * @returns {GridChenNS.ColumnSchema[]}
+ * @returns {GridChenNS.JSONSchema[]}
  */
 function updateSchemaInPlace(schemas) {
-    for (const schema of /**@type{GridChenNS.ColumnSchema[]}*/(schemas)) {
-        console.assert(schema.width || schema.title, `You must specify either width or title in schema ${JSON.stringify(schema, null, 2)}`);
+    for (const schema of schemas) {
+        console.assert(schema.width !== undefined || schema.title !== undefined , `You must specify either width or title in schema ${JSON.stringify(schema, null, 2)}`);
         schema.width = Number(schema.width || (schema.title.length * 12) || 100);
         schema.type = schema.type || 'string';
 
@@ -102,7 +102,7 @@ function updateSchemaInPlace(schemas) {
         }
     }
 
-    return /**@type{GridChenNS.ColumnSchema[]}*/ (schemas)
+    return schemas
 }
 
 /**

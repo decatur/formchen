@@ -9,7 +9,7 @@ declare module FormChenNS {
         add: (node: BaseNode) => void;
         getNodeById: (id: string) => BaseNode;
     }
-    
+
     export interface BaseNode {
         tooltip: string;
         id: string;
@@ -29,25 +29,10 @@ declare module FormChenNS {
         refreshUI: (disabled: boolean) => void;
     }
 
-    export interface LeafNode extends TypeBaseNodedValue {
-    }
-    
     export interface HolderNode extends BaseNode {
         obj: object | Array;
         children: BaseNode[];
-        onObjectReferenceChanged: (obj: object | Array) => void;
     }
-    
-    export interface MasterNode extends HolderNode {
-        selectedRowIndex: number;
-        children: DetailNode[];
-    }
-    
-    export interface DetailNode extends HolderNode {
-        grid: GridChenNS.GridChen;
-        masterNode: HolderNode;
-        rowIndex: number;
-        setRowIndex: (rowIndex: number) => void;
-    }
+
 }
 

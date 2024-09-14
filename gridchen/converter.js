@@ -57,10 +57,10 @@ export class StringConverter {
 
     /**
      * @param {HTMLElement} element
-     * @param {boolean|*} value
+     * @param {string|*} value
      */
     render(element, value) {
-        if (value.constructor !== String) {
+        if (typeof value !== 'string') {
             element.textContent = String(value);
             element.className = 'error';
         } else {
@@ -234,7 +234,7 @@ export class BooleanStringConverter {
      * @param {boolean|*} value
      */
     render(element, value) {
-        if (value.constructor !== Boolean) {
+        if (typeof value !== 'boolean') {
             element.textContent = String(value);
             element.className = 'error';
         } else {

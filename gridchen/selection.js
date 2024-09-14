@@ -1,3 +1,4 @@
+//@ts-check
 /**
  * Author: Wolfgang Kühn 2019-2021
  * Source located at https://github.com/decatur/gridchen
@@ -5,7 +6,7 @@
  * Module implementing Excel style multi area selection behaviour on a grid.
  */
 
-//@ts-check
+/** @import { GridChenNS } from "gridchen-internal" */
 
 import {logger, wrap} from "./utils.js";
 

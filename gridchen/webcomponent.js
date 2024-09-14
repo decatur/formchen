@@ -126,6 +126,8 @@ export class GridChen extends HTMLElement {
         this._onresize = undefined;
         this.selectedRange = undefined;
         this.select = undefined;
+        this.refresh = undefined;
+        this.insertEmptyRow = undefined;
     }
 
     /**
@@ -562,7 +564,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     container.addEventListener('blur', wrap(gridchenElement, function (evt) {
         // This is also called by UA if an alert box is shown.
         logger.log('container.onblur: ' + evt);
-        if (!container.contains(/** @type {HTMLElement} */(/** @type {FocusEvent} */evt).relatedTarget)) {
+        if (!container.contains(/**@type {HTMLElement} */(/**@type {FocusEvent} */(evt).relatedTarget))) {
             // We are leaving the component.
             selection.hide();
         }

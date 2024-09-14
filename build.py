@@ -14,9 +14,6 @@ def build():
     process_dir(Path('./demos').glob('*.*'), target_root, spec_mapping)
     process_dir(Path('./formchen').rglob('*.*'), target_root, spec_mapping)
 
-    # target_root = Path('./lib')
-    # process_dir(Path('./formchen').rglob('*.*'), target_root, spec_mapping)
-
 
 if __name__ == '__main__':
     build()
