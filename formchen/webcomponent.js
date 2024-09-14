@@ -1,10 +1,8 @@
-//@ts-check
-// <reference path="./formchen.d.ts"/>
-// <reference path="../gridchen/gridchen.d.ts"/>
+/** @import { Patch, JSONPatchOperation, GridChen as IGridChen, JSONSchema, TransactionManager } from "../gridchen/gridchen" */
+/** @import { Graph as IGraph, BaseNode, HolderNode } from "./formchen-internal" */
+/** @import { IFormChen } from "./formchen" */
 
 import "../gridchen/webcomponent.js"
-//import { GridChenNS } from "gridchen/";
-//import { FormChenNS } from "formchen.d.ts";
 import { createView } from "../gridchen/matrixview.js";
 import {
     NumberConverter,
@@ -48,7 +46,7 @@ function querySelector(parent, selector) {
 }
 
 /**
- * @implements {FormChenNS.Graph}
+ * @implements {IGraph}
  */
 export class Graph {
     /**
@@ -60,28 +58,15 @@ export class Graph {
     }
 
     /**
-     * @param {FormChenNS.BaseNode} node 
+     * @param {BaseNode} node 
      */
     add(node) {
         this.nodesById[node.id] = node;
     }
 
-    // /**
-    //  * @param {string} path 
-    //  * @returns {FormChenNS.BaseNode}
-    //  */
-    // _getNodeByPath(path) {
-    //     for (const node of this.nodes) {
-    //         if (node.path === path) {
-    //             return node
-    //         }
-    //     }
-    //     return null;
-    // }
-
     /**
      * @param {string} id 
-     * @returns {FormChenNS.BaseNode}
+     * @returns {BaseNode}
      */
     getNodeById(id) {
         return this.nodesById[id]
@@ -96,20 +81,19 @@ export class Graph {
  * obj    | {foo: {bar: 'foobar'}} |   parent   | {bar: 'foobar'}} |  parent  |               |
  * key    | ''                     |     <-     | 'foo'            |    <-    | 'bar'         |
  *         ------------------------              ------------------            ---------------
- * @interface{FormChenNS.BaseNode}
  */
 
 /**
- * @implements{FormChenNS.BaseNode}
+ * @implements{BaseNode}
  */
-export class BaseNode {
+export class BaseNodeClass {
 
     /**
-     * @param {FormChenNS.Graph} graph
+     * @param {Graph} graph
      * @param {string} relId
      * @param {string | number} key
-     * @param {GridChenNS.JSONSchema} schema
-     * @param {FormChenNS.HolderNode} parent
+     * @param {JSONSchema} schema
+     * @param {HolderNode} parent
      */
     constructor(graph, relId, key, schema, parent) {
         if (!parent && relId === '') {
@@ -160,13 +144,13 @@ export class BaseNode {
 
     /**
      * @param {?} obj
-     * @returns {GridChenNS.Patch}
+     * @returns {Patch}
      */
     setValue(obj) {
         let oldValue = this.getValue();
         const graph = this.graph;
 
-        /** @implements {GridChenNS.Patch} */
+        /** @implements {Patch} */
         class MyPatch {
             constructor() {
                 this.operations = [];
@@ -181,14 +165,14 @@ export class BaseNode {
             }
         }
 
-        /** @type {GridChenNS.Patch} */
+        /** @type {Patch} */
         const patch = new MyPatch();
 
         if (obj === oldValue) {
             return patch
         }
 
-        /** @type{GridChenNS.JSONPatchOperation} */
+        /** @type{JSONPatchOperation} */
         let op;
         if (obj == null) {
             op = { op: 'remove', path: this.path, oldValue };
@@ -225,7 +209,7 @@ export class BaseNode {
             } else {
                 this.parent.obj[this.key] = obj;
             }
-        } else if (obj !== undefined && this.constructor === BaseNode) {
+        } else if (obj !== undefined && this.constructor === BaseNodeClass) {
             throw Error('Value lost')
         }
 
@@ -234,12 +218,12 @@ export class BaseNode {
 
     /**
      * @param{number | string | boolean} value
-     * @returns {GridChenNS.JSONPatchOperation[]}
+     * @returns {JSONPatchOperation[]}
      */
     createPathToRoot(value) {
-        /** @type{GridChenNS.JSONPatchOperation[]} */
+        /** @type{JSONPatchOperation[]} */
         let operations = [];
-        /** @type{FormChenNS.HolderNode} */
+        /** @type{HolderNode} */
         let n = this.parent;
         let v = value;
         /** @type{string | number} */
@@ -260,11 +244,11 @@ export class BaseNode {
      * Removes the value for this node.
      * If the parent holder object thus will become empty, it is also removed.
      * This will continue to the root.
-     * @returns {GridChenNS.JSONPatchOperation[]}
+     * @returns {JSONPatchOperation[]}
      */
     clearPathToRoot() {
         let operations = [];
-        /** @type{FormChenNS.HolderNode} */
+        /** @type{HolderNode} */
         let n = this.parent;
         while (true) {
 
@@ -302,22 +286,22 @@ export class BaseNode {
 }
 
 /** 
- * @implements{FormChenNS.HolderNode} 
+ * @implements{HolderNode} 
  */
-export class HolderNode extends BaseNode {
+export class HolderNodeClass extends BaseNodeClass {
     /**
-     * @param {FormChenNS.Graph} graph
+     * @param {Graph} graph
      * @param {string} relId
      * @param {string | number} key
-     * @param {GridChenNS.JSONSchema} schema
-     * @param {FormChenNS.HolderNode} parent
+     * @param {JSONSchema} schema
+     * @param {HolderNode} parent
      */
     constructor(graph, relId, key, schema, parent) {
         if (!['object', 'array'].includes(schema.type)) {
             throw Error('Invalid schema type: ' + schema.type);
         }
         super(graph, relId, key, schema, parent);
-        /** @type{FormChenNS.BaseNode[]} */
+        /** @type{BaseNode[]} */
         this.children = [];
     }
 
@@ -328,7 +312,7 @@ export class HolderNode extends BaseNode {
     /**
      * 
      * @param {*} obj 
-     * @param {FormChenNS.BaseNode} child
+     * @param {BaseNode} child
      * @param {boolean} disabled
      */
     visitChild(obj, child, disabled) {
@@ -358,23 +342,23 @@ export class HolderNode extends BaseNode {
 
 /**
  * @param {HTMLElement} rootElement
- * @param {GridChenNS.JSONSchema} topSchema
+ * @param {JSONSchema} topSchema
  * @param {object} topObj
- * @param {GridChenNS.TransactionManager=} transactionManager
- * @returns {FormChenNS.FormChen}
+ * @param {TransactionManager=} transactionManager
+ * @returns {FormChen}
  */
 export function createFormChen(rootElement, topSchema, topObj, transactionManager) {
 
     const pathPrefix = topSchema.pathPrefix || '';
-    /** @type{FormChenNS.Graph} */
+    /** @type{Graph} */
     const graph = new Graph(pathPrefix);
 
     let holder = null;
 
     /**
-      * @param {GridChenNS.JSONSchema} schema
+      * @param {JSONSchema} schema
       * @param {string} path
-      * @returns {GridChenNS.JSONSchema}
+      * @returns {JSONSchema}
       */
     function resolveSchema(schema, path) {
         if ('$ref' in schema) {
@@ -383,7 +367,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             if (!refSchema) {
                 throw Error('Undefined $ref at ' + path);
             }
-            return /**@type{GridChenNS.ColumnSchema}*/ refSchema
+            return /**@type{JSONSchema}*/ (refSchema)
         }
         return schema
     }
@@ -391,17 +375,17 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     /**
     * @param {string} relId 
     * @param {string | number} key 
-    * @param {GridChenNS.JSONSchema} schema 
-    * @param {FormChenNS.HolderNode} parent 
-    * @returns {FormChenNS.BaseNode}
+    * @param {JSONSchema} schema 
+    * @param {HolderNode} parent 
+    * @returns {BaseNode}
     */
     function createNode(relId, key, schema, parent) {
         schema = resolveSchema(schema, String(key));
         let constructor;
         if (schema.format === 'grid' || schema.type === 'object' || schema.type === 'array') {
-            constructor = HolderNode
+            constructor = HolderNodeClass
         } else {
-            constructor = BaseNode;
+            constructor = BaseNodeClass;
         }
         return new constructor(graph, relId, key, schema, parent);
     }
@@ -414,7 +398,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     rootNode.setValue(topObj);
 
     /**
-     * @param {FormChenNS.HolderNode} node
+     * @param {HolderNode} node
      * @param {HTMLElement} container
      */
     function bindObject(node, container) {
@@ -426,11 +410,11 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     }
 
     /**
-     * @param {FormChenNS.HolderNode} node
+     * @param {HolderNode} node
      * @param {HTMLElement} containerElement
      */
     function bindGrid(node, containerElement) {
-        const grid = /** @type{GridChenNS.GridChen} */ (containerElement.querySelector('.data-value'));
+        const grid = /** @type{IGridChen} */ (containerElement.querySelector('.data-value'));
         grid.id = node.id;
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
         node.schema.pathPrefix = node.id;
@@ -465,13 +449,13 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     }
 
     /**
-     * @param {FormChenNS.HolderNode} node
+     * @param {HolderNode} node
      * @param {HTMLElement} container
      */
     function bindTuple(node, container) {
         if (Array.isArray(node.schema.items)) {
             // Fixed length tuple.
-            const tupleSchemas = /**@type{GridChenNS.JSONSchema[]}*/ (node.schema.items);
+            const tupleSchemas = /**@type{JSONSchema[]}*/ (node.schema.items);
             for (let [key, childSchema] of Object.entries(tupleSchemas)) {
                 const childNode = createNode(key, key, childSchema, node);
                 bindNode(childNode, container);
@@ -481,7 +465,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
     /**
      * 
-     * @param {FormChenNS.BaseNode} node 
+     * @param {BaseNode} node 
      * @param {HTMLElement} container
      */
     function bindNode(node, container) {
@@ -511,11 +495,11 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             //console.log('bind: ' + path);
 
             if (schema.format === 'grid') {
-                if (control) bindGrid(/**@type{FormChenNS.HolderNode}*/(node), control);
+                if (control) bindGrid(/**@type{HolderNode}*/(node), control);
             } else if (schema.type === 'object') {
-                bindObject(/**@type{FormChenNS.HolderNode}*/(node), container);
+                bindObject(/**@type{HolderNode}*/(node), container);
             } else if (schema.type === 'array') {
-                bindTuple(/**@type{FormChenNS.HolderNode}*/(node), container);
+                bindTuple(/**@type{HolderNode}*/(node), container);
             }
 
             return
@@ -641,7 +625,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     }
 
     /**
-     * @implements {FormChenNS.FormChen}
+     * @implements {IFormChen}
      */
     class FormChen {
         /**
@@ -654,7 +638,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
         /**
          * @param {string} id
-         * @returns {FormChenNS.BaseNode}
+         * @returns {BaseNode}
          */
         getNodeById(id) {
             return graph.getNodeById(id);

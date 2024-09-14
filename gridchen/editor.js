@@ -5,26 +5,24 @@
  * Module implementing edit and display (for read-only cells) capabilities for cell values.
  */
 
-//@ts-check
+/** @import { CellEditMode } from "../gridchen/gridchen" */
+/** @import { Selection } from "./gridchen-internal" */
 
 import {logger} from "./utils.js";
 
-/** @type{GridChenNS.CellEditMode.HIDDEN} */
-export const HIDDEN = /** @type{GridChenNS.CellEditMode.HIDDEN} */ ('hidden');
-/** @type{GridChenNS.CellEditMode.INPUT} */
-export const INPUT = /** @type{GridChenNS.CellEditMode.INPUT} */ ('input');
-/** @type{GridChenNS.CellEditMode.EDIT} */
-export const EDIT = /** @type{GridChenNS.CellEditMode.EDIT} */ ('edit');
+export const HIDDEN = /** @type{CellEditMode.HIDDEN} */ ('hidden');
+export const INPUT = /** @type{CellEditMode.INPUT} */ ('input');
+export const EDIT = /** @type{CellEditMode.EDIT} */ ('edit');
 
 /**
  * @param {HTMLElement} container
  * @param {function} commitCellEdit
- * @param {GridChenNS.Selection} selection
+ * @param {Selection} selection
  * @param {number} lineHeight
  * @returns {Editor}
  */
 export function createEditor(container, commitCellEdit, selection, lineHeight) {
-    /** @type{GridChenNS.CellEditMode} */
+    /** @type{CellEditMode} */
     let currentMode = HIDDEN;
     let currentSchema = undefined;
     /** @type{boolean} */
@@ -204,13 +202,13 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
         constructor() {
         }
 
-        /** @returns {GridChenNS.CellEditMode} */
+        /** @returns {CellEditMode} */
         get mode() {
             return currentMode
         }
 
         /**
-         * @param {GridChenNS.CellEditMode} mode
+         * @param {CellEditMode} mode
          * @param value
          * @param {CSSStyleDeclaration} spanStyle
          * @param {object} schema

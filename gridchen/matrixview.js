@@ -5,11 +5,11 @@
  * Module implementing data (model) abstraction for some common matrix representations.
  */
 
-//@ts-check
+/** @import { JSONSchema, MatrixView, GridSchema, ColumnSchema, JSONPatch, JSONPatchOperation, Patch } from "./gridchen" */
+/** @import { Interval } from "./gridchen-internal" */
 
 import * as c from "./converter.js";
-import {applyJSONPatch} from './utils.js'
-//import {GridChenNS} from './gridchen.d.ts'
+import { applyJSONPatch } from './utils.js'
 
 const numeric = new Set(['number', 'integer']);
 
@@ -18,7 +18,7 @@ const numeric = new Set(['number', 'integer']);
  * @returns {number[]}
  */
 function range(count) {
-    return Array.from({length: count}, (_, i) => i);
+    return Array.from({ length: count }, (_, i) => i);
 }
 
 /**
@@ -60,12 +60,12 @@ function updateSortDirection(schemas, colIndex) {
 }
 
 /**
- * @param {GridChenNS.JSONSchema[]} schemas
- * @returns {GridChenNS.JSONSchema[]}
+ * @param {JSONSchema[]} schemas
+ * @returns {ColumnSchema[]}
  */
 function updateSchemaInPlace(schemas) {
     for (const schema of schemas) {
-        console.assert(schema.width !== undefined || schema.title !== undefined , `You must specify either width or title in schema ${JSON.stringify(schema, null, 2)}`);
+        console.assert(schema.width !== undefined || schema.title !== undefined, `You must specify either width or title in schema ${JSON.stringify(schema, null, 2)}`);
         schema.width = Number(schema.width || (schema.title.length * 12) || 100);
         schema.type = schema.type || 'string';
 
@@ -102,7 +102,7 @@ function updateSchemaInPlace(schemas) {
         }
     }
 
-    return schemas
+    return /**@type{ColumnSchema[]}*/(schemas)
 }
 
 /**
@@ -127,9 +127,9 @@ function sortedColumns(properties) {
 // }
 
 /**
- * @param {GridChenNS.JSONSchema} schema
+ * @param {JSONSchema} schema
  * @param {*=} matrix
- * @returns {GridChenNS.MatrixView}
+ * @returns {MatrixView}
  */
 export function createView(schema, matrix) {
     const invalidError = new Error('Invalid schema: ' + schema.title);
@@ -158,14 +158,55 @@ export function createView(schema, matrix) {
 }
 
 /**
- * @implements {GridChenNS.MatrixView}
+ * @implements {MatrixView}
  */
-class MatrixView {
-    /**@type{GridChenNS.GridSchema}*/
+class MatrixViewClass {
+
+    /**
+         * @param {number} startRowIndex
+         * @param {string} pattern
+         * @returns {number[]}
+         */
+    search(startRowIndex, pattern) {
+        throw new Error("Method not implemented.");
+    }
+
+    /**
+     * @returns {any[]}
+     */
+    getRowStyles() { return [] };
+    
+    /**
+     * @returns {JSONPatchOperation[]}
+     */
+    removeModel() { return [] };
+
+    /**
+     * @param {number} rowIndex
+     * @returns {JSONPatchOperation[]}
+     */
+    deleteRow(rowIndex) {
+        return [];
+    }
+
+    /**
+     * @param {number} rowIndex
+     * @returns {JSONPatch}
+     */
+    splice(rowIndex) { return [] };
+
+    /**
+     * @param {number} colIndex
+     */
+    sort(colIndex) {};
+
+    /**@type{GridSchema}*/
     schema;
 
-    getModel() {
-    }
+    /**
+    * @returns {object}
+    */
+    getModel() { }
 
     /**
      * @returns {number}
@@ -194,7 +235,7 @@ class MatrixView {
      * @param {number} rowIndex
      * @param {number} colIndex
      * @param value
-     * @returns {GridChenNS.JSONPatchOperation[]}
+     * @returns {JSONPatchOperation[]}
      */
     setCell(rowIndex, colIndex, value) {
         return void 0
@@ -217,14 +258,14 @@ class MatrixView {
     }
 
     /**
-     * @param {GridChenNS.JSONPatchOperation[]} patch
+     * @param {JSONPatchOperation[]} patch
      */
     applyJSONPatch(patch) {
         return void 0
     }
 
     /**
-     * @returns {GridChenNS.Patch}
+     * @returns {Patch}
      */
     updateHolder() {
         return void 0
@@ -270,20 +311,19 @@ function createArray(length, mapfn) {
     // Note this is differs from Array(length), the latter not having any index set
     // (which we need for JSON Patch)
     mapfn = mapfn || (() => null);
-    return Array.from({length: length}, mapfn)
+    return Array.from({ length: length }, mapfn)
 }
 
 function padArray(a, targetLength, prefix) {
     const patch = [];
     for (let k = a.length; k < targetLength; k++) {
         a[k] = null;
-        patch.push({op: 'add', path: prefix + k, value: null});
+        patch.push({ op: 'add', path: prefix + k, value: null });
     }
     return patch
 }
 
 /**
- *
  * @param {string} pattern
  * @param {string} value
  * @returns {boolean}
@@ -294,20 +334,20 @@ function search(pattern, value) {
 }
 
 /**
- * @param {GridChenNS.JSONSchema} schema
+ * @param {JSONSchema} schema
  */
 function readOnly(schema) {
     return (typeof schema.readOnly === 'boolean') ? schema.readOnly : false;
 }
 
 /**
- * @param {GridChenNS.JSONSchema} jsonSchema
+ * @param {JSONSchema} jsonSchema
  * @param {(number | string | boolean | null)[][]} rows
- * @returns {GridChenNS.MatrixView}
+ * @returns {MatrixView}
  */
 export function createRowMatrixView(jsonSchema, rows) {
     // Array of tuples.
-    /** @type{GridChenNS.JSONSchema[]} */
+    /** @type{JSONSchema[]} */
     const itemSchemas = jsonSchema.items['items'];
     const columnSchemas = [];
     const detailSchemas = [];
@@ -329,7 +369,7 @@ export function createRowMatrixView(jsonSchema, rows) {
 
     const schemas = updateSchemaInPlace(columnSchemas);
 
-    /**@type{GridChenNS.GridSchema} */
+    /**@type{GridSchema} */
     const schema = {
         pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
@@ -339,9 +379,9 @@ export function createRowMatrixView(jsonSchema, rows) {
     };
 
     /**
-     * @implements {GridChenNS.MatrixView}
+     * @implements {MatrixView}
      */
-    class RowMatrixView extends MatrixView {
+    class RowMatrixView extends MatrixViewClass {
         //schema;
 
         constructor() {
@@ -377,12 +417,12 @@ export function createRowMatrixView(jsonSchema, rows) {
         }
 
         /**
-         * @returns {GridChenNS.JSONPatchOperation[]}
+         * @returns {JSONPatchOperation[]}
          */
         removeModel() {
             const oldValue = rows;
             rows = null;
-            return [{op: 'remove', path: '', oldValue: oldValue}];
+            return [{ op: 'remove', path: '', oldValue: oldValue }];
         }
 
         /**
@@ -400,7 +440,7 @@ export function createRowMatrixView(jsonSchema, rows) {
         }
 
         /**
-         * @param {GridChenNS.Interval} rowsRange
+         * @param {Interval} rowsRange
          * @param {number} colIndex
          * @returns {any[]}
          */
@@ -411,12 +451,12 @@ export function createRowMatrixView(jsonSchema, rows) {
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChenNS.JSONPatchOperation[]}
+         * @returns {JSONPatchOperation[]}
          */
         deleteRow(rowIndex) {
             const oldValue = rows[rowIndex];
             rows.splice(rowIndex, 1);
-            return [{op: 'remove', path: `/${rowIndex}`, oldValue}];
+            return [{ op: 'remove', path: `/${rowIndex}`, oldValue }];
         }
 
         /**
@@ -437,7 +477,7 @@ export function createRowMatrixView(jsonSchema, rows) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param value
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
             colIndex = columnIndices[colIndex];
@@ -450,20 +490,20 @@ export function createRowMatrixView(jsonSchema, rows) {
                 const oldValue = rows[rowIndex][colIndex];
                 // Important: Must not delete rows[rowIndex][colIndex], as this would produce an empty index, which is not JSON.
                 rows[rowIndex][colIndex] = null;
-                patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: null, oldValue});
+                patch.push({ op: 'replace', path: `/${rowIndex}/${colIndex}`, value: null, oldValue });
                 return patch
             }
 
             if (!rows) {
                 rows = createArray(1 + rowIndex);
-                patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
+                patch.push({ op: 'add', path: '', value: createArray(1 + rowIndex) });
             }
 
             patch.push(...padArray(rows, 1 + rowIndex, '/'));
 
             if (!rows[rowIndex]) {
                 rows[rowIndex] = createArray(1 + colIndex);
-                patch.push({op: 'replace', path: `/${rowIndex}`, value: createArray(1 + colIndex), oldValue: null});
+                patch.push({ op: 'replace', path: `/${rowIndex}`, value: createArray(1 + colIndex), oldValue: null });
             } else if (rows[rowIndex].length < schemas.length) {
                 patch.push(...padArray(rows[rowIndex], schemas.length, `/${rowIndex}/`));
             }
@@ -473,7 +513,7 @@ export function createRowMatrixView(jsonSchema, rows) {
                 // TODO: assert that patch is empty?
                 return patch
             }
-            patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue: oldValue});
+            patch.push({ op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue: oldValue });
 
             rows[rowIndex][colIndex] = value;
             return patch;
@@ -481,11 +521,11 @@ export function createRowMatrixView(jsonSchema, rows) {
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         splice(rowIndex) {
             rows.splice(rowIndex, 0, null);
-            return [{op: 'add', path: `/${rowIndex}`, value: null}];
+            return [{ op: 'add', path: `/${rowIndex}`, value: null }];
         }
 
         /**
@@ -522,9 +562,9 @@ export function createRowMatrixView(jsonSchema, rows) {
 }
 
 /**
- * @param {GridChenNS.JSONSchema} jsonSchema
+ * @param {JSONSchema} jsonSchema
  * @param {Array<object>} rows
- * @returns {GridChenNS.MatrixView}
+ * @returns {MatrixView}
  */
 export function createRowObjectsView(jsonSchema, rows) {
 
@@ -534,10 +574,10 @@ export function createRowObjectsView(jsonSchema, rows) {
         return e[1]
     });
     const ids = entries.map(e => e[0]);
-    const rowStyles = new Array(rows?rows.length:0);
+    const rowStyles = new Array(rows ? rows.length : 0);
     const schemas = updateSchemaInPlace(columnSchemas);
 
-    /**@type{GridChenNS.GridSchema} */
+    /**@type{GridSchema} */
     const schema = {
         pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
@@ -548,9 +588,9 @@ export function createRowObjectsView(jsonSchema, rows) {
     };
 
     /**
-     * @implements {GridChenNS.MatrixView}
+     * @implements {MatrixView}
      */
-    class RowObjectsView extends MatrixView {
+    class RowObjectsView extends MatrixViewClass {
 
         constructor() {
             super();
@@ -566,10 +606,10 @@ export function createRowObjectsView(jsonSchema, rows) {
         }
 
         /**
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         removeModel() {
-            const patch = [{op: 'remove', path: '', oldValue: rows}];
+            const patch = [{ op: 'remove', path: '', oldValue: rows }];
             rows = null;
             return patch
         }
@@ -590,12 +630,12 @@ export function createRowObjectsView(jsonSchema, rows) {
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         deleteRow(rowIndex) {
             rows.splice(rowIndex, 1);
             rowStyles.splice(rowIndex, 1);
-            return [{op: 'remove', path: `/${rowIndex}`}];
+            return [{ op: 'remove', path: `/${rowIndex}` }];
         }
 
         /**
@@ -612,14 +652,14 @@ export function createRowObjectsView(jsonSchema, rows) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param value
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
             let patch = [];
 
             if (!rows) {
                 rows = createArray(1 + rowIndex);
-                patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
+                patch.push({ op: 'add', path: '', value: createArray(1 + rowIndex) });
             }
 
             patch.push(...padArray(rows, 1 + rowIndex, '/'));
@@ -627,7 +667,7 @@ export function createRowObjectsView(jsonSchema, rows) {
             if (!rows[rowIndex]) {
                 rows[rowIndex] = {};
                 // TODO: Make this an add and previous padArray(rows, rowIndex, '/-')
-                patch.push({op: 'replace', path: `/${rowIndex}`, value: {}});
+                patch.push({ op: 'replace', path: `/${rowIndex}`, value: {} });
             }
 
             const key = ids[colIndex];
@@ -635,13 +675,13 @@ export function createRowObjectsView(jsonSchema, rows) {
             if (value == null && oldValue == null) {
                 // No Op
             } else if (value == null) {
-                patch.push({op: 'remove', path: `/${rowIndex}/${key}`, oldValue});
+                patch.push({ op: 'remove', path: `/${rowIndex}/${key}`, oldValue });
                 delete rows[rowIndex][key];
             } else if (oldValue == null) {
-                patch.push({op: 'add', path: `/${rowIndex}/${key}`, value});
+                patch.push({ op: 'add', path: `/${rowIndex}/${key}`, value });
                 rows[rowIndex][key] = value;
             } else {
-                patch.push({op: 'replace', path: `/${rowIndex}/${key}`, value: value, oldValue: oldValue});
+                patch.push({ op: 'replace', path: `/${rowIndex}/${key}`, value: value, oldValue: oldValue });
                 rows[rowIndex][key] = value;
             }
 
@@ -650,12 +690,12 @@ export function createRowObjectsView(jsonSchema, rows) {
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         splice(rowIndex) {
             rows.splice(rowIndex, 0, null);
             rowStyles.splice(rowIndex, 0, null);
-            return [{op: 'add', path: `/${rowIndex}`, value: null}];
+            return [{ op: 'add', path: `/${rowIndex}`, value: null }];
         }
 
         /**
@@ -693,15 +733,15 @@ export function createRowObjectsView(jsonSchema, rows) {
 }
 
 /**
- * @param {GridChenNS.JSONSchema} jsonSchema
+ * @param {JSONSchema} jsonSchema
  * @param {object[]} columns
- * @returns {GridChenNS.MatrixView}
+ * @returns {MatrixView}
  */
 export function createColumnMatrixView(jsonSchema, columns) {
-    const columnSchemas = /**@type{GridChenNS.JSONSchema[]}*/(jsonSchema.items).map(item => /**@type{GridChenNS.JSONSchema}*/(item.items));
+    const columnSchemas = /**@type{JSONSchema[]}*/(jsonSchema.items).map(item => /**@type{JSONSchema}*/(item.items));
     const schemas = updateSchemaInPlace(columnSchemas);
 
-    /**@type{GridChenNS.GridSchema} */
+    /**@type{GridSchema} */
     const schema = {
         pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
@@ -716,9 +756,9 @@ export function createColumnMatrixView(jsonSchema, columns) {
     }
 
     /**
-     * @implements {GridChenNS.MatrixView}
+     * @implements {MatrixView}
      */
-    class ColumnMatrixView extends MatrixView {
+    class ColumnMatrixView extends MatrixViewClass {
         schema;
 
         constructor() {
@@ -731,10 +771,10 @@ export function createColumnMatrixView(jsonSchema, columns) {
         }
 
         /**
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         removeModel() {
-            const patch = [{op: 'remove', path: '', oldValue: columns}];
+            const patch = [{ op: 'remove', path: '', oldValue: columns }];
             columns = null;
             return patch
         }
@@ -755,14 +795,14 @@ export function createColumnMatrixView(jsonSchema, columns) {
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         deleteRow(rowIndex) {
             const patch = [];
             columns.forEach(function (column, colIndex) {
                 if (column) {
                     column.splice(rowIndex, 1);
-                    patch.push({op: 'remove', path: `/${colIndex}/${rowIndex}`})
+                    patch.push({ op: 'remove', path: `/${colIndex}/${rowIndex}` })
                 }
             });
             return patch;
@@ -782,19 +822,19 @@ export function createColumnMatrixView(jsonSchema, columns) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param value
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
             let patch = [];
             if (!columns) {
                 columns = createArray(schemas.length);
-                patch.push({op: 'add', path: '', value: createArray(schemas.length)});
+                patch.push({ op: 'add', path: '', value: createArray(schemas.length) });
             }
 
             let column = columns[colIndex];
             if (!column) {
                 column = columns[colIndex] = [];
-                patch.push({op: 'replace', path: `/${colIndex}`, value: []});
+                patch.push({ op: 'replace', path: `/${colIndex}`, value: [] });
             }
 
             if (rowIndex >= column.length) {
@@ -804,21 +844,21 @@ export function createColumnMatrixView(jsonSchema, columns) {
             const oldValue = columns[colIndex][rowIndex];
             // Must not use remove operation here!
             columns[colIndex][rowIndex] = value;
-            patch.push({op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value, oldValue});
+            patch.push({ op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value, oldValue });
 
             return patch;
         }
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         splice(rowIndex) {
             let patch = [];
             columns.forEach(function (column, colIndex) {
                 if (column) {
                     column.splice(rowIndex, 0, null);
-                    patch.push({op: 'add', path: `/${colIndex}/${rowIndex}`, value: null});
+                    patch.push({ op: 'add', path: `/${colIndex}/${rowIndex}`, value: null });
                 }
             });
             return patch;
@@ -869,7 +909,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
 }
 
 /**
- * @param {GridChenNS.JSONSchema} jsonSchema
+ * @param {JSONSchema} jsonSchema
  * @param {object} columns
  */
 export function createColumnObjectView(jsonSchema, columns) {
@@ -894,7 +934,7 @@ export function createColumnObjectView(jsonSchema, columns) {
     const rowStyles = new Array(getRowCount());
     let schemas = updateSchemaInPlace(columnSchemas);
 
-    /**@type{GridChenNS.GridSchema}*/
+    /**@type{GridSchema}*/
     const schema = {
         pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
@@ -910,9 +950,9 @@ export function createColumnObjectView(jsonSchema, columns) {
     }
 
     /**
-     * @implements {GridChenNS.MatrixView}
+     * @implements {MatrixView}
      */
-    class ColumnObjectView extends MatrixView {
+    class ColumnObjectView extends MatrixViewClass {
         constructor() {
             super();
             this.schema = schema;
@@ -927,10 +967,10 @@ export function createColumnObjectView(jsonSchema, columns) {
         }
 
         /**
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         removeModel() {
-            const patch = [{op: 'remove', path: '', oldValue: columns}];
+            const patch = [{ op: 'remove', path: '', oldValue: columns }];
             columns = null;
             return patch
         }
@@ -951,7 +991,7 @@ export function createColumnObjectView(jsonSchema, columns) {
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         deleteRow(rowIndex) {
             const patch = [];
@@ -959,7 +999,7 @@ export function createColumnObjectView(jsonSchema, columns) {
                 // TODO: Handle column == null
                 const column = columns[key];
                 column.splice(rowIndex, 1);
-                patch.push({op: 'remove', path: `/${key}/${rowIndex}`})
+                patch.push({ op: 'remove', path: `/${key}/${rowIndex}` })
             });
             rowStyles.splice(rowIndex, 1);
             return patch;
@@ -980,7 +1020,7 @@ export function createColumnObjectView(jsonSchema, columns) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param value
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
             let patch = [];
@@ -993,13 +1033,13 @@ export function createColumnObjectView(jsonSchema, columns) {
                     return o;
                 };
                 columns = createEmptyObject();
-                patch.push({op: 'add', path: '', value: createEmptyObject()});
+                patch.push({ op: 'add', path: '', value: createEmptyObject() });
             }
 
             let column = columns[key];
             if (!column) {
                 column = columns[key] = [];
-                patch.push({op: 'add', path: `/${key}`, value: []});
+                patch.push({ op: 'add', path: `/${key}`, value: [] });
             }
 
             if (rowIndex >= column.length) {
@@ -1009,17 +1049,17 @@ export function createColumnObjectView(jsonSchema, columns) {
             const oldValue = column[rowIndex];
             column[rowIndex] = value;
             // Must not use remove operation here!
-            patch.push({op: 'replace', path: `/${key}/${rowIndex}`, value: value, oldValue});
+            patch.push({ op: 'replace', path: `/${key}/${rowIndex}`, value: value, oldValue });
 
             return patch;
         }
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         splice(rowIndex) {
-            /** @type{GridChenNS.JSONPatch} */
+            /** @type{JSONPatch} */
             let patch = [];
             // TODO: Object.values and sort index?
             ids.forEach(function (key) {
@@ -1028,7 +1068,7 @@ export function createColumnObjectView(jsonSchema, columns) {
                     return
                 }
                 column.splice(rowIndex, 0, null);
-                patch.push({op: 'add', path: `/${key}/${rowIndex}`, value: null});
+                patch.push({ op: 'add', path: `/${key}/${rowIndex}`, value: null });
             });
             rowStyles.splice(rowIndex, 0, null);
             return patch;
@@ -1074,7 +1114,7 @@ export function createColumnObjectView(jsonSchema, columns) {
         }
 
         /**
-         * @param {GridChenNS.JSONPatch} patch
+         * @param {JSONPatch} patch
          */
         applyJSONPatch(patch) {
             columns = applyJSONPatch(columns, patch);
@@ -1085,19 +1125,19 @@ export function createColumnObjectView(jsonSchema, columns) {
 }
 
 /**
- * @param {GridChenNS.JSONSchema} jsonSchema
+ * @param {JSONSchema} jsonSchema
  * @param {(number|string|boolean|null)[]} column
  */
 export function createColumnVectorView(jsonSchema, column) {
 
-    const items = /**@type{GridChenNS.JSONSchema} */(jsonSchema.items);
+    const items = /**@type{JSONSchema} */(jsonSchema.items);
     const title = items.title;
     items.title = title;
 
     const schemas = updateSchemaInPlace([items]);
     const columnSchema = schemas[0];
 
-    /**@type{GridChenNS.GridSchema} */
+    /**@type{GridSchema} */
     const schema = {
         pathPrefix: jsonSchema.pathPrefix,
         title: title,
@@ -1112,9 +1152,9 @@ export function createColumnVectorView(jsonSchema, column) {
     }
 
     /**
-     * @implements {GridChenNS.MatrixView}
+     * @implements {MatrixView}
      */
-    class ColumnVectorView extends MatrixView {
+    class ColumnVectorView extends MatrixViewClass {
         constructor() {
             super();
             this.schema = schema;
@@ -1125,10 +1165,10 @@ export function createColumnVectorView(jsonSchema, column) {
         }
 
         /**
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         removeModel() {
-            const patch = [{op: 'remove', path: '', oldValue: column}];
+            const patch = [{ op: 'remove', path: '', oldValue: column }];
             column = null;
             return patch
         }
@@ -1149,11 +1189,11 @@ export function createColumnVectorView(jsonSchema, column) {
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         deleteRow(rowIndex) {
             column.splice(rowIndex, 1);
-            return [{op: 'remove', path: `/${rowIndex}`}];
+            return [{ op: 'remove', path: `/${rowIndex}` }];
         }
 
         /**
@@ -1169,7 +1209,7 @@ export function createColumnVectorView(jsonSchema, column) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param value
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
             if (colIndex !== 0) {
@@ -1179,7 +1219,7 @@ export function createColumnVectorView(jsonSchema, column) {
 
             if (!column) {
                 column = createArray(1 + rowIndex);
-                patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
+                patch.push({ op: 'add', path: '', value: createArray(1 + rowIndex) });
             } else if (rowIndex >= column.length) {
                 patch.push(...padArray(column, rowIndex + 1, '/'));
             }
@@ -1188,11 +1228,11 @@ export function createColumnVectorView(jsonSchema, column) {
             if (value == null) {
                 // Important: Must not use delete column[rowIndex], see RowMatrixView.
                 column[rowIndex] = null;
-                patch.push({op: 'replace', path: `/${rowIndex}`, value: null, oldValue});
+                patch.push({ op: 'replace', path: `/${rowIndex}`, value: null, oldValue });
                 return patch
             }
 
-            patch.push({op: 'replace', path: `/${rowIndex}`, value: value, oldValue});
+            patch.push({ op: 'replace', path: `/${rowIndex}`, value: value, oldValue });
 
             column[rowIndex] = value;
             return patch;
@@ -1200,11 +1240,11 @@ export function createColumnVectorView(jsonSchema, column) {
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChenNS.JSONPatch}
+         * @returns {JSONPatch}
          */
         splice(rowIndex) {
             column.splice(rowIndex, 0, null);
-            return [{op: 'add', path: `/${rowIndex}`, value: null}]
+            return [{ op: 'add', path: `/${rowIndex}`, value: null }]
         }
 
         /**

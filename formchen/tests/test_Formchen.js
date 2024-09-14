@@ -1,6 +1,6 @@
-//@ts-check
 
-import { test, assert } from 'gridchen/testing/utils.js'
+
+import { test, assert } from '../gridchen/testing/utils.js'
 import { createFormChen } from '../webcomponent.js'
 import { schema, data } from '../../demos/sample2.js'
 import * as utils from 'gridchen/utils.js';
@@ -95,7 +95,7 @@ test('FormChen', () => {
     input.onchange(null);
     assert.equal({ op: "replace", path: "/sample2/somePercentValue", value: 0.6, oldValue: 0.5 }, tm.patch.pop());
 
-    /** @type{GridChenNS.GridChen} */
+    /** @type{GridChen} */
     const gc = document.querySelector('grid-chen');
     gc._keyboard('keydown', { key: " " });
     gc._sendKeys('2020-01-01 00:00Z');

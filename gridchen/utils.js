@@ -5,14 +5,11 @@
  * Module implementing, well, utilities.
  */
 
-//@ts-check
+/** @import { LocalDateParser, JSONPatchOperation, Patch, Transaction, TransactionManager } from "./gridchen" */
+
 
 // const DEBUG = (location.hostname === 'localhost');
 const DEBUG = false;
-
-// window.addEventListener('error', evt => {
-//     console.log(evt);
-// });
 
 /**
  * @param {HTMLElement} element
@@ -172,7 +169,7 @@ const localeDateParsers = {};
 
 /**
  * @param {string} locale
- * @returns {GridChenNS.LocalDateParser}
+ * @returns {LocalDateParser}
  */
 export function localeDateParser(locale) {
     if (!(locale in localeDateParsers)) {
@@ -252,12 +249,14 @@ function createLocalDateParser(locale) {
 
     /**
      * @param {string} s
-     * @returns {{parts?: number[], error?: SyntaxError}}
+     * @returns {{parts?: [number, number, number, number, number, number, number, number, number], error?: SyntaxError}}
      */
     function parseDateOptionalTimeTimezone(s) {
         const dateTimeParts = s.trim().split(/\s+|T/);
         const fullDateResult = parseFullDate(dateTimeParts[0]);
-        if (dateTimeParts.length === 1 || fullDateResult.error) {
+        if (fullDateResult.error) {
+            return fullDateResult
+        } else if (dateTimeParts.length === 1 || fullDateResult.error) {
             if (fullDateResult.parts) {
                 fullDateResult.parts = [...fullDateResult.parts, 0, 0, 0, 0];
             }
@@ -298,7 +297,10 @@ function createLocalDateParser(locale) {
         return { parts: [...fullDateResult.parts, hours, minutes, seconds, millis, ...timeZone] }
     }
 
-    class LocalDateParser {
+    /**
+     * @implements {LocalDateParser}
+     */
+    class LocalDateParserClass {
         /**
          * Parses full dates of the form 2019-10-27, 10/27/2019, ...
          * @param {string} s
@@ -312,7 +314,7 @@ function createLocalDateParser(locale) {
         /**
          * Parses dates with partial time of the form 2019-10-27 00:00, 10/27/2019T01:02, ...
          * @param s
-         * @returns {{parts?: number[], error?:SyntaxError}}
+         * @returns {{parts?: [number, number, number, number, number, number, number, number, number], error?:SyntaxError}}
          */
         datePartialTime(s) {
             const r = parseDateOptionalTimeTimezone(s);
@@ -337,11 +339,11 @@ function createLocalDateParser(locale) {
 
     }
 
-    return new LocalDateParser()
+    return new LocalDateParserClass()
 }
 
 /**
- * @param {GridChenNS.JSONPatchOperation} op
+ * @param {JSONPatchOperation} op
  */
 function reverseOp(op) {
     if (op.op === 'replace') {
@@ -360,8 +362,8 @@ function reverseOp(op) {
 }
 
 /**
- * @param {GridChenNS.JSONPatchOperation[]} patch
- * @returns {GridChenNS.JSONPatchOperation[]}
+ * @param {JSONPatchOperation[]} patch
+ * @returns {JSONPatchOperation[]}
  */
 export function reversePatch(patch) {
     const reversedPatch = [];
@@ -374,7 +376,7 @@ export function reversePatch(patch) {
 /**
  * Applies a JSON Patch operation.
  * @param {{'':object}} holder
- * @param {GridChenNS.JSONPatchOperation} op
+ * @param {JSONPatchOperation} op
  */
 function applyJSONPatchOperation(holder, op) {
     const path = op.path.split('/');
@@ -406,7 +408,7 @@ function applyJSONPatchOperation(holder, op) {
 
 /**
  * @param {{'':*}} holder
- * @param {GridChenNS.JSONPatchOperation[]} patch
+ * @param {JSONPatchOperation[]} patch
  */
 function applyPatch(holder, patch) {
     for (let op of patch) {
@@ -423,7 +425,7 @@ function applyPatch(holder, patch) {
  * It does not do any validation or error handling.
  *
  * @param {object} data
- * @param {GridChenNS.JSONPatchOperation[]} patch
+ * @param {JSONPatchOperation[]} patch
  * @returns {object|undefined}
  */
 export function applyJSONPatch(data, patch) {
@@ -464,7 +466,7 @@ export function registerUndo(container, tm) {
 
 /**
  * Pure creator function for TransactionManager instances.
- * @returns {GridChenNS.TransactionManager}
+ * @returns {TransactionManager}
  */
 export function createTransactionManager() {
     const listenersByType = { change: [] };
@@ -482,7 +484,7 @@ export function createTransactionManager() {
     }
 
     /**
-     * @implements {GridChenNS.TransactionManager}
+     * @implements {TransactionManager}
      */
     class TransactionManager {
         constructor() {
@@ -509,12 +511,12 @@ export function createTransactionManager() {
         }
 
         /**
-         * @param {(ops:GridChenNS.JSONPatchOperation[]) => any} apply
-         * @returns {GridChenNS.Transaction}
+         * @param {(ops:JSONPatchOperation[]) => any} apply
+         * @returns {Transaction}
          */
         openTransaction(apply) {
             const tm = this;
-            return /**@type{GridChenNS.Transaction}*/ {
+            return /**@type{Transaction}*/ ({
                 patches: [],
                 commit() {
                     tm.transactions.push(this);
@@ -532,7 +534,7 @@ export function createTransactionManager() {
                     return flattend;
                 },
                 context() { }
-            };
+            });
         }
 
         undo() {
@@ -540,10 +542,10 @@ export function createTransactionManager() {
             if (!trans) return;
             trans.context();
             this.redoTransactions.push(trans);
-            const reversedTransaction = /**@type{GridChenNS.Transaction}*/ Object.assign({}, trans);
+            const reversedTransaction = /**@type{Transaction}*/ (Object.assign({}, trans));
             reversedTransaction.patches = [];
             for (let patch of Object.assign([], trans.patches).reverse()) {
-                const reversedPatch = /**@type{GridChenNS.Patch}*/ Object.assign({}, patch);
+                const reversedPatch = /**@type{Patch}*/ (Object.assign({}, patch));
                 reversedPatch.operations = reversePatch(patch.operations);
                 reversedTransaction.patches.push(reversedPatch);
                 reversedPatch.apply(reversedPatch);
@@ -564,14 +566,14 @@ export function createTransactionManager() {
         }
 
         clear() {
-            /** @type {GridChenNS.Transaction[]} */
+            /** @type {Transaction[]} */
             this.transactions = [];
-            /** @type {GridChenNS.Transaction[]} */
+            /** @type {Transaction[]} */
             this.redoTransactions = [];
         }
 
         /**
-         * @returns {GridChenNS.JSONPatchOperation[]}
+         * @returns {JSONPatchOperation[]}
          */
         get patch() {
             const allPatches = [];

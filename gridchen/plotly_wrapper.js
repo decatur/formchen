@@ -6,16 +6,20 @@
  *  to the head element.
  */
 
+/** @import { ColumnSchema } from "./gridchen" */
+
+
 /**
  * @param {HTMLElement} container
  * @param {string} title
- * @param {GridChenNS.ColumnSchema[]} schemas
+ * @param {ColumnSchema[]} schemas
  * @param {number[][]} series
  */
 export function renderPlot(container, title, schemas, series) {
     /*
     */
 
+    // @ts-ignore
     if (!window.Plotly) {
         container.textContent = '🤮 You must add plotly_wrapper.js to your html page';
     }
@@ -39,5 +43,6 @@ export function renderPlot(container, title, schemas, series) {
         })
     }
 
-    Plotly.newPlot(container, traces, layout);
+    // @ts-ignore
+    window.Plotly.newPlot(container, traces, layout);
 }

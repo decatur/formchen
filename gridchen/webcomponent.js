@@ -5,7 +5,7 @@
  * Module implementing the visual grid and scrolling behaviour.
  */
 
-//@ts-check
+/** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, Patch, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, JSONSchema, MatrixView, Transaction, TransactionManager } from "./gridchen" */
 
 import {logger, wrap} from "./utils.js";
 import {createSelection, Range, IndexToPixelMapper} from "./selection.js";
@@ -108,15 +108,15 @@ const ro = new window.ResizeObserver(entry => debounceResize(entry));
 
 /**
  * We export for testability.
- * @implements {GridChenNS.GridChen}
+ * @implements {GridChen}
  */
 export class GridChen extends HTMLElement {
 
     constructor() {
         super();
-        /** @type {GridChenNS.MatrixView} */
+        /** @type {MatrixView} */
         this._viewModel = void 0;
-        /** @type {GridChenNS.TransactionManager} */
+        /** @type {TransactionManager} */
         this._transactionManager = void 0;
 
         ro.observe(this);
@@ -131,9 +131,9 @@ export class GridChen extends HTMLElement {
     }
 
     /**
-     * @param {GridChenNS.MatrixView} view
-     * @param {GridChenNS.TransactionManager=} transactionManager
-     * @returns {GridChenNS.GridChen}
+     * @param {MatrixView} view
+     * @param {TransactionManager=} transactionManager
+     * @returns {IGridChen}
      */
     resetFromView(view, transactionManager) {
         this._viewModel = view;
@@ -154,7 +154,7 @@ export class GridChen extends HTMLElement {
         this.shadowRoot.appendChild(container);
         createGrid(container, view, this, transactionManager, this._totalHeight);
         this.style.width = container.style.width;
-        return /**@type{GridChenNS.GridChen}*/(this)
+        return /**@type{IGridChen}*/(this)
     }
 
     reset() {
@@ -236,9 +236,9 @@ class ScrollBar {
 
 /**
  * @param {HTMLElement} container
- * @param {GridChenNS.MatrixView} viewModel
- * @param {GridChen} gridchenElement
- * @param {GridChenNS.TransactionManager} tm
+ * @param {MatrixView} viewModel
+ * @param {IGridChen} gridchenElement
+ * @param {TransactionManager} tm
  * @param {number} totalHeight
  */
 function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
@@ -372,6 +372,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     info.addEventListener('click', showInfo);
     container.appendChild(info);
 
+    /**
+     * @param {string} path
+     */
     function refresh(path) {
 		pathPrefix = path;				  
         rowCount = viewModel.rowCount();
@@ -379,14 +382,13 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         gridAbstraction.rowCount = rowCount;
         setFirstRow(firstRow);
         scrollBar.setMax(Math.max(viewPortRowCount, rowCount - viewPortRowCount));
-
     }
 
     refreshHeaders();
     makeDataLists();
 
     /**
-     * @param {GridChenNS.Transaction} trans
+     * @param {Transaction} trans
      */
     function commitTransaction(trans) {
         // Note: First refresh, then commit!
@@ -460,7 +462,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     container.tabIndex = 0;
 
     const activeCell = {
-        openEditor: function (/** @type {GridChenNS.CellEditMode} */ mode, /** @type {any} */ value) {
+        openEditor: function (/** @type {CellEditMode} */ mode, /** @type {any} */ value) {
             // TODO: rowIncrement should depend on scroll direction.
             scrollIntoView(selection.active.rowIndex, selection.active.rowIndex - firstRow);
             const spanStyle = getCell(selection.active).style;
@@ -486,7 +488,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
 
     /**
      *
-     * @param {GridChenNS.Range} range
+     * @param {IRange} range
      * @param {boolean} show
      */
     function repaintSelection(range, show) {
@@ -771,7 +773,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     }
 
     /**
-     * @param {GridChenNS.Patch} patch
+     * @param {Patch} patch
      */
     function tmListener(patch) {
         viewModel.applyJSONPatch(patch.operations);
@@ -783,16 +785,16 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     }
 
     /**
-     * @param {GridChenNS.JSONPatchOperation[]=} operations
-     * @returns {GridChenNS.Patch}
+     * @param {JSONPatchOperation[]=} operations
+     * @returns {Patch}
      */
     function createPatch(operations) {
-        return /** @type{GridChenNS.Patch} */ {
+        return /** @type{Patch} */ ({
             operations: operations || [],
             pathPrefix,
             apply: tmListener,
             detail: {rowIndex: selection.active.rowIndex, columnIndex: selection.active.columnIndex}
-        };
+        });
     }
 
     function showInfo() {
@@ -868,7 +870,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             return
         }
 
-        /** @type{GridChenNS.ColumnSchema[]}*/
+        /** @type{ColumnSchema[]}*/
         let columnSchemas = [];
         /** @type{number[][]}*/
         const columns = [];
@@ -881,7 +883,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         // in the HTML element.
         dialog.textContent = '';
         const graphElement = dialog.appendChild(document.createElement('div'));
-        /** @type {GridChenNS.PlotEventDetail} */
+        /** @type {PlotEventDetail} */
         let detail = Object.assign({
             graphElement: graphElement,
             title: schema.title,
@@ -992,7 +994,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     }
 
     /**
-     * @param {GridChenNS.Range} range
+     * @param {IRange} range
      * @returns {Array<Array<?>>}
      */
     function getRangeData(range) {
@@ -1009,7 +1011,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
 
     /**
      * TODO: Move this to matrixview.js
-     * @param {GridChenNS.Range} r
+     * @param {IRange} r
      * @param {string} sep
      * @param {boolean} withHeaders
      * @returns {string}
@@ -1045,13 +1047,13 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
      * @param {number} topRowIndex
      * @param {number} topColIndex
      * @param {Array<Array<string|undefined>>} matrix
-     * @returns {GridChenNS.JSONPatchOperation[]}
+     * @returns {JSONPatchOperation[]}
      */
     function pasteSingle(topRowIndex, topColIndex, matrix) {
         let rowIndex = topRowIndex;
         let endRowIndex = rowIndex + matrix.length;
         let endColIndex = Math.min(schemas.length, topColIndex + matrix[0].length);
-        /** @type{GridChenNS.JSONPatchOperation[]} */
+        /** @type{JSONPatchOperation[]} */
         let patch = [];
 
         for (let i = 0; rowIndex < endRowIndex; i++ , rowIndex++) {
@@ -1168,7 +1170,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         }
     }
 
-    /** @type{GridChenNS.GridSelectionAbstraction} */
+    /** @type{GridSelectionAbstraction} */
     const gridAbstraction = {
         container,
         rowCount, // Will be updated on refresh().
@@ -1204,7 +1206,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     );
 
     /**
-     * @param {GridChenNS.Range} range
+     * @param {IRange} range
      */
     gridchenElement.select = function (range) {
         container.focus();

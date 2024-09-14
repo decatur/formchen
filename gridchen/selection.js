@@ -1,4 +1,3 @@
-//@ts-check
 /**
  * Author: Wolfgang Kühn 2019-2021
  * Source located at https://github.com/decatur/gridchen
@@ -6,7 +5,8 @@
  * Module implementing Excel style multi area selection behaviour on a grid.
  */
 
-/** @import { GridChenNS } from "gridchen-internal" */
+/** @import { Interval, Selection as ISelection } from "./gridchen-internal" */
+/** @import { Range as IRange } from "./gridchen" */
 
 import {logger, wrap} from "./utils.js";
 
@@ -14,7 +14,7 @@ import {logger, wrap} from "./utils.js";
  * A rectangular area.
  * TODO: Resolve name collision with lib.dom.Range?
  * lib.dom.Range is not really prolific.
- * @implements {GridChenNS.Range}
+ * @implements {IRange}
  */
 export class Range {
     /**
@@ -49,7 +49,7 @@ export class Range {
     }
 
     /**
-     * @returns {Range}
+     * @returns {IRange}
      */
     clone() {
         return Object.assign(new Range(0, 0, 0, 0), this);
@@ -69,8 +69,8 @@ export class Range {
 
     /**
      * Intersect this range with another range.
-     * @param {Range} other
-     * @returns {Range}
+     * @param {IRange} other
+     * @returns {IRange}
      */
     intersect(other) {
         const row = intersectInterval(
@@ -88,7 +88,7 @@ export class Range {
 
     /**
      * Test if this range intersects with another range.
-     * @param {Range} other
+     * @param {IRange} other
      * @returns {boolean}
      */
     intersects(other) {
@@ -99,7 +99,7 @@ export class Range {
      * Copy this range to an offset position.
      * @param {number} rowOffset
      * @param {number} colOffset
-     * @returns {Range}
+     * @returns {IRange}
      */
     offset(rowOffset, colOffset) {
         return new Range(
@@ -110,14 +110,17 @@ export class Range {
     /**
      * Subtract other range from this. Returns array of ranges whose union is this-other.
      * Reimplementation of https://gist.github.com/Noitidart/90ea1ebd30156df9ef530c6a9a1b6ea7
-     * @param {Range} other
-     * @returns {Range[]}
+     * @param {IRange} other
+     * @returns {IRange[]}
      */
     subtract(other) {
-        other = other.intersect(this);
-        if (other === undefined) {
+        let foo = other.intersect(this);
+        if (foo === undefined) {
             return [this.clone()];
         }
+
+        {
+            const other = /**@type{Range}*/(foo);
 
         // Partition into four rectangles left, top, bottom and right strip.
         // Example: hole in the middle
@@ -146,13 +149,14 @@ export class Range {
 
         return result
     }
+    }
 }
 
 /**
  * Updates the target range with the convex hull of all areas.
- * @param {Range[]} areas
- * @param {Range} target
- * @returns Range
+ * @param {IRange[]} areas
+ * @param {IRange} target
+ * @returns IRange
  */
 function convexHull(target, areas) {
     target.rowIndex = Math.min(...areas.map(r => r.rowIndex));
@@ -164,20 +168,20 @@ function convexHull(target, areas) {
 
 /**
  * @param {*} uiRefresher
- * @param {GridChenNS.GridSelectionAbstraction} grid
- * @returns {GridChenNS.Selection}
+ * @param {GridSelectionAbstraction} grid
+ * @returns {ISelection}
  */
 export function createSelection(uiRefresher, grid) {
 
-    /** @implements{GridChenNS.Selection} */
+    /** @implements{ISelection} */
     class Selection extends Range {
-        /**@type{Range}*/
+        /**@type{IRange}*/
         active;
-        /**@type{Range}*/
+        /**@type{IRange}*/
         pilot;
-        /**@type{Range}*/
+        /**@type{IRange}*/
         initial;
-        /**@type{Range[]}*/
+        /**@type{IRange[]}*/
         areas;
         uiRefresher;
         lastEvt;
@@ -381,9 +385,9 @@ export function createSelection(uiRefresher, grid) {
 
 
 /**
- * @param {GridChenNS.Interval} i1
- * @param {GridChenNS.Interval} i2
- * @returns {GridChenNS.Interval}
+ * @param {Interval} i1
+ * @param {Interval} i2
+ * @returns {Interval}
  */
 function intersectInterval(i1, i2) {
     const min = Math.max(i1.min, i2.min);
@@ -397,7 +401,7 @@ function intersectInterval(i1, i2) {
 /**
  *
  * @param {MouseEvent} evt
- * @param {Selection} selection
+ * @param {ISelection} selection
  * @param {HTMLDivElement} cellParent
  * @param {IndexToPixelMapper} indexMapper
  */

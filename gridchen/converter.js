@@ -5,7 +5,8 @@
  * Module implementing data mapping for some common data types.
  */
 
-//@ts-check
+/** @import { Converter } from "./gridchen" */
+
 
 import * as u from './utils.js'
 
@@ -19,7 +20,7 @@ function createSpan() {
 }
 
 /**
- * @implements {GridChenNS.Converter}
+ * @implements {Converter}
  */
 export class StringConverter {
     constructor() {
@@ -186,7 +187,7 @@ export class URIConverter {
 }
 
 /**
- * @interface {GridChenNS.Converter}
+ * @interface {Converter}
  */
 export class BooleanStringConverter {
     constructor() {
@@ -245,7 +246,7 @@ export class BooleanStringConverter {
 }
 
 /**
- * @interface {GridChenNS.Converter}
+ * @interface {Converter}
  */
 export class NumberConverter {
     /**
