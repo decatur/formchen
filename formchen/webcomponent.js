@@ -429,19 +429,6 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             return node.setValue(view.getModel())
         };
 
-        if (view.schema.detailSchemas && view.schema.detailSchemas.length) {
-            node.tm = Object.create(tm);
-
-            node.tm.openTransaction = function () {
-                const transaction = tm.openTransaction();  // Invoke super method.
-                // TODO: This must be the default impl
-                transaction.context = function () {
-                };
-                return transaction
-            };
-
-        }
-
         node.refreshUI = function () {
             view.applyJSONPatch([{ op: 'replace', path: '', value: node.obj }]);
             grid.refresh(node.id);

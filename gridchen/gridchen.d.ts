@@ -58,7 +58,6 @@ export interface GridSchema {
     pathPrefix: string,
     title: string;
     columnSchemas: ColumnSchema[];
-    detailSchemas: ColumnSchema[];
     ids?: string[];
     readOnly?: boolean;
 }

@@ -175,7 +175,7 @@ class MatrixViewClass {
      * @returns {any[]}
      */
     getRowStyles() { return [] };
-    
+
     /**
      * @returns {JSONPatchOperation[]}
      */
@@ -198,7 +198,7 @@ class MatrixViewClass {
     /**
      * @param {number} colIndex
      */
-    sort(colIndex) {};
+    sort(colIndex) { };
 
     /**@type{GridSchema}*/
     schema;
@@ -350,21 +350,13 @@ export function createRowMatrixView(jsonSchema, rows) {
     /** @type{JSONSchema[]} */
     const itemSchemas = jsonSchema.items['items'];
     const columnSchemas = [];
-    const detailSchemas = [];
     /** @type{number[]} */
     const columnIndices = [];
-    /** @type{number[]} */
-    const detailIndices = [];
 
     for (const [columnIndex, columnSchema] of itemSchemas.entries()) {
         // Do not test for columnSchema.type === 'object' because the type could be a Date.
-        if (columnSchema.properties || columnSchema.type === 'array') {
-            detailSchemas.push(columnSchema);
-            detailIndices.push(columnIndex);
-        } else {
-            columnSchemas.push(columnSchema);
-            columnIndices.push(columnIndex);
-        }
+        columnSchemas.push(columnSchema);
+        columnIndices.push(columnIndex);
     }
 
     const schemas = updateSchemaInPlace(columnSchemas);
@@ -374,7 +366,6 @@ export function createRowMatrixView(jsonSchema, rows) {
         pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
-        detailSchemas,
         readOnly: readOnly(jsonSchema)
     };
 
@@ -387,29 +378,6 @@ export function createRowMatrixView(jsonSchema, rows) {
         constructor() {
             super();
             this.schema = schema;
-        }
-
-        /**
-         * @param {number} rowIndex
-         * @param {number} detailIndex
-         * @returns {{path: string, value: number | string | boolean}}
-         */
-        getDetail(rowIndex, detailIndex) {
-            const colIndex = detailIndices[detailIndex];
-            return {
-                path: rowIndex + '/' + colIndex,
-                value: (rows && rowIndex < rows.length ? rows[rowIndex][colIndex] : null)
-            }
-        }
-
-        getDetailId(detailIndex) {
-            return '/*/' + detailIndices[detailIndex]
-        }
-
-        setDetail(rowIndex, detailIndex, value) {
-            // Note: rowIndex should never be out of range, i.e. for this detail there must already be a master.
-            const colIndex = detailIndices[detailIndex];
-            rows[rowIndex][colIndex] = value;
         }
 
         getModel() {
@@ -582,7 +550,6 @@ export function createRowObjectsView(jsonSchema, rows) {
         pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
-        detailSchemas: [],
         ids,
         readOnly: readOnly(jsonSchema)
     };
@@ -746,7 +713,6 @@ export function createColumnMatrixView(jsonSchema, columns) {
         pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
-        detailSchemas: [],
         readOnly: readOnly(jsonSchema)
     };
 
@@ -940,7 +906,6 @@ export function createColumnObjectView(jsonSchema, columns) {
         title: jsonSchema.title,
         columnSchemas: schemas,
         ids,
-        detailSchemas: [],
         readOnly: readOnly(jsonSchema)
     };
 
@@ -1142,7 +1107,6 @@ export function createColumnVectorView(jsonSchema, column) {
         pathPrefix: jsonSchema.pathPrefix,
         title: title,
         columnSchemas: schemas,
-        detailSchemas: [],
         readOnly: readOnly(jsonSchema)
     };
 
