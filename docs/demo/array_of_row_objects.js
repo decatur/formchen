@@ -1,9 +1,6 @@
-import { GridChen } from "../gridchen/webcomponent.js"
-import { createView } from "../gridchen/matrixview.js"
-import { createTransactionManager, registerUndo } from "../gridchen/utils.js";
+import { create_grid } from "./grid_helper.js"
 
-const schema =
-{
+const schema = {
     title: 'Array of Row Objects',
     type: 'array',
     items: {
@@ -15,22 +12,12 @@ const schema =
         }
     }
 };
-const data =
-    [
-        { timestamp: "2019-01-01", age: 0, weight: 0 },
-        { timestamp: "2019-01-02", age: 1, weight: 2 },
-        { timestamp: "2019-01-03", age: 2, weight: 4 }
-    ];
 
-const container = document.getElementById(schema.title);
-container.querySelector('code').innerText = JSON.stringify(data, null, 4);
-const view = createView(schema, data);
-const gridElement = /** @type{GridChen} */ (container.querySelector('grid-chen'));
-const tm = createTransactionManager();
-registerUndo(document.body, tm);
-tm.addEventListener('change', function (evt) {
-    console.log(view.getModel());
-    console.log(evt.transaction.operations);
-});
+const data = [
+    { timestamp: "2019-01-01", age: 0, weight: 0 },
+    { timestamp: "2019-01-02", age: 1, weight: 2 },
+    { timestamp: "2019-01-03", age: 2, weight: 4 }
+];
 
-gridElement.resetFromView(view, tm);
+create_grid(schema, data);
+
