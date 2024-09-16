@@ -22,7 +22,7 @@ const data =
         { timestamp: "2019-01-03", age: 2, weight: 4 }
     ];
 
-const container = document.getElementById('Array of Row Objects');
+const container = document.getElementById(schema.title);
 container.querySelector('code').innerText = JSON.stringify(data, null, 4);
 const view = createView(schema, data);
 const gridElement = /** @type{GridChen} */ (container.querySelector('grid-chen'));
