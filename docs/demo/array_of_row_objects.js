@@ -22,8 +22,10 @@ const data =
         { timestamp: "2019-01-03", age: 2, weight: 4 }
     ];
 
+const container = document.getElementById('Array of Row Objects');
+container.querySelector('code').innerText = JSON.stringify(data, null, 4);
 const view = createView(schema, data);
-const gridElement = /** @type{GridChen} */ (document.querySelector('grid-chen'));
+const gridElement = /** @type{GridChen} */ (container.querySelector('grid-chen'));
 const tm = createTransactionManager();
 registerUndo(document.body, tm);
 tm.addEventListener('change', function (evt) {
