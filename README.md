@@ -185,4 +185,10 @@ https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#t
 
 * https://docs.joshuatz.com/cheatsheets/js/jsdoc
 
+# Deploy to GithubIO
+```
+cp gridchen/*.js docs/gridchen/
+cp formchen/webcomponent.js docs/formchen
+```
+
 
