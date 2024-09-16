@@ -13,8 +13,8 @@ export interface JSONSchema {
     minimum?: number;
     maximum?: number;
     format?: string;
-    tooltip: string;
-    editable: boolean;
+    tooltip?: string;
+    editable?: boolean;
     title?: string;
     pathPrefix?: string,
     type: string;
@@ -68,6 +68,7 @@ export interface Converter {
     toEditable: (a: (number | Date | string | boolean)) => string;
     createElement: () => HTMLElement;
     render: (element: HTMLElement, value: any) => void;
+    isPercent?: boolean;  // TODO: Deprecate or move to NumberConverter
 }
 
 // export interface Interval {

@@ -178,4 +178,11 @@ Bump version in `fromchen/package.json` and `git tag`.
 cd fromchen & npm publish
 ````
 
+# Development
+
+* Use TypeScript 5.5 `@import`, see 
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#the-jsdoc-import-tag
+
+* https://docs.joshuatz.com/cheatsheets/js/jsdoc
+
 

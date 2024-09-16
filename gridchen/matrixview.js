@@ -329,8 +329,7 @@ function padArray(a, targetLength, prefix) {
  * @returns {boolean}
  */
 function search(pattern, value) {
-    // TODO: Must not use String, but converter.toEditable()
-    return String(value).includes(pattern)
+    return value.includes(pattern)
 }
 
 /**
@@ -512,8 +511,8 @@ export function createRowMatrixView(jsonSchema, rows) {
          */
         search(startRowIndex, pattern) {
             for (let rowIndex = startRowIndex; rowIndex < rows.length; rowIndex++) {
-
-                const columnIndex = rows[rowIndex].findIndex((value) => search(pattern, value));
+                // TODO: Must not use String, but converter.toEditable()
+                const columnIndex = rows[rowIndex].findIndex((value) => search(pattern, String(value)));
                 if (columnIndex !== -1) {
                     return [rowIndex, columnIndex]
                 }
@@ -1229,7 +1228,8 @@ export function createColumnVectorView(jsonSchema, column) {
             const rowCount = getRowCount();
             for (let rowIndex = startRowIndex; rowIndex < rowCount; rowIndex++) {
                 const value = column[rowIndex];
-                if (search(pattern, value)) {
+                // TODO: Must not use String, but converter.toEditable()
+                if (search(pattern, String(value))) {
                     return [rowIndex, 0]
                 }
             }

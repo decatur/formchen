@@ -291,7 +291,7 @@ export class NumberConverter {
             // Round tripping is hard, see 
             // https://stackoverflow.com/questions/29255843/is-there-a-way-to-reverse-the-formatting-by-intl-numberformat-in-javascript
             // https://stackoverflow.com/questions/15303940/how-to-handle-floats-and-decimal-separators-with-html5-input-type-number
-            s = s.replace(new RegExp(',', 'g'), '');
+            s = s.replaceAll(',', '');
         }
         
         return s
