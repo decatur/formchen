@@ -1,16 +1,12 @@
+import { test, assert } from './utils.js'
+import { createFormChen } from '../docs/formchen/webcomponent.js'
+import { schema, data } from '../demos/sample2.js'
+import * as utils from '../docs/gridchen/utils.js';
+import {GridChen} from "../docs/gridchen/webcomponent.js";
 
-
-import { test, assert } from '../gridchen/testing/utils.js'
-import { createFormChen } from '../webcomponent.js'
-import { schema, data } from '../../demos/sample2.js'
-import * as utils from 'gridchen/utils.js';
-
-const container = document.createElement('div');
-container.id = '/sample2';
-document.body.appendChild(container);
-
-test('atomic', () => {
-    const fc = createFormChen({ type: 'string' }, 'foobar');
+test('Atomic', (test_name) => {
+    const container = document.getElementById(test_name);
+    const fc = createFormChen(container, { type: 'string' }, 'foobar');
     assert.equal('foobar', fc.value)
 })
 
@@ -18,16 +14,6 @@ test('FormChen', () => {
     const tm = utils.createTransactionManager();
     utils.registerUndo(document.body, tm);
     const fc = createFormChen(schema, data, tm);
-
-
-    //const selects = Array.from(document.getElementsByTagName('select'));
-
-    // function *inputGenerator() {
-    //     const inputs = Array.from(document.getElementsByTagName('input'));
-    //     for (const input of inputs) yield input;
-    // }
-    // const inputs = inputGenerator();
-    // const nextInput = () => inputs.next().value;
 
     /** @type{HTMLInputElement} */
     let input;

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>TestRunner</title>
+</head>
+
+<body>
+    <p>
+        Please open JavaScript console...
+    </p>
+
+    <div id="Empty Object one Level">
+        <label data-path="/test/foo" class="label"><span class="data-title"></span> <input class="data-value"></label>
+    </div>
+
+    <div id="Empty Object two Levels">
+        <label data-path="/test/foo" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/test/bar/foobar" class="label"><span class="data-title"></span> <input
+                class="data-value"></label>
+    </div>
+
+    <div id="Delete">
+        <label data-path="/test/foo" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/test/bar/foobar" class="label"><span class="data-title"></span> <input
+                class="data-value"></label>
+    </div>
+
+    <div id="Delete subtree">
+        <label data-path="/test/foo" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/test/bar/foobar" class="label"><span class="data-title"></span> <input
+                class="data-value"></label>
+    </div>
+
+    <div id="Empty object with grid">
+        <div data-path="/test/foo">
+            <label class="data-title"> <span class="data-unit"></span></label>
+            <grid-chen class="data-value" style="display:block; height:200px"></grid-chen>
+        </div>
+    </div>
+
+    <script type="module" src="./test_empty_object.js"></script>
+
+
+    <div id="Atomic">
+        <label data-path="/foobar" class="label"><span class="data-title"></span> <input class="data-value"></label>
+    </div>
+    <script type="module" src="./test_Formchen.js"></script>
+
+</body>
+
+
+</html>

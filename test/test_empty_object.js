@@ -1,12 +1,10 @@
-import {test, assert} from 'gridchen/testing/utils.js'
-import {createFormChen} from '../webcomponent.js'
-import {createTransactionManager} from "gridchen/utils.js";
+import {test, assert} from './utils.js'
+import {createFormChen} from '../docs/formchen/webcomponent.js'
+import {createTransactionManager} from "../docs/gridchen/utils.js";
+import {GridChen} from "../docs/gridchen/webcomponent.js";
 
-const container = document.createElement('div');
-container.id = '/test';
-document.body.appendChild(container);
 
-test('Empty Object one Level', () => {
+test('Empty Object one Level', (test_name) => {
     const schema = {
         pathPrefix: '/test',
         type: 'object',
@@ -17,12 +15,12 @@ test('Empty Object one Level', () => {
         }
     };
 
-    container.textContent = '';
+    const container = document.getElementById(test_name);
     const tm = createTransactionManager();
-    const fc = createFormChen(schema, null, tm);
+    const fc = createFormChen(container, schema, null, tm);
 
-    let input = document.getElementById('/test/foo');
-
+    let input = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/test/foo"]`).querySelector('.data-value'));
+    
     input.value = 'foo';
     input.onchange(null);
     let expected = [
@@ -40,7 +38,7 @@ test('Empty Object one Level', () => {
     assert.equal({foo: 'foobar'}, fc.value);
 });
 
-test('Empty Object two Levels', () => {
+test('Empty Object two Levels', (test_name) => {
     const schema = {
         pathPrefix: '/test',
         type: 'object',
@@ -59,12 +57,12 @@ test('Empty Object two Levels', () => {
         }
     };
 
-    container.textContent = '';
+    const container = document.getElementById(test_name);
     const tm = createTransactionManager();
-    const fc = createFormChen(schema, null, tm);
+    const fc = createFormChen(container, schema, null, tm);
 
-    let fooInput = document.getElementById('/test/foo');
-    let foobarInput = document.getElementById('/test/bar/foobar');
+    let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/test/foo"]`).querySelector('.data-value'));
+    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/test/bar/foobar"]`).querySelector('.data-value'));
 
     foobarInput.value = 'bar';
     foobarInput.onchange(null);
@@ -89,7 +87,7 @@ test('Empty Object two Levels', () => {
     assert.equal({bar: {foobar: 'foobar'}, foo: 'foo'}, fc.value);
 });
 
-test('delete', () => {
+test('Delete', (test_name) => {
     const schema = {
         pathPrefix: '/test',
         type: 'object',
@@ -108,13 +106,11 @@ test('delete', () => {
         }
     };
 
-    container.textContent = '';
+    const container = document.getElementById(test_name);
     const tm = createTransactionManager();
-    const fc = createFormChen(schema, {bar:{foobar:'foobar'}}, tm);
+    const fc = createFormChen(container, schema, {bar:{foobar:'foobar'}}, tm);
 
-    //let fooInput = document.getElementById('/test/foo');
-    let foobarInput = document.getElementById('/test/bar/foobar');
-
+    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/test/bar/foobar"]`).querySelector('.data-value'));
     foobarInput.value = '';
     foobarInput.onchange(null);
     let expected = [
@@ -126,7 +122,7 @@ test('delete', () => {
     assert.equal(undefined, fc.value);
 });
 
-test('delete subtree', () => {
+test('Delete subtree', (test_name) => {
     const schema = {
         pathPrefix: '/test',
         type: 'object',
@@ -145,12 +141,12 @@ test('delete subtree', () => {
         }
     };
 
-    container.textContent = '';
+    const container = document.getElementById(test_name);
     const tm = createTransactionManager();
-    const fc = createFormChen(schema, {bar:{foobar:'foobar'}}, tm);
+    const fc = createFormChen(container, schema, {bar:{foobar:'foobar'}}, tm);
 
-    let fooInput = document.getElementById('/test/foo');
-    let foobarInput = document.getElementById('/test/bar/foobar');
+    let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/test/foo"]`).querySelector('.data-value'));
+    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/test/bar/foobar"]`).querySelector('.data-value'));
 
     fc.getNodeById('/test/bar').setValue(undefined);
     assert.equal('', foobarInput.value);
@@ -160,7 +156,7 @@ test('delete subtree', () => {
     assert.equal(undefined, fc.value);
 });
 
-test('Empty object with grid', () => {
+test('Empty object with grid', (test_name) => {
     const schema = {
         definitions: {
             "measurements": {
@@ -181,23 +177,26 @@ test('Empty object with grid', () => {
         type: 'object',
         properties: {
             foo: {
-                type: 'string',
+                type: 'array',
                 $ref: '#/definitions/measurements'
             }
         }
     };
 
-    container.textContent = '';
+    const container = document.getElementById(test_name);
     const tm = createTransactionManager();
-    const fc = createFormChen(schema, null, tm);
+    const fc = createFormChen(container, schema, null, tm);
 
-    const gc = document.querySelector('grid-chen');
+    const gc = /** @type{GridChen} */ (container.querySelector(`[data-path="/test/foo"]`).querySelector('.data-value'));
+
     gc._click(0, 0);  // NoOp because cell 0,0 is selected by default.
     gc._sendKeys('2020-01-01 00:00Z');
     gc._keyboard('keydown', {code: 'Enter'});
+    gc._sendKeys('2020-01-02 00:00Z');
+    gc._keyboard('keydown', {code: 'Enter'});
 
     let value = fc.value;
-    assert.equal({foo:[['2020-01-01T01:00+01:00']]}, value);
+    assert.equal({foo:[['2020-01-01T01:00+01:00'], ['2020-01-02T01:00+01:00']]}, value);
 
     let patch = tm.patch;
     assert.equal({op: 'add', path: "/test", value: {}}, patch[0]);
@@ -206,7 +205,7 @@ test('Empty object with grid', () => {
     //assert.equal({op: 'replace', path: "/foo/0", value: Array(1), oldValue: null}, patch[2]);
     //assert.equal({op: 'replace', path: "/foo/0/0", value: "2020-01-01T01:00+01:00", oldValue: null}, patch[3]);
 
-    gc._click(0, 0);
+    gc._click(1, 0);
     gc._keyboard('keydown', {code: 'Delete'});
     patch = tm.patch;
     assert.equal({op: 'replace', path: "/test/foo/0/0", value: null, oldValue: "2020-01-01T01:00+01:00"}, patch[2]);
