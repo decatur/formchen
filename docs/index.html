@@ -1,56 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>form-chen</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            margin: 2em;
-        }
+    <link rel="stylesheet" href="demo.css">
 
-        select {
-            background-color: inherit;
-            color: inherit;
-        }
-    </style>
-    <script src="./theme.js"></script>
 </head>
+
 <body>
 
-<h1>form-chen</h1>
+    <h1>form-chen</h1>
 
-<p>
-    Extreme lightweight web form generator for hierarchical and grid data supporting master-detail relation ships and undo/redo management.
-    See the repository <a href="https://github.com/decatur/formchen">https://github.com/decatur/formchen</a> for
-    details.
-</p>
+    <p>
+        Extreme lightweight web form generator for hierarchical and grid data supporting master-detail relation ships
+        and undo/redo management.
+        See the repository <a href="https://github.com/decatur/formchen">https://github.com/decatur/formchen</a> for
+        details.
+    </p>
 
-<h2>Color Scheme Support</h2>
+    <form>
+        <label>View Generated Patch <textarea class="patch"></textarea></label>
+    </form>
 
-<label>
-    You are using the
-    <select id="colorScheme">
-        <option name="preferred">preferred</option>
-        <option name="dark">dark</option>
-        <option name="light">light</option>
-    </select>
-    color scheme.
-</label>
+    <div class="form-chen" id="ROOT">
+        <label data-path="/plant" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/reference" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/observer" class="label"><span class="data-title"></span> <select
+                class="data-value"></select></label>
+        <label data-path="/start" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/latitude" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/longitude" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <div data-path="/measurements">
+            <label class="data-title"> <span class="data-unit"></span></label>
+            <grid-chen class="data-value" style="display:block; height:10em"></grid-chen>
+        </div>
+        <label data-path="/isCompleted" class="label"><span class="data-title"></span> <input
+                class="data-value"></label>
+    </div>
+    <script type="module" src="./demo/basic-demo.js"></script>
 
-<h2>Demos</h2>
+    <div id="Array of Row Objects">
+        <h2>Array of row objects</h2>
+        <code></code>
+        <grid-chen style="display:block; height: 10em"></grid-chen>
+    </div>
+    <script type="module" src="./demo/array_of_row_objects.js"></script>
 
-<p>
-    <a href="demo/basic-demo.html">Basic Demo</a>
-</p>
+    <div id="Array of Column Arrays">
+        <h2>A tuple (fixed length array) of column arrays</h2>
+        <code></code>
+        <grid-chen style="display:block; height: 10em"></grid-chen>
+    </div>
+    <script type="module" src="./demo/array_of_column_arrays.js"></script>
 
-<p>
-    <a href="demo/comprehensive-demo.html">Comprehensive Demo</a>
-</p>
+    <div id="Array of Row Tuples">
+        <h2>Array of row tuples (fixed length array)</h2>
+        <code></code>
+        <grid-chen style="display:block; height: 10em"></grid-chen>
+    </div>
+    <script type="module" src="./demo/array_of_row_arrays.js"></script>
 
-<p>
-    <a href="suiterunner.html">Run unit tests</a>
-</p>
+    <div id="demo">
+        <h2>Column Order_objects_of_columns</h2>
+        <code></code>
+        <grid-chen style="display:block; height: 10em"></grid-chen>
+    </div>
+    <script type="module" src="./demo/column_order_objects_of_columns.js"></script>
+
+    <div id="Column Order">
+        <h2>Column Order with Row Objects</h2>
+        <code></code>
+        <grid-chen style="display:block; height: 10em"></grid-chen>
+    </div>
+    <script type="module" src="./demo/column_order_row_objects.js"></script>
+
+    <div id="Object of Columns">
+        <h2>Object of Columns</h2>
+        <code></code>
+        <grid-chen style="display:block; height: 10em"></grid-chen>
+    </div>
+    <script type="module" src="./demo/object_of_columns.js"></script>
+
+    <div id="Single Column Array">
+        <h2>a single column array</h2>
+        <code></code>
+        <grid-chen style="display:block; height: 10em"></grid-chen>
+    </div>
+    <script type="module" src="./demo/single_column_array.js"></script>
 
 </body>
+
 </html>
