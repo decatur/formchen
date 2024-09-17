@@ -1,3 +1,7 @@
+export function log(msg) {
+    console.log(msg);
+}
+
 function error(a, b, msg) {
     const err = Error('assertEqual failed');
     console.error(err);
@@ -58,6 +62,7 @@ export const assert = {
 };
 
 export function test(test_name, func) {
-    func(test_name)
+    log('Running ' + test_name);
+    func(test_name);
 }
 
