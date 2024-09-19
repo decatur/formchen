@@ -521,7 +521,7 @@ export function createRowMatrixView(jsonSchema, rows) {
         }
 
         applyJSONPatch(patch) {
-            rows = /**@type{object[]}*/ applyJSONPatch(rows, patch);
+            rows = /**@type{object[]}*/ (applyJSONPatch(rows, patch));
         }
     }
 
@@ -691,7 +691,7 @@ export function createRowObjectsView(jsonSchema, rows) {
         }
 
         applyJSONPatch(patch) {
-            rows = /**@type{object[]}*/ applyJSONPatch(rows, patch);
+            rows = /**@type{object[]}*/ (applyJSONPatch(rows, patch));
         }
     }
 
@@ -866,7 +866,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
         }
 
         applyJSONPatch(patch) {
-            columns = /**@type{object[]}*/ applyJSONPatch(columns, patch);
+            columns = /**@type{object[]}*/ (applyJSONPatch(columns, patch));
         }
     }
 
@@ -1237,7 +1237,7 @@ export function createColumnVectorView(jsonSchema, column) {
         }
 
         applyJSONPatch(patch) {
-            column = /**@type{(number|string|boolean|null)[]}*/ applyJSONPatch(column, patch);
+            column = /**@type{(number|string|boolean|null)[]}*/ (applyJSONPatch(column, patch));
         }
     }
 

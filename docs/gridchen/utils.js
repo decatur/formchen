@@ -172,6 +172,7 @@ const localeDateParsers = {};
  * @returns {LocalDateParser}
  */
 export function localeDateParser(locale) {
+    if (locale === undefined) throw Error("Locale must be defined");
     if (!(locale in localeDateParsers)) {
         localeDateParsers[locale] = createLocalDateParser(locale);
     }
@@ -390,13 +391,13 @@ function applyJSONPatchOperation(holder, op) {
         holder[index] = op.value;
     } else if (op.op === 'add') {
         if (Array.isArray(holder)) {
-            (/**@type{object[]}*/holder).splice(parseInt(index), 0, op.value);
+            (/**@type{object[]}*/(holder)).splice(parseInt(index), 0, op.value);
         } else {
             holder[index] = op.value;
         }
     } else if (op.op === 'remove') {
         if (Array.isArray(holder)) {
-            (/**@type{object[]}*/holder).splice(parseInt(index), 1);
+            (/**@type{object[]}*/(holder)).splice(parseInt(index), 1);
         } else {
             delete holder[index];
         }

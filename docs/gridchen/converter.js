@@ -8,7 +8,7 @@
 /** @import { Converter } from "./gridchen" */
 
 
-import * as u from './utils.js'
+import * as utils from './utils.js'
 
 /**
  * @returns {HTMLSpanElement}
@@ -255,14 +255,14 @@ export class NumberConverter {
      */
     constructor(fractionDigits, locale) {
         /** @type {Intl.NumberFormat} */
-        this.nf = Intl.NumberFormat(locale, {
+        this.nf_render = Intl.NumberFormat(locale, {
             minimumFractionDigits: fractionDigits,
             maximumFractionDigits: fractionDigits
         });
         // Default for maximumFractionDigits is 3.
         /** @type {Intl.NumberFormat} */
-        this.nf1 = new Intl.NumberFormat(locale, {maximumFractionDigits: 10});
-        let testNumber = this.nf1.format(1000.5); // 1.000,50 in de-DE or 1,000.5 in en
+        this.nf_editable = new Intl.NumberFormat(locale, {maximumFractionDigits: 10});
+        let testNumber = this.nf_editable.format(1000.5); // 1.000,50 in de-DE or 1,000.5 in en
         this.thousandSep = testNumber[1];
         this.decimalSep = testNumber[5];  // Will be undefined for fractionDigits=0
         this.isPercent = false;
@@ -279,9 +279,9 @@ export class NumberConverter {
         }
         let s;
         if (this.isPercent) {
-            s = this.nf1.format(n * 100) + '%';
+            s = this.nf_editable.format(n * 100) + '%';
         } else {
-            s = this.nf1.format(n);
+            s = this.nf_editable.format(n);
         }
 
         if (this.thousandSep == ',') {
@@ -336,9 +336,9 @@ export class NumberConverter {
             element.className = 'error';
         } else {
             if (this.isPercent) {
-                element.textContent = this.nf.format(value * 100) + '%';
+                element.textContent = this.nf_render.format(value * 100) + '%';
             } else {
-                element.textContent = this.nf.format(value);
+                element.textContent = this.nf_render.format(value);
             }
             element.className = 'non-string';
         }
@@ -358,8 +358,8 @@ export class DatePartialTimeStringConverter {
      * @param {string=} locale
      */
     constructor(period, locale) {
-        this.period = u.resolvePeriod(period);
-        this.parser = u.localeDateParser(locale);
+        this.period = utils.resolvePeriod(period);
+        this.parser = utils.localeDateParser(locale);
     }
 
     /**
@@ -377,7 +377,7 @@ export class DatePartialTimeStringConverter {
             return s
         }
         const d = new Date(Date.UTC(...r.parts));
-        return u.toUTCDatePartialTimeString(d, this.period);
+        return utils.toUTCDatePartialTimeString(d, this.period);
     }
 
     toEditable(s) {
@@ -394,7 +394,7 @@ export class DatePartialTimeStringConverter {
         if (r.error) {
             return s
         }
-        return u.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.period).replace(' ', 'T')
+        return utils.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.period).replace(' ', 'T')
     }
 
     /**
@@ -418,7 +418,7 @@ export class DatePartialTimeStringConverter {
                 element.textContent = value;
                 element.className = 'error';
             } else {
-                element.textContent = u.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.period);
+                element.textContent = utils.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.period);
                 element.className = 'non-string';
             }
         }
@@ -431,11 +431,12 @@ export class DatePartialTimeStringConverter {
 export class DateTimeStringConverter {
     /**
      * @param {string} period
-     * @param {string=} locale
+     * @param {string} locale
      */
     constructor(period, locale) {
-        this.period = u.resolvePeriod(period);
-        this.parser = u.localeDateParser(locale);
+        locale = locale || navigator.language;
+        this.period = utils.resolvePeriod(period);
+        this.parser = utils.localeDateParser(locale);
     }
 
     /**
@@ -470,7 +471,7 @@ export class DateTimeStringConverter {
         let tuple = /**@type{[number, number]}*/(parts.slice(0, 1 + this.period));
 
         const d = new Date(Date.UTC(...tuple));
-        return u.toLocaleISODateTimeString(d, this.period).replace(' ', 'T')
+        return utils.toLocaleISODateTimeString(d, this.period).replace(' ', 'T')
     }
 
     /**
@@ -498,7 +499,7 @@ export class DateTimeStringConverter {
                 parts[3] -= parts[7]; // Get rid of hour offset
                 parts[4] -= parts[8]; // Get rid of minute offset
                 let tuple = /**@type{[number, number]}*/(parts.slice(0, 7));
-                element.textContent = u.toLocaleISODateTimeString(new Date(Date.UTC(...tuple)), this.period);
+                element.textContent = utils.toLocaleISODateTimeString(new Date(Date.UTC(...tuple)), this.period);
                 element.className = 'non-string';
             }
         }
@@ -517,8 +518,8 @@ export class DatePartialTimeConverter {
      * @param {string=} locale
      */
     constructor(period, locale) {
-        this.period = u.resolvePeriod(period);
-        this.parser = u.localeDateParser(locale);
+        this.period = utils.resolvePeriod(period);
+        this.parser = utils.localeDateParser(locale);
     }
 
     /**
@@ -531,7 +532,7 @@ export class DatePartialTimeConverter {
             return String(d);
         }
 
-        return u.toUTCDatePartialTimeString(d, this.period)
+        return utils.toUTCDatePartialTimeString(d, this.period)
     }
 
     toEditable(d) {
@@ -568,7 +569,7 @@ export class DatePartialTimeConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-            element.textContent = u.toUTCDatePartialTimeString(value, this.period);
+            element.textContent = utils.toUTCDatePartialTimeString(value, this.period);
             element.className = 'non-string';
         }
     }
@@ -583,8 +584,8 @@ export class DateTimeConverter {
      * @param {string=} locale
      */
     constructor(period, locale) {
-        this.period = u.resolvePeriod(period);
-        this.parser = u.localeDateParser(locale);
+        this.period = utils.resolvePeriod(period);
+        this.parser = utils.localeDateParser(locale);
     }
 
     /**
@@ -596,7 +597,7 @@ export class DateTimeConverter {
         if (d.constructor !== Date) {
             return String(d)
         }
-        return u.toLocaleISODateTimeString(d, this.period)
+        return utils.toLocaleISODateTimeString(d, this.period)
     }
 
     toEditable(d) {
@@ -636,7 +637,7 @@ export class DateTimeConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-            element.textContent = u.toLocaleISODateTimeString(value, this.period);
+            element.textContent = utils.toLocaleISODateTimeString(value, this.period);
             element.className = 'non-string';
         }
     }

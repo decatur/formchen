@@ -62,7 +62,9 @@ export const assert = {
 };
 
 export function test(test_name, func) {
-    log('Running ' + test_name);
-    func(test_name);
+    if (window.location.hash === '' || window.location.hash == '#' + test_name) {
+        log('Running ' + test_name);
+        func(test_name);
+    }
 }
 

@@ -4,6 +4,7 @@ import { test, assert, log } from './utils.js'
 import {createView} from "../docs/gridchen/matrixview.js";
 import {createTransactionManager} from "../docs/gridchen/utils.js"
 import {Range} from "../docs/gridchen/selection.js";
+import {GridChen} from "../docs/gridchen/webcomponent.js";
 
 log('\x1B[41;93;4m####### Loading test_Clipboard')
 
@@ -29,7 +30,7 @@ test('copy', async function () {
         [0, 'a'],
         [NaN, 'b']
     ];
-    const gc = new (customElements.get('grid-chen'))();
+    const gc = /** @type{GridChen} **/ (new (customElements.get('grid-chen'))());
     gc.resetFromView(createView(schema, rows), tm);
 
     gc.select(new Range(0, 0, 2, 2));
@@ -43,7 +44,7 @@ test('should paste cells to (2,1)', async function () {
         [0, 'a'],
         [NaN, 'b']
     ];
-    const gc = new (customElements.get('grid-chen'))();
+    const gc = /** @type{GridChen} **/  (new (customElements.get('grid-chen'))());
     gc.resetFromView(createView(schema, rows), tm);
     // Write to clipboard 2x2 matrix
     //  0    a

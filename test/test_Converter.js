@@ -79,7 +79,6 @@ function runEdits(run) {
     const de = defaultEdits.concat(['27.10.2019 02:13:14.123+02:00']);
     const en = defaultEdits.concat(['10/27/2019 02:13:14.123+02:00']);
 
-    run(undefined, defaultEdits);
     run('de', de);
     run('en', en);
 }
@@ -89,7 +88,6 @@ function runPartialEdits(run) {
     const de = defaultEdits.concat(['27.10.2019 02:13:14.123']);
     const en = defaultEdits.concat(['10/27/2019 02:13:14.123']);
 
-    run(undefined, defaultEdits);
     run('de', de);
     run('en', en);
 }

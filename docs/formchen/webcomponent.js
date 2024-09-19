@@ -349,6 +349,10 @@ export class HolderNodeClass extends BaseNodeClass {
  */
 export function createFormChen(rootElement, topSchema, topObj, transactionManager) {
 
+    if (topSchema.type != 'object') {
+        throw Error("Root schema must be an object")
+    }
+
     const pathPrefix = topSchema.pathPrefix || '';
     /** @type{Graph} */
     const graph = new Graph(pathPrefix);

@@ -90,7 +90,7 @@ test('ColumnMatrix', () => {
             ]
     };
     const gc = new GridChen();
-    gc.resetFromView(createColumnMatrixView(schema, [[new Number(0)], ['a']]));
+    gc.resetFromView(createColumnMatrixView(schema, [[0], ['a']]));
     log('ViewportText');
     assert.equal(`0${decimalSep}00a`, gc._textContent)
 

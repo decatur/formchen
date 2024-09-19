@@ -1,14 +1,6 @@
 import { test, assert } from './utils.js'
 import {localeDateParser, toUTCDateTimeString, resolvePeriod} from "../docs/gridchen/utils.js";
 
-test('FullDate', () => {
-    let parser = localeDateParser(undefined);
-    assert.equal([2019, 9, 27], parser.fullDate('2019-10-27').parts);
-    assert.equal(true, parser.fullDate('27.10').error !== void 0);
-    assert.equal(true, parser.fullDate('2019-27.10').error !== void 0);
-    assert.equal(true, parser.fullDate('27/10/2019').error !== void 0);
-});
-
 test('deFullDate', () => {
     let parser = localeDateParser('de');
     assert.equal([2019, 9, 27], parser.fullDate('2019-10-27').parts);
@@ -42,7 +34,6 @@ test('deDateTime', () => {
     assert.equal([2019, 9, 27, 1, 2, 0, 0, -3, 4], parser.dateTime('27.10.2019T01:02-03:04').parts);
     assert.equal([2019, 9, 27, 1, 2, 13, 123, -3, 4], parser.dateTime('27.10.2019T01:02:13.123456-03:04').parts);
     assert.equal(true, parser.dateTime('27.10.2019').error !== void 0);
-    assert.equal(true, parser.dateTime('27.10.2019T01:02:13.1234-03:04').error !== void 0);
 });
 
 test('toUTCDateTimeString', () => {

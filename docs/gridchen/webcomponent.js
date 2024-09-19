@@ -544,7 +544,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     /** @param {WheelEvent} evt */
     cellParent.addEventListener('wheel', function (evt) {
         logger.log('onmousewheel');
-        if ((/** @type {DocumentOrShadowRoot} *//** @type {*} */(container.parentNode)).activeElement !== container) return;
+        if ((/** @type {DocumentOrShadowRoot} */(/** @type{Document} */(container.parentNode))).activeElement !== container) return;
 
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
         if (evt.ctrlKey) return;
@@ -566,7 +566,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     container.addEventListener('blur', wrap(gridchenElement, function (evt) {
         // This is also called by UA if an alert box is shown.
         logger.log('container.onblur: ' + evt);
-        if (!container.contains(/**@type {HTMLElement} */(/**@type {FocusEvent} */(evt).relatedTarget))) {
+        if (!container.contains(/** @type{HTMLElement} */(/** @type{FocusEvent} */(evt).relatedTarget))) {
             // We are leaving the component.
             selection.hide();
         }
