@@ -186,7 +186,7 @@ function someNaN(a) {
 }
 
 export class FullDate {
-    
+
     /**
      * @param {number} year 
      * @param {number} month 
@@ -206,10 +206,6 @@ export class FullDate {
  * @returns {LocalDateParser}
  */
 function createLocalDateParser() {
-    // We do not want to use the Date constructor because
-    // * it is a very loose parser
-    // * the time zone information is lost.
-
     /**
      * @param {string} s
      * @returns {FullDate|SyntaxError}
@@ -292,14 +288,13 @@ function createLocalDateParser() {
          */
         datePartialTime(s) {
             const r = parseDateOptionalTimeTimezone(s);
-            if (r.error) {
-                return { error: r.error }
+            if (r instanceof SyntaxError) {
+                return r
+            } else if (r.length !== 7) {
+                return new SyntaxError(s)
+            } else {
+                return r
             }
-            if (r.parts && r.parts.length !== 7) {
-                return { error: new SyntaxError(s) }
-            }
-            
-            return r
         }
 
         /**
@@ -422,7 +417,7 @@ export function registerUndo(container, tm) {
      */
     function listener(evt) {
         if (evt.code === 'KeyY' && evt.ctrlKey) {
-            
+
             const target = /**@type{HTMLElement} */ (evt.target);
             if (target instanceof HTMLInputElement && target.value !== target.defaultValue) {
                 // Let the default browser undo action be performed on this input element.
