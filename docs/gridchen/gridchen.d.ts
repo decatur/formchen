@@ -231,7 +231,7 @@ enum CellEditMode {
 
 export interface LocalDateParser {
     fullDate: (string) => { parts?: [number, number, number], error?: SyntaxError };
-    dateTime: (string) => { parts?: [number, number, number, number, number, number, number, number, number], error?: SyntaxError };
+    dateTime: (string) => [number, number, number, number, number, number, number, number, number] | SyntaxError ;
     datePartialTime: (string) => { parts?: [number, number, number, number, number, number, number], error?: SyntaxError };
 }
 

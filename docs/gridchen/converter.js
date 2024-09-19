@@ -355,11 +355,10 @@ export class DatePartialTimeStringConverter {
 
     /**
      * @param {string} period
-     * @param {string=} locale
      */
-    constructor(period, locale) {
+    constructor(period) {
         this.period = utils.resolvePeriod(period);
-        this.parser = utils.localeDateParser(locale || navigator.language);
+        this.parser = utils.localeDateParser();
     }
 
     /**
@@ -373,10 +372,10 @@ export class DatePartialTimeStringConverter {
         }
 
         let r = this.parser.datePartialTime(s);
-        if (r.error) {
+        if (r instanceof SyntaxError) {
             return s
         }
-        const d = new Date(Date.UTC(...r.parts));
+        const d = new Date(Date.UTC(...r));
         return utils.toUTCDatePartialTimeString(d, this.period);
     }
 
@@ -391,10 +390,10 @@ export class DatePartialTimeStringConverter {
      */
     fromEditable(s) {
         const r = this.parser.datePartialTime(s);
-        if (r.error) {
+        if (r instanceof SyntaxError) {
             return s
         }
-        return utils.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.period).replace(' ', 'T')
+        return utils.toUTCDatePartialTimeString(new Date(Date.UTC(...r)), this.period).replace(' ', 'T')
     }
 
     /**
@@ -414,11 +413,11 @@ export class DatePartialTimeStringConverter {
             element.className = 'error';
         } else {
             const r = this.parser.datePartialTime(value);
-            if (r.error) {
+            if (r instanceof SyntaxError) {
                 element.textContent = value;
                 element.className = 'error';
             } else {
-                element.textContent = utils.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.period);
+                element.textContent = utils.toUTCDatePartialTimeString(new Date(Date.UTC(...r)), this.period);
                 element.className = 'non-string';
             }
         }
@@ -431,12 +430,10 @@ export class DatePartialTimeStringConverter {
 export class DateTimeStringConverter {
     /**
      * @param {string} period
-     * @param {string=} locale
      */
-    constructor(period, locale) {
-        locale = locale || navigator.language;
+    constructor(period) {
         this.period = utils.resolvePeriod(period);
-        this.parser = utils.localeDateParser(locale);
+        this.parser = utils.localeDateParser();
     }
 
     /**
@@ -462,13 +459,12 @@ export class DateTimeStringConverter {
         }
 
         let r = this.parser.dateTime(s);
-        if (r.error) {
+        if (r instanceof SyntaxError) {
             return s
         }
-        let parts = r.parts;
-        parts[3] -= parts[7]; // Get rid of hour offset
-        parts[4] -= parts[8]; // Get rid of minute offset
-        let tuple = /**@type{[number, number]}*/(parts.slice(0, 1 + this.period));
+        r[3] -= r[7]; // Get rid of hour offset
+        r[4] -= r[8]; // Get rid of minute offset
+        let tuple = /**@type{[number, number]}*/(r.slice(0, 1 + this.period));
 
         const d = new Date(Date.UTC(...tuple));
         return utils.toLocaleISODateTimeString(d, this.period).replace(' ', 'T')
@@ -491,11 +487,11 @@ export class DateTimeStringConverter {
             element.className = 'error';
         } else {
             const r = this.parser.dateTime(value);
-            if (r.error) {
+            if (r instanceof SyntaxError) {
                 element.textContent = value;
                 element.className = 'error';
             } else {
-                const parts = r.parts;
+                const parts = r;
                 parts[3] -= parts[7]; // Get rid of hour offset
                 parts[4] -= parts[8]; // Get rid of minute offset
                 let tuple = /**@type{[number, number]}*/(parts.slice(0, 7));
@@ -515,11 +511,10 @@ export class DateTimeStringConverter {
 export class DatePartialTimeConverter {
     /**
      * @param {string} period
-     * @param {string=} locale
      */
     constructor(period, locale) {
         this.period = utils.resolvePeriod(period);
-        this.parser = utils.localeDateParser(locale);
+        this.parser = utils.localeDateParser();
     }
 
     /**
@@ -546,10 +541,10 @@ export class DatePartialTimeConverter {
      */
     fromEditable(s) {
         let r = this.parser.datePartialTime(s);
-        if (r.error) {
+        if (r instanceof SyntaxError) {
             return s
         }
-        let tuple = /**@type{[number, number]}*/(r.parts.slice(0, 1 + this.period));
+        let tuple = /**@type{[number, number]}*/(r.slice(0, 1 + this.period));
         return new Date(Date.UTC(...tuple))
     }
 
@@ -581,11 +576,10 @@ export class DatePartialTimeConverter {
 export class DateTimeConverter {
     /**
      * @param {string} period
-     * @param {string=} locale
      */
     constructor(period, locale) {
         this.period = utils.resolvePeriod(period);
-        this.parser = utils.localeDateParser(locale);
+        this.parser = utils.localeDateParser();
     }
 
     /**
@@ -611,10 +605,10 @@ export class DateTimeConverter {
      */
     fromEditable(s) {
         let r = this.parser.dateTime(s);
-        if (r.error) {
+        if (r instanceof SyntaxError) {
             return s
         }
-        const parts = r.parts;
+        const parts = r;
         parts[3] -= parts[7]; // Get rid of hour offset
         parts[4] -= parts[8]; // Get rid of minute offset
         let tuple = /**@type{[number, number]}*/(parts.slice(0, 1 + this.period));

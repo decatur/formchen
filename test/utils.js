@@ -57,8 +57,18 @@ function assertEqual(a, b, path) {
     }
 }
 
+/**
+ * @param {boolean} b 
+ */
+function assertTrue(b) {
+    if (b !== true) {
+        throw Error()
+    }
+}
+
 export const assert = {
-    equal: assertEqual
+    equal: assertEqual,
+    true: assertTrue
 };
 
 export function test(test_name, func) {

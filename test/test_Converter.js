@@ -75,21 +75,13 @@ function assertNotADate(converter, elem) {
 }
 
 function runEdits(run) {
-    const defaultEdits = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
-    const de = defaultEdits.concat(['27.10.2019 02:13:14.123+02:00']);
-    const en = defaultEdits.concat(['10/27/2019 02:13:14.123+02:00']);
-
-    run('de', de);
-    run('en', en);
+    const edits = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
+    run(edits);
 }
 
 function runPartialEdits(run) {
-    const defaultEdits = ['2019-10-27T02:13:14.123', '2019-10-27 02:13:14.123'];
-    const de = defaultEdits.concat(['27.10.2019 02:13:14.123']);
-    const en = defaultEdits.concat(['10/27/2019 02:13:14.123']);
-
-    run('de', de);
-    run('en', en);
+    const edits = ['2019-10-27T02:13:14.123', '2019-10-27 02:13:14.123'];
+    run(edits);
 }
 
 test('DatePartialTimeStringConverter SECONDS', () => {
@@ -175,8 +167,8 @@ test('DatePartialTimeStringConverter DAYS', () => {
 });
 
 test('DateTimeStringConverter HOURS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DateTimeStringConverter('HOURS', locale);
+    function run(localizedDates) {
+        let converter = new c.DateTimeStringConverter('HOURS');
         assert.equal('not_a_date', converter.toTSV('not_a_date'));
         assert.equal('2019-10-27 01+02:00', converter.toTSV('2019-10-27T01+02:00'));
         assert.equal('2019-10-27 00+02:00', converter.toEditable('2019-10-27T00+02:00'));

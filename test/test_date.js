@@ -1,39 +1,23 @@
 import { test, assert } from './utils.js'
-import {localeDateParser, toUTCDateTimeString, resolvePeriod} from "../docs/gridchen/utils.js";
+import {localeDateParser, toUTCDateTimeString, resolvePeriod, FullDate} from "../docs/gridchen/utils.js";
 
-test('deFullDate', () => {
-    let parser = localeDateParser('de');
-    assert.equal([2019, 9, 27], parser.fullDate('2019-10-27').parts);
-    assert.equal([2019, 9, 27], parser.fullDate('27.10.2019').parts);
-    assert.equal(true, parser.fullDate('27.10').error !== void 0);
-    assert.equal(true, parser.fullDate('2019-27.10').error !== void 0);
-    assert.equal(true, parser.fullDate('27/10/2019').error !== void 0);
+test('FullDate', () => {
+    let parser = localeDateParser();
+    assert.equal(parser.fullDate('2019-10-27'), new FullDate(2019, 9, 27));
+    assert.equal(parser.fullDate('27.10.2019'), new SyntaxError('27.10.2019'));
 });
 
-test('enFullDate', () => {
-    let parser = localeDateParser('en');
-    assert.equal([2019, 9, 27], parser.fullDate('2019-10-27').parts);
-    assert.equal([2019, 9, 27], parser.fullDate('10/27/2019').parts);
-    assert.equal(true, parser.fullDate('27.10').error !== void 0);
-    assert.equal(true, parser.fullDate('2019-27.10').error !== void 0);
-    assert.equal(true, parser.fullDate('27.10.2019').error !== void 0);
+test('DatePartialTime', () => {
+    let parser = localeDateParser();
+    assert.equal([2019, 9, 27, 1, 2, 0, 0], parser.datePartialTime('2019-10-27 01:02'));
+    assert.true(parser.datePartialTime('27.10.2019 01:02') instanceof SyntaxError);
 });
 
-test('deDatePartialTime', () => {
-    let parser = localeDateParser('de');
-    assert.equal([2019, 9, 27, 1, 2, 0, 0], parser.datePartialTime('2019-10-27 01:02').parts);
-    assert.equal([2019, 9, 27, 1, 2, 0, 0], parser.datePartialTime('27.10.2019 01:02').parts);
-    assert.equal(true, parser.datePartialTime('foo 01:00').error !== void 0);
-});
-
-test('deDateTime', () => {
-    let parser = localeDateParser('de');
-    assert.equal([2019, 9, 27, 1, 2, 0, 0, 0, 0], parser.dateTime('2019-10-27 01:02Z').parts);
-    assert.equal([2019, 9, 27, 1, 2, 0, 0, 1, 0], parser.dateTime('27.10.2019 01:02+01:00').parts);
-    assert.equal([2019, 9, 27, 1, 2, 0, 0, -3, 4], parser.dateTime('27.10.2019 01:02-03:04').parts);
-    assert.equal([2019, 9, 27, 1, 2, 0, 0, -3, 4], parser.dateTime('27.10.2019T01:02-03:04').parts);
-    assert.equal([2019, 9, 27, 1, 2, 13, 123, -3, 4], parser.dateTime('27.10.2019T01:02:13.123456-03:04').parts);
-    assert.equal(true, parser.dateTime('27.10.2019').error !== void 0);
+test('DateTime', () => {
+    let parser = localeDateParser();
+    assert.equal([2019, 9, 27, 1, 2, 0, 0, 0, 0], parser.dateTime('2019-10-27 01:02Z'));
+    assert.true(parser.dateTime('27.10.2019 01:02+01:00') instanceof SyntaxError);
+    assert.true(parser.dateTime('27.10.2019') instanceof SyntaxError);
 });
 
 test('toUTCDateTimeString', () => {

@@ -6,12 +6,6 @@ export interface Interval {
     sup: number;
 }
 
-export interface LocalDateParser {
-    fullDate: (s: string) => { parts?: number[], error?: SyntaxError };
-    datePartialTime: (s: string) => { parts?: number[], error?: SyntaxError };
-    dateTime: (s: string) => { parts?: number[], error?: SyntaxError };
-}
-
 export interface Selection extends Range {
     active: Range;
     initial: Range;

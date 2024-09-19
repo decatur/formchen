@@ -165,18 +165,16 @@ export function toLocaleISODateTimeString(d, period) {
     return s + '+' + pad(String(dh)) + ':00';
 }
 
-const localeDateParsers = {};
+let localeDateParserSingleton = undefined;
 
 /**
- * @param {string} locale
  * @returns {LocalDateParser}
  */
-export function localeDateParser(locale) {
-    if (locale === undefined) throw Error("Locale must be defined");
-    if (!(locale in localeDateParsers)) {
-        localeDateParsers[locale] = createLocalDateParser(locale);
+export function localeDateParser() {
+    if (!localeDateParserSingleton) {
+        localeDateParserSingleton = createLocalDateParser();
     }
-    return localeDateParsers[locale];
+    return localeDateParserSingleton;
 }
 
 /**
@@ -187,85 +185,56 @@ function someNaN(a) {
     return a.some((v) => isNaN(v))
 }
 
+export class FullDate {
+    
+    /**
+     * @param {number} year 
+     * @param {number} month 
+     * @param {number} day 
+     */
+    constructor(year, month, day) {
+        this.year = year;
+        this.month = month;
+        this.day = day;
+    }
+
+}
+
 /**
- * The created parser can parse full dates, dates with partial time, or date times in specified locale or as ISO.
- * @param {string} locale
+ * The created parser can parse strings of the form YYYY-MM-DDTHH:mm:ss.sssZ,
+ * see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#date_time_string_format
  * @returns {LocalDateParser}
  */
-function createLocalDateParser(locale) {
+function createLocalDateParser() {
     // We do not want to use the Date constructor because
     // * it is a very loose parser
     // * the time zone information is lost.
 
-    // We only support numeric year-month-day formats.
-    const numeric = /**@type{"numeric"} */ ("numeric")
-    const options = { year: numeric, month: numeric, day: numeric };
-    const dtf = Intl.DateTimeFormat(locale, options);
-    const testDate = dtf.format(Date.UTC(2019, 0, 17));
-    // -> depends on locale, examples are 17.1.2019, 1/17/2019, 17/1/2019, 2019-01-17
-
-    const m = testDate.match(/[^0-9]/);  // Heuristic: First non-numeric character is date separator.
-    let dateSeparator;
-    let yearIndex;
-    let monthIndex;
-    let dateIndex;
-
-    if (m) {
-        dateSeparator = m[0];
-        /** @type {number[]} */
-        const testParts = testDate.split(dateSeparator).map(v => Number(v));
-        yearIndex = testParts.indexOf(2019);
-        monthIndex = testParts.indexOf(1);
-        dateIndex = testParts.indexOf(17);
-    }
-
     /**
      * @param {string} s
-     * @returns {{parts?: [number, number, number], error?:SyntaxError}}
+     * @returns {FullDate|SyntaxError}
      */
     function parseFullDate(s) {
-
-        /**
-         * @returns {[number, number, number]}
-         */
-        function stringParts() {
-            let parts;
-            if (dateSeparator) {
-                parts = s.split(dateSeparator);
-                if (parts.length === 3) {
-                    return [Number(parts[yearIndex]), Number(parts[monthIndex]) - 1, Number(parts[dateIndex])]
-                }
-                if (dateSeparator === '-') {
-                    return [NaN, NaN, NaN]
-                }
-            }
-
-            // Fall back to ISO.
-            parts = s.split('-');
-            return [Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])]
+        const parts = s.split('-');
+        if (parts.length === 3) {
+            return new FullDate(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+        } else {
+            return new SyntaxError(s)
         }
-
-        const parts = stringParts();
-        if (someNaN(parts)) {
-            return { error: new SyntaxError(s) }
-        }
-        return { parts: parts }
     }
 
     /**
      * @param {string} s
-     * @returns {{parts?: [number, number, number, number, number, number, number, number, number], error?: SyntaxError}}
+     * @returns {[number, number, number, number, number, number, number, number, number] | SyntaxError}
      */
     function parseDateOptionalTimeTimezone(s) {
         const dateTimeParts = s.trim().split(/\s+|T/);
         const fullDateResult = parseFullDate(dateTimeParts[0]);
-        if (fullDateResult.error) {
+        if (fullDateResult instanceof SyntaxError) {
             return fullDateResult
-        } else if (dateTimeParts.length === 1 || fullDateResult.error) {
-            if (fullDateResult.parts) {
-                fullDateResult.parts = [...fullDateResult.parts, 0, 0, 0, 0];
-            }
-            return fullDateResult
+        } else if (dateTimeParts.length === 1) {
+            let parts = [...[fullDateResult.year, fullDateResult.month, fullDateResult.day], 0, 0, 0, 0];
+            return parts
         }
 
         //  19:52:53.3434+00:00 ->
@@ -273,7 +242,7 @@ function createLocalDateParser(locale) {
         //  ["19:52:53.123456+00:00", "19", ":52", ":53", ".123456", "+00:00"]
         const m = dateTimeParts[1].match(/^(\d+)(:\d+)?(:\d+)?(\.[0-9]+)?(Z|[+-][0-9:]+)?$/);
         if (!m) {
-            return { error: new SyntaxError(s) }
+            return new SyntaxError(s)
         }
 
         const hours = Number(m[1]);
@@ -294,12 +263,12 @@ function createLocalDateParser(locale) {
                 timeZone = m[5].split(':').map(v => Number(v));
             }
             if (timeZone.length !== 2 || someNaN(timeZone)) {
-                return { error: new SyntaxError(s) }
+                return new SyntaxError(s)
             }
         }
 
         // Array of length 9
-        return { parts: [...fullDateResult.parts, hours, minutes, seconds, millis, ...timeZone] }
+        return [...[fullDateResult.year, fullDateResult.month, fullDateResult.day], hours, minutes, seconds, millis, ...timeZone]
     }
 
     /**
@@ -309,7 +278,7 @@ function createLocalDateParser(locale) {
         /**
          * Parses full dates of the form 2019-10-27, 10/27/2019, ...
          * @param {string} s
-         * @returns {{parts?: [number, number, number], error?:SyntaxError}}
+         * @returns {FullDate|SyntaxError}
          */
         fullDate(s) {
             // This is currently only used for unit testing.
