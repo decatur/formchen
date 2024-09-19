@@ -359,7 +359,7 @@ export class DatePartialTimeStringConverter {
      */
     constructor(period, locale) {
         this.period = utils.resolvePeriod(period);
-        this.parser = utils.localeDateParser(locale);
+        this.parser = utils.localeDateParser(locale || navigator.language);
     }
 
     /**
@@ -431,7 +431,7 @@ export class DatePartialTimeStringConverter {
 export class DateTimeStringConverter {
     /**
      * @param {string} period
-     * @param {string} locale
+     * @param {string=} locale
      */
     constructor(period, locale) {
         locale = locale || navigator.language;

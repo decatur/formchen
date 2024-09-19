@@ -35,8 +35,6 @@ const light = {
 // End Configuration
 //////////////////////
 
-window.console.log('Executing GridChen ...');
-
 /**
  * Returns a numerical vector from a CSS color of the form rgb(1,2,3).
  * @param {string} color
@@ -128,6 +126,8 @@ export class GridChen extends HTMLElement {
         this.select = undefined;
         this.refresh = undefined;
         this.insertEmptyRow = undefined;
+        /** @type{(string, KeyboardEventInit) => void} */
+        this._keyboard = undefined;
     }
 
     /**
@@ -146,7 +146,7 @@ export class GridChen extends HTMLElement {
         }
         // Attention: Possible Layout Thrashing.
         // Default value needed for unit testing and flex layouts.
-        console.log('clientHeight:' + this.clientHeight);
+        // console.log('clientHeight:' + this.clientHeight);
         this._totalHeight = this.clientHeight || 100;
         const container = document.createElement('div');
         container.style.position = 'absolute';  // Needed so that container does not take up any space.
@@ -158,7 +158,7 @@ export class GridChen extends HTMLElement {
     }
 
     reset() {
-        console.log('reset clientHeight:' + this.clientHeight);
+        // console.log('reset clientHeight:' + this.clientHeight);
         if (this._viewModel && this._totalHeight !== this.clientHeight) {
             this.resetFromView(this._viewModel, this._transactionManager);
         }
@@ -237,7 +237,7 @@ class ScrollBar {
 /**
  * @param {HTMLElement} container
  * @param {MatrixView} viewModel
- * @param {IGridChen} gridchenElement
+ * @param {GridChen} gridchenElement
  * @param {TransactionManager} tm
  * @param {number} totalHeight
  */
@@ -1230,7 +1230,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
      * Hidden API for unit testing.
      * Dispatches the specified keyboard event.
      */
-    gridchenElement['_keyboard'] = function (typeArg, eventInitDict) {
+    gridchenElement._keyboard = function (typeArg, eventInitDict) {
         if (editor.mode !== edit.HIDDEN) {
             editor._keyboard(typeArg, eventInitDict);
         } else {

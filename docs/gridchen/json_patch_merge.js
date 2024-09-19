@@ -1,9 +1,11 @@
+// !!Deprecated!!
+/** @import {JSONPatchOperation } from "./gridchen" */
 
 /**
  * Dispense all redundant operation values.
  *
- * @param {GridChenNS.JSONPatchOperation[]} patch
- * @returns {GridChenNS.JSONPatchOperation[]}
+ * @param {JSONPatchOperation[]} patch
+ * @returns {JSONPatchOperation[]}
  */
 export function dispense(patch) {
     const normalizedPatch = [];
@@ -16,16 +18,16 @@ export function dispense(patch) {
         }
     }
 
-    /** @type {GridChenNS.PatchNode} */
-    const root = /** @type{GridChenNS.PatchNode}*/{};
+    /** @type {PatchNode} */
+    const root = /** @type{PatchNode}*/{};
 
     /**
-     * @param {GridChenNS.JSONPatchOperation} op
+     * @param {JSONPatchOperation} op
      */
     function mergeOperation(op) {
         const path = op.path.split('/').map(key => /^\d+$/.test(key) ? parseInt(key) : key);
         path.shift();
-        /** @type {GridChenNS.PatchNode} */
+        /** @type {PatchNode} */
         let node = root;
         let parent = undefined;
         let key = undefined;
@@ -40,7 +42,7 @@ export function dispense(patch) {
                     node.splices = [];
                 }
                 if (path.length > 1 && node.items[key] === undefined) {
-                    node.items[key] = /** @type{GridChenNS.PatchNode}*/{};
+                    node.items[key] = /** @type{PatchNode}*/{};
 
                 }
                 node = node.items[key];
@@ -50,7 +52,7 @@ export function dispense(patch) {
                     node.children = {};
                 }
                 if (node.children[key] === undefined) {
-                    node.children[key] = /** @type{GridChenNS.PatchNode}*/{};
+                    node.children[key] = /** @type{PatchNode}*/{};
                 }
                  node = node.children[key];
             }
@@ -71,7 +73,7 @@ export function dispense(patch) {
                 } else
                     parent.splices.push({index: key, op:'add'});
                 parent.items.length = Math.max(parent.items.length, key+1);
-                parent.items.splice(key, 0, /** @type{GridChenNS.PatchNode}*/{value: op.value});
+                parent.items.splice(key, 0, /** @type{PatchNode}*/{value: op.value});
             } else if (op.op === 'remove') {
                 if (last.index === key && last.op === 'add') {
                     parent.splices.pop()
@@ -109,7 +111,7 @@ export function dispense(patch) {
 
     /**
      *
-     * @param {GridChenNS.PatchNode} o
+     * @param {PatchNode} o
      * @param {string} path
      */
     function serialize(o, path) {

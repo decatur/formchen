@@ -221,31 +221,35 @@ function createLocalDateParser(locale) {
 
     /**
      * @param {string} s
-     * @returns {{parts?: number[], error?:SyntaxError}}
+     * @returns {{parts?: [number, number, number], error?:SyntaxError}}
      */
     function parseFullDate(s) {
+
+        /**
+         * @returns {[number, number, number]}
+         */
         function stringParts() {
             let parts;
             if (dateSeparator) {
                 parts = s.split(dateSeparator);
                 if (parts.length === 3) {
-                    return [parts[yearIndex], Number(parts[monthIndex]) - 1, parts[dateIndex]]
+                    return [Number(parts[yearIndex]), Number(parts[monthIndex]) - 1, Number(parts[dateIndex])]
                 }
                 if (dateSeparator === '-') {
-                    return [NaN]
+                    return [NaN, NaN, NaN]
                 }
             }
 
             // Fall back to ISO.
             parts = s.split('-');
-            return [parts[0], Number(parts[1]) - 1, parts[2]]
+            return [Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])]
         }
 
-        const numericParts = stringParts().map(p => Number(p));
-        if (someNaN(numericParts)) {
+        const parts = stringParts();
+        if (someNaN(parts)) {
             return { error: new SyntaxError(s) }
         }
-        return { parts: numericParts }
+        return { parts: parts }
     }
 
     /**
@@ -305,7 +309,7 @@ function createLocalDateParser(locale) {
         /**
          * Parses full dates of the form 2019-10-27, 10/27/2019, ...
          * @param {string} s
-         * @returns {{parts?: number[], error?:SyntaxError}}
+         * @returns {{parts?: [number, number, number], error?:SyntaxError}}
          */
         fullDate(s) {
             // This is currently only used for unit testing.
@@ -314,21 +318,25 @@ function createLocalDateParser(locale) {
 
         /**
          * Parses dates with partial time of the form 2019-10-27 00:00, 10/27/2019T01:02, ...
-         * @param s
-         * @returns {{parts?: [number, number, number, number, number, number, number, number, number], error?:SyntaxError}}
+         * @param {string} s
+         * @returns {{parts?: [number, number, number, number, number], error?:SyntaxError}}
          */
         datePartialTime(s) {
             const r = parseDateOptionalTimeTimezone(s);
+            if (r.error) {
+                return { error: r.error }
+            }
             if (r.parts && r.parts.length !== 7) {
                 return { error: new SyntaxError(s) }
             }
+            
             return r
         }
 
         /**
          * Parses date times of the form 2019-10-27 00:00Z, 10/27/2019T01:02+01:00, ...
-         * @param s
-         * @returns {{parts?: number[], error?:SyntaxError}}
+         * @param {string} s
+         * @returns {{parts?: [number, number, number, number, number, number, number, number, number], error?:SyntaxError}}
          */
         dateTime(s) {
             const r = parseDateOptionalTimeTimezone(s);
