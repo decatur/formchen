@@ -7,7 +7,8 @@ import { createView } from "../gridchen/matrixview.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
-    DatePartialTimeStringConverter,
+    // DatePartialTimeStringConverter,
+    FullDateConverter,
     StringConverter
 } from "../gridchen/converter.js";
 
@@ -576,12 +577,10 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 
             } else if (schema.format === 'date-time') {
                 converter = new DateTimeStringConverter(schema.period || 'HOURS');
-            } else if (schema.format === 'date-partial-time') {
-                converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
-                
+            // } else if (schema.format === 'date-partial-time') {
+            //     converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
             } else if (schema.format === 'full-date') {
-                converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
-                
+                converter = new FullDateConverter();
             } else if (schema.type === 'string') {
                 converter = new StringConverter();
                 

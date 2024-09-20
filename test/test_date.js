@@ -7,12 +7,6 @@ test('FullDate', () => {
     assert.equal(parser.fullDate('27.10.2019'), new SyntaxError('27.10.2019'));
 });
 
-test('DatePartialTime', () => {
-    let parser = localeDateParser();
-    assert.equal([2019, 9, 27, 1, 2, 0, 0], parser.datePartialTime('2019-10-27 01:02'));
-    assert.true(parser.datePartialTime('27.10.2019 01:02') instanceof SyntaxError);
-});
-
 test('DateTime', () => {
     let parser = localeDateParser();
     assert.equal([2019, 9, 27, 1, 2, 0, 0, 0, 0], parser.dateTime('2019-10-27 01:02Z'));

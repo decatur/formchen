@@ -345,84 +345,84 @@ export class NumberConverter {
     }
 }
 
-/**
- * Converter for naive dates. Naive dates do not know about time zones
- * or daylight saving times. JavaScript does not support such naive dates.
- * As a workaround, we choose the UTC time zone as the 'naive' zone.
- * So the date 2017-01-01 corresponds to new Date('2017-01-01T00:00Z').
- */
-export class DatePartialTimeStringConverter {
+// /**
+//  * Converter for naive dates. Naive dates do not know about time zones
+//  * or daylight saving times. JavaScript does not support such naive dates.
+//  * As a workaround, we choose the UTC time zone as the 'naive' zone.
+//  * So the date 2017-01-01 corresponds to new Date('2017-01-01T00:00Z').
+//  */
+// export class DatePartialTimeStringConverter {
 
-    /**
-     * @param {string} period
-     */
-    constructor(period) {
-        this.period = utils.resolvePeriod(period);
-        this.parser = utils.localeDateParser();
-    }
+//     /**
+//      * @param {string} period
+//      */
+//     constructor(period) {
+//         this.period = utils.resolvePeriod(period);
+//         this.parser = utils.localeDateParser();
+//     }
 
-    /**
-     * Returns a iso formatted string in local time without timezone information, for example 2017-01-01T02:00.
-     * @param {string|*} s
-     * @returns {string}
-     */
-    toTSV(s) {
-        if (typeof s !== 'string') {
-            return String(s);
-        }
+//     /**
+//      * Returns a iso formatted string in local time without timezone information, for example 2017-01-01T02:00.
+//      * @param {string|*} s
+//      * @returns {string}
+//      */
+//     toTSV(s) {
+//         if (typeof s !== 'string') {
+//             return String(s);
+//         }
 
-        let r = this.parser.datePartialTime(s);
-        if (r instanceof SyntaxError) {
-            return s
-        }
-        const d = new Date(Date.UTC(...r));
-        return utils.toUTCDatePartialTimeString(d, this.period);
-    }
+//         let r = this.parser.datePartialTime(s);
+//         if (r instanceof SyntaxError) {
+//             return s
+//         }
+//         const d = new Date(Date.UTC(...r));
+//         return utils.toUTCDatePartialTimeString(d, this.period);
+//     }
 
-    toEditable(s) {
-        return this.toTSV(s);
-    }
+//     toEditable(s) {
+//         return this.toTSV(s);
+//     }
 
-    /**
-     * Parses any valid date-time format, but iso format is preferred.
-     * @param {string} s
-     * @returns {string}
-     */
-    fromEditable(s) {
-        const r = this.parser.datePartialTime(s);
-        if (r instanceof SyntaxError) {
-            return s
-        }
-        return utils.toUTCDatePartialTimeString(new Date(Date.UTC(...r)), this.period).replace(' ', 'T')
-    }
+//     /**
+//      * Parses any valid date-time format, but iso format is preferred.
+//      * @param {string} s
+//      * @returns {string}
+//      */
+//     fromEditable(s) {
+//         const r = this.parser.datePartialTime(s);
+//         if (r instanceof SyntaxError) {
+//             return s
+//         }
+//         return utils.toUTCDatePartialTimeString(new Date(Date.UTC(...r)), this.period).replace(' ', 'T')
+//     }
 
-    /**
-     * @returns {HTMLSpanElement}
-     */
-    createElement() {
-        return createSpan()
-    }
+//     /**
+//      * @returns {HTMLSpanElement}
+//      */
+//     createElement() {
+//         return createSpan()
+//     }
 
-    /**
-     * @param {HTMLElement} element
-     * @param {string|*} value
-     */
-    render(element, value) {
-        if (typeof value !== 'string') {
-            element.textContent = String(value);
-            element.className = 'error';
-        } else {
-            const r = this.parser.datePartialTime(value);
-            if (r instanceof SyntaxError) {
-                element.textContent = value;
-                element.className = 'error';
-            } else {
-                element.textContent = utils.toUTCDatePartialTimeString(new Date(Date.UTC(...r)), this.period);
-                element.className = 'non-string';
-            }
-        }
-    }
-}
+//     /**
+//      * @param {HTMLElement} element
+//      * @param {string|*} value
+//      */
+//     render(element, value) {
+//         if (typeof value !== 'string') {
+//             element.textContent = String(value);
+//             element.className = 'error';
+//         } else {
+//             const r = this.parser.datePartialTime(value);
+//             if (r instanceof SyntaxError) {
+//                 element.textContent = value;
+//                 element.className = 'error';
+//             } else {
+//                 element.textContent = utils.toUTCDatePartialTimeString(new Date(Date.UTC(...r)), this.period);
+//                 element.className = 'non-string';
+//             }
+//         }
+//     }
+// }
 
 /**
  * Converter for timezone aware dates.
@@ -502,50 +502,116 @@ export class DateTimeStringConverter {
     }
 }
 
+// /**
+//  * Converter for naive dates. Naive dates do not know about time zones
+//  * or daylight saving times. JavaScript does not support such naive dates.
+//  * As a workaround, we choose the UTC time zone as the 'naive' zone.
+//  * So the date 2017-01-01 corresponds to new Date('2017-01-01T00:00Z').
+//  */
+// export class DatePartialTimeConverter {
+//     /**
+//      * @param {string} period
+//      */
+//     constructor(period) {
+//         this.period = utils.resolvePeriod(period);
+//         this.parser = utils.localeDateParser();
+//     }
+
+//     /**
+//      * Returns a iso formatted string in local time without timezone information, for example 2017-01-01T02:00.
+//      * @param {Date|*} d
+//      * @returns {string}
+//      */
+//     toTSV(d) {
+//         if (d.constructor !== Date) {
+//             return String(d);
+//         }
+
+//         return utils.toUTCDatePartialTimeString(d, this.period)
+//     }
+
+//     toEditable(d) {
+//         return this.toTSV(d);
+//     }
+
+//     /**
+//      * Parses any valid date-time format, but iso format is preferred.
+//      * @param {string} s
+//      * @returns {Date|string}
+//      */
+//     fromEditable(s) {
+//         let r = this.parser.datePartialTime(s);
+//         if (r instanceof SyntaxError) {
+//             return s
+//         }
+//         let tuple = /**@type{[number, number]}*/(r.slice(0, 1 + this.period));
+//         return new Date(Date.UTC(...tuple))
+//     }
+
+//     /**
+//      * @returns {HTMLSpanElement}
+//      */
+//     createElement() {
+//         return createSpan()
+//     }
+
+//     /**
+//      * @param {HTMLElement} element
+//      * @param {Date|*} value
+//      */
+//     render(element, value) {
+//         if (value.constructor !== Date) {
+//             element.textContent = String(value);
+//             element.className = 'error';
+//         } else {
+//             element.textContent = utils.toUTCDatePartialTimeString(value, this.period);
+//             element.className = 'non-string';
+//         }
+//     }
+// }
+
 /**
  * Converter for naive dates. Naive dates do not know about time zones
  * or daylight saving times. JavaScript does not support such naive dates.
  * As a workaround, we choose the UTC time zone as the 'naive' zone.
  * So the date 2017-01-01 corresponds to new Date('2017-01-01T00:00Z').
  */
-export class DatePartialTimeConverter {
-    /**
-     * @param {string} period
-     */
-    constructor(period, locale) {
-        this.period = utils.resolvePeriod(period);
+export class FullDateConverter {
+
+    constructor() {
         this.parser = utils.localeDateParser();
     }
 
     /**
      * Returns a iso formatted string in local time without timezone information, for example 2017-01-01T02:00.
-     * @param {Date|*} d
+     * @param {string} date
      * @returns {string}
      */
-    toTSV(d) {
-        if (d.constructor !== Date) {
-            return String(d);
-        }
-
-        return utils.toUTCDatePartialTimeString(d, this.period)
-    }
-
-    toEditable(d) {
-        return this.toTSV(d);
+    toTSV(date) {
+        return date
     }
 
     /**
-     * Parses any valid date-time format, but iso format is preferred.
+     * 
+     * @param {string} date
+     * @returns 
+     */
+    toEditable(date) {
+        return this.toTSV(date);
+    }
+
+    /**
+     * Parses the full date format yyyy-mm-dd.
      * @param {string} s
      * @returns {Date|string}
      */
     fromEditable(s) {
-        let r = this.parser.datePartialTime(s);
+        let r = this.parser.fullDate(s);
         if (r instanceof SyntaxError) {
+            // TODO: Style this case differently?
             return s
         }
-        let tuple = /**@type{[number, number]}*/(r.slice(0, 1 + this.period));
-        return new Date(Date.UTC(...tuple))
+        return s
     }
 
     /**
@@ -557,16 +623,16 @@ export class DatePartialTimeConverter {
 
     /**
      * @param {HTMLElement} element
-     * @param {Date|*} value
+     * @param {string} date
      */
-    render(element, value) {
-        if (value.constructor !== Date) {
-            element.textContent = String(value);
+    render(element, date) {
+        let r = this.parser.fullDate(date);
+        if (r instanceof SyntaxError) {
             element.className = 'error';
         } else {
-            element.textContent = utils.toUTCDatePartialTimeString(value, this.period);
             element.className = 'non-string';
         }
+        element.textContent = date
     }
 }
 
@@ -577,7 +643,7 @@ export class DateTimeConverter {
     /**
      * @param {string} period
      */
-    constructor(period, locale) {
+    constructor(period) {
         this.period = utils.resolvePeriod(period);
         this.parser = utils.localeDateParser();
     }

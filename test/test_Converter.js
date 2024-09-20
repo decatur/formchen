@@ -1,4 +1,4 @@
-import {test, assert} from './utils.js'
+import { test, assert } from './utils.js'
 import * as c from "../docs/gridchen/converter.js";
 
 test('URIConverter', (test_name) => {
@@ -74,356 +74,346 @@ function assertNotADate(converter, elem) {
     assert.equal('error', elem.className);
 }
 
-function runEdits(run) {
-    const edits = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
-    run(edits);
-}
+test('FullDateConverter', () => {
+    let converter = new c.FullDateConverter();
+    assert.equal('01/01/1970', converter.toTSV('01/01/1970'));
+    assert.equal('2019-10-27', converter.toEditable('2019-10-27'));
 
-function runPartialEdits(run) {
-    const edits = ['2019-10-27T02:13:14.123', '2019-10-27 02:13:14.123'];
-    run(edits);
-}
+    const elem = document.createElement('span');
+    converter.render(elem, '2019-10-27');
+    assert.equal('2019-10-27', elem.textContent);
+    assert.equal('non-string', elem.className);
 
-test('DatePartialTimeStringConverter SECONDS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DatePartialTimeStringConverter('SECONDS', locale);
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27 02:13:14', converter.toEditable('2019-10-27T02:13:14'));
-        for (const date of localizedDates) {
-            assert.equal('2019-10-27T02:13:14', converter.fromEditable(date));
-        }
-
-        const elem = document.createElement('span');
-        converter.render(elem, '2019-10-27T02:13:14');
-        assert.equal('2019-10-27 02:13:14', elem.textContent);
-        assert.equal('non-string', elem.className);
-
-        assertNotADate(converter, elem);
-    }
-
-    runPartialEdits(run);
+    assertNotADate(converter, elem);
 
 });
 
-test('DatePartialTimeStringConverter MINUTES', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DatePartialTimeStringConverter('MINUTES', locale);
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27 02:13', converter.toEditable('2019-10-27T02:13'));
-        for (const date of localizedDates) {
-            assert.equal('2019-10-27T02:13', converter.fromEditable(date));
-        }
+// test('DatePartialTimeStringConverter SECONDS', () => {
+//     function run(locale, localizedDates) {
+//         let converter = new c.DatePartialTimeStringConverter('SECONDS', locale);
+//         assert.equal('not_a_date', converter.toTSV('not_a_date'));
+//         assert.equal('2019-10-27 02:13:14', converter.toEditable('2019-10-27T02:13:14'));
+//         for (const date of localizedDates) {
+//             assert.equal('2019-10-27T02:13:14', converter.fromEditable(date));
+//         }
 
-        const elem = document.createElement('span');
-        converter.render(elem, '2019-10-27T02:13');
-        assert.equal('2019-10-27 02:13', elem.textContent);
-        assert.equal('non-string', elem.className);
+//         const elem = document.createElement('span');
+//         converter.render(elem, '2019-10-27T02:13:14');
+//         assert.equal('2019-10-27 02:13:14', elem.textContent);
+//         assert.equal('non-string', elem.className);
 
-        assertNotADate(converter, elem);
-    }
+//         assertNotADate(converter, elem);
+//     }
 
-    runPartialEdits(run);
+//     runPartialEdits(run);
 
-});
+// });
 
-test('DatePartialTimeStringConverter HOURS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DatePartialTimeStringConverter('HOURS', locale);
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27 02', converter.toEditable('2019-10-27T02:13'));
-        for (const date of localizedDates) {
-            assert.equal('2019-10-27T02', converter.fromEditable(date));
-        }
+// test('DatePartialTimeStringConverter MINUTES', () => {
+//     function run(locale, localizedDates) {
+//         let converter = new c.DatePartialTimeStringConverter('MINUTES', locale);
+//         assert.equal('not_a_date', converter.toTSV('not_a_date'));
+//         assert.equal('2019-10-27 02:13', converter.toEditable('2019-10-27T02:13'));
+//         for (const date of localizedDates) {
+//             assert.equal('2019-10-27T02:13', converter.fromEditable(date));
+//         }
 
-        const elem = document.createElement('span');
-        converter.render(elem, '2019-10-27T02:13');
-        assert.equal('2019-10-27 02', elem.textContent);
-        assert.equal('non-string', elem.className);
+//         const elem = document.createElement('span');
+//         converter.render(elem, '2019-10-27T02:13');
+//         assert.equal('2019-10-27 02:13', elem.textContent);
+//         assert.equal('non-string', elem.className);
 
-        assertNotADate(converter, elem);
-    }
+//         assertNotADate(converter, elem);
+//     }
 
-    runPartialEdits(run);
-});
+//     runPartialEdits(run);
 
-test('DatePartialTimeStringConverter DAYS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DatePartialTimeStringConverter('DAYS', locale);
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27', converter.toEditable('2019-10-27'));
-        for (const date of localizedDates) {
-            assert.equal('2019-10-27', converter.fromEditable(date));
-        }
+// });
 
-        const elem = document.createElement('span');
-        converter.render(elem, '2019-10-27');
-        assert.equal('2019-10-27', elem.textContent);
-        assert.equal('non-string', elem.className);
+// test('DatePartialTimeStringConverter HOURS', () => {
+//     function run(locale, localizedDates) {
+//         let converter = new c.DatePartialTimeStringConverter('HOURS', locale);
+//         assert.equal('not_a_date', converter.toTSV('not_a_date'));
+//         assert.equal('2019-10-27 02', converter.toEditable('2019-10-27T02:13'));
+//         for (const date of localizedDates) {
+//             assert.equal('2019-10-27T02', converter.fromEditable(date));
+//         }
 
-        assertNotADate(converter, elem);
-    }
+//         const elem = document.createElement('span');
+//         converter.render(elem, '2019-10-27T02:13');
+//         assert.equal('2019-10-27 02', elem.textContent);
+//         assert.equal('non-string', elem.className);
 
-    runPartialEdits(run);
-});
+//         assertNotADate(converter, elem);
+//     }
+
+//     runPartialEdits(run);
+// });
+
+// test('DatePartialTimeStringConverter DAYS', () => {
+//     function run(locale, localizedDates) {
+//         let converter = new c.DatePartialTimeStringConverter('DAYS', locale);
+//         assert.equal('not_a_date', converter.toTSV('not_a_date'));
+//         assert.equal('2019-10-27', converter.toEditable('2019-10-27'));
+//         for (const date of localizedDates) {
+//             assert.equal('2019-10-27', converter.fromEditable(date));
+//         }
+
+//         const elem = document.createElement('span');
+//         converter.render(elem, '2019-10-27');
+//         assert.equal('2019-10-27', elem.textContent);
+//         assert.equal('non-string', elem.className);
+
+//         assertNotADate(converter, elem);
+//     }
+
+//     runPartialEdits(run);
+// });
 
 test('DateTimeStringConverter HOURS', () => {
-    function run(localizedDates) {
-        let converter = new c.DateTimeStringConverter('HOURS');
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27 01+02:00', converter.toTSV('2019-10-27T01+02:00'));
-        assert.equal('2019-10-27 00+02:00', converter.toEditable('2019-10-27T00+02:00'));
-        for (const date of localizedDates) {
-            assert.equal('2019-10-27T02+02:00', converter.fromEditable(date));
-        }
+    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
 
-        const elem = document.createElement('span');
-        converter.render(elem, '2019-10-27T01+02:00');
-        assert.equal('2019-10-27 01+02:00', elem.textContent);
-        assert.equal('non-string', elem.className);
-
-        assertNotADate(converter, elem);
+    let converter = new c.DateTimeStringConverter('HOURS');
+    assert.equal('not_a_date', converter.toTSV('not_a_date'));
+    assert.equal('2019-10-27 01+02:00', converter.toTSV('2019-10-27T01+02:00'));
+    assert.equal('2019-10-27 00+02:00', converter.toEditable('2019-10-27T00+02:00'));
+    for (const date of localizedDates) {
+        assert.equal('2019-10-27T02+02:00', converter.fromEditable(date));
     }
 
-    runEdits(run);
+    const elem = document.createElement('span');
+    converter.render(elem, '2019-10-27T01+02:00');
+    assert.equal('2019-10-27 01+02:00', elem.textContent);
+    assert.equal('non-string', elem.className);
+
+    assertNotADate(converter, elem);
+
 });
 
 test('DateTimeStringConverter MINUTES', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DateTimeStringConverter('MINUTES', locale);
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27 01:13+02:00', converter.toTSV('2019-10-27T01:13+02:00'));
-        assert.equal('2019-10-27 00:13+02:00', converter.toEditable('2019-10-27T00:13+02:00'));
-        for (const date of localizedDates) {
-            assert.equal('2019-10-27T02:13+02:00', converter.fromEditable(date));
-        }
-
-        const elem = document.createElement('span');
-        converter.render(elem, '2019-10-27T01:13+02:00');
-        assert.equal('2019-10-27 01:13+02:00', elem.textContent);
-        assert.equal('non-string', elem.className);
-
-        assertNotADate(converter, elem);
+    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
+    let converter = new c.DateTimeStringConverter('MINUTES');
+    assert.equal('not_a_date', converter.toTSV('not_a_date'));
+    assert.equal('2019-10-27 01:13+02:00', converter.toTSV('2019-10-27T01:13+02:00'));
+    assert.equal('2019-10-27 00:13+02:00', converter.toEditable('2019-10-27T00:13+02:00'));
+    for (const date of localizedDates) {
+        assert.equal('2019-10-27T02:13+02:00', converter.fromEditable(date));
     }
 
-    runEdits(run);
+    const elem = document.createElement('span');
+    converter.render(elem, '2019-10-27T01:13+02:00');
+    assert.equal('2019-10-27 01:13+02:00', elem.textContent);
+    assert.equal('non-string', elem.className);
+
+    assertNotADate(converter, elem);
+
 });
 
 test('DateTimeStringConverter SECONDS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DateTimeStringConverter('SECONDS', locale);
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27 01:13:14+02:00', converter.toTSV('2019-10-27T01:13:14+02:00'));
-        assert.equal('2019-10-27 00:13:14+02:00', converter.toEditable('2019-10-27T00:13:14+02:00'));
-        for (const date of localizedDates) {
-            assert.equal('2019-10-27T02:13:14+02:00', converter.fromEditable(date));
-        }
-
-        const elem = document.createElement('span');
-        converter.render(elem, '2019-10-27T01:13:14+02:00');
-        assert.equal('2019-10-27 01:13:14+02:00', elem.textContent);
-        assert.equal('non-string', elem.className);
-
-        assertNotADate(converter, elem);
+    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
+    let converter = new c.DateTimeStringConverter('SECONDS');
+    assert.equal('not_a_date', converter.toTSV('not_a_date'));
+    assert.equal('2019-10-27 01:13:14+02:00', converter.toTSV('2019-10-27T01:13:14+02:00'));
+    assert.equal('2019-10-27 00:13:14+02:00', converter.toEditable('2019-10-27T00:13:14+02:00'));
+    for (const date of localizedDates) {
+        assert.equal('2019-10-27T02:13:14+02:00', converter.fromEditable(date));
     }
 
-    runEdits(run);
+    const elem = document.createElement('span');
+    converter.render(elem, '2019-10-27T01:13:14+02:00');
+    assert.equal('2019-10-27 01:13:14+02:00', elem.textContent);
+    assert.equal('non-string', elem.className);
+
+    assertNotADate(converter, elem);
+
 });
 
 test('DateTimeStringConverter MILLISECONDS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DateTimeStringConverter('MILLISECONDS', locale);
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27 01:13:14.123+02:00', converter.toTSV('2019-10-27T01:13:14.123+02:00'));
-        assert.equal('2019-10-27 00:13:14.123+02:00', converter.toEditable('2019-10-27T00:13:14.123+02:00'));
-        for (const date of localizedDates) {
-            assert.equal('2019-10-27T02:13:14.123+02:00', converter.fromEditable(date));
-        }
-
-        const elem = document.createElement('span');
-        converter.render(elem, '2019-10-27T01:13:14.123+02:00');
-        assert.equal('2019-10-27 01:13:14.123+02:00', elem.textContent);
-        assert.equal('non-string', elem.className);
-
-        assertNotADate(converter, elem);
+    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
+    let converter = new c.DateTimeStringConverter('MILLISECONDS');
+    assert.equal('not_a_date', converter.toTSV('not_a_date'));
+    assert.equal('2019-10-27 01:13:14.123+02:00', converter.toTSV('2019-10-27T01:13:14.123+02:00'));
+    assert.equal('2019-10-27 00:13:14.123+02:00', converter.toEditable('2019-10-27T00:13:14.123+02:00'));
+    for (const date of localizedDates) {
+        assert.equal('2019-10-27T02:13:14.123+02:00', converter.fromEditable(date));
     }
 
-    runEdits(run);
+    const elem = document.createElement('span');
+    converter.render(elem, '2019-10-27T01:13:14.123+02:00');
+    assert.equal('2019-10-27 01:13:14.123+02:00', elem.textContent);
+    assert.equal('non-string', elem.className);
+
+    assertNotADate(converter, elem);
+
 });
 
-test('DatePartialTimeConverter SECONDS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DatePartialTimeConverter('SECONDS', locale);
-        let d = new Date(Date.UTC(2019, 9, 27, 2, 13, 14));
+// test('DatePartialTimeConverter SECONDS', () => {
+//     function run(locale, localizedDates) {
+//         let converter = new c.DatePartialTimeConverter('SECONDS', locale);
+//         let d = new Date(Date.UTC(2019, 9, 27, 2, 13, 14));
 
-        assert.equal('2019-10-27 02:13:14', converter.toTSV(d));
-        assert.equal('2019-10-27 02:13:14', converter.toEditable(d));
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        for (const date of localizedDates) {
-            assert.equal(d, converter.fromEditable(date));
-        }
+//         assert.equal('2019-10-27 02:13:14', converter.toTSV(d));
+//         assert.equal('2019-10-27 02:13:14', converter.toEditable(d));
+//         assert.equal('not_a_date', converter.toTSV('not_a_date'));
+//         for (const date of localizedDates) {
+//             assert.equal(d, converter.fromEditable(date));
+//         }
 
-        const elem = document.createElement('span');
-        converter.render(elem, d);
-        assert.equal('2019-10-27 02:13:14', elem.textContent);
-        assert.equal('non-string', elem.className);
+//         const elem = document.createElement('span');
+//         converter.render(elem, d);
+//         assert.equal('2019-10-27 02:13:14', elem.textContent);
+//         assert.equal('non-string', elem.className);
 
-        assertNotADate(converter, elem);
-    }
+//         assertNotADate(converter, elem);
+//     }
 
-    runPartialEdits(run);
-});
+//     runPartialEdits(run);
+// });
 
-test('DatePartialTimeConverter MINUTES', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DatePartialTimeConverter('MINUTES', locale);
-        let d = new Date(Date.UTC(2019, 9, 27, 2, 13));
+// test('DatePartialTimeConverter MINUTES', () => {
+//     function run(locale, localizedDates) {
+//         let converter = new c.DatePartialTimeConverter('MINUTES', locale);
+//         let d = new Date(Date.UTC(2019, 9, 27, 2, 13));
 
-        assert.equal('2019-10-27 02:13', converter.toTSV(d));
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27 02:13', converter.toEditable(d));
-        for (const date of localizedDates) {
-            assert.equal(d, converter.fromEditable(date));
-        }
+//         assert.equal('2019-10-27 02:13', converter.toTSV(d));
+//         assert.equal('not_a_date', converter.toTSV('not_a_date'));
+//         assert.equal('2019-10-27 02:13', converter.toEditable(d));
+//         for (const date of localizedDates) {
+//             assert.equal(d, converter.fromEditable(date));
+//         }
 
-        const elem = document.createElement('span');
-        converter.render(elem, d);
-        assert.equal('2019-10-27 02:13', elem.textContent);
-        assert.equal('non-string', elem.className);
+//         const elem = document.createElement('span');
+//         converter.render(elem, d);
+//         assert.equal('2019-10-27 02:13', elem.textContent);
+//         assert.equal('non-string', elem.className);
 
-        assertNotADate(converter, elem);
-    }
+//         assertNotADate(converter, elem);
+//     }
 
-    runPartialEdits(run);
-});
+//     runPartialEdits(run);
+// });
 
-test('DatePartialTimeConverter HOURS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DatePartialTimeConverter('HOURS', locale);
-        let d = new Date(Date.UTC(2019, 9, 27, 2));
+// test('DatePartialTimeConverter HOURS', () => {
+//     function run(locale, localizedDates) {
+//         let converter = new c.DatePartialTimeConverter('HOURS', locale);
+//         let d = new Date(Date.UTC(2019, 9, 27, 2));
 
-        assert.equal('2019-10-27 02', converter.toTSV(d));
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27 02', converter.toEditable(d));
-        for (const date of localizedDates) {
-            assert.equal(d, converter.fromEditable(date));
-        }
+//         assert.equal('2019-10-27 02', converter.toTSV(d));
+//         assert.equal('not_a_date', converter.toTSV('not_a_date'));
+//         assert.equal('2019-10-27 02', converter.toEditable(d));
+//         for (const date of localizedDates) {
+//             assert.equal(d, converter.fromEditable(date));
+//         }
 
-        const elem = document.createElement('span');
-        converter.render(elem, d);
-        assert.equal('2019-10-27 02', elem.textContent);
-        assert.equal('non-string', elem.className);
+//         const elem = document.createElement('span');
+//         converter.render(elem, d);
+//         assert.equal('2019-10-27 02', elem.textContent);
+//         assert.equal('non-string', elem.className);
 
-        assertNotADate(converter, elem);
-    }
+//         assertNotADate(converter, elem);
+//     }
 
-    runPartialEdits(run);
-});
+//     runPartialEdits(run);
+// });
 
-test('DatePartialTimeConverter DAYS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DatePartialTimeConverter('DAYS', locale);
-        let d = new Date(Date.UTC(2019, 9, 27));
+// test('DatePartialTimeConverter DAYS', () => {
+//     function run(locale, localizedDates) {
+//         let converter = new c.DatePartialTimeConverter('DAYS', locale);
+//         let d = new Date(Date.UTC(2019, 9, 27));
 
-        assert.equal('2019-10-27', converter.toTSV(d));
-        assert.equal('not_a_date', converter.toTSV('not_a_date'));
-        assert.equal('2019-10-27', converter.toEditable(d));
-        for (const date of localizedDates) {
-            assert.equal(d, converter.fromEditable(date));
-        }
+//         assert.equal('2019-10-27', converter.toTSV(d));
+//         assert.equal('not_a_date', converter.toTSV('not_a_date'));
+//         assert.equal('2019-10-27', converter.toEditable(d));
+//         for (const date of localizedDates) {
+//             assert.equal(d, converter.fromEditable(date));
+//         }
 
-        const elem = document.createElement('span');
-        converter.render(elem, d);
-        assert.equal('2019-10-27', elem.textContent);
-        assert.equal('non-string', elem.className);
+//         const elem = document.createElement('span');
+//         converter.render(elem, d);
+//         assert.equal('2019-10-27', elem.textContent);
+//         assert.equal('non-string', elem.className);
 
-        assertNotADate(converter, elem);
-    }
+//         assertNotADate(converter, elem);
+//     }
 
-    runPartialEdits(run);
-});
+//     runPartialEdits(run);
+// });
 
 test('DateTimeConverter MILLISECONDS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DateTimeConverter('MILLISECONDS', locale);
-        let d = new Date('2019-10-27T02:13:14.123+02:00');
-        assert.equal('2019-10-27 02:13:14.123+02:00', converter.toTSV(d));
-        assert.equal('2019-10-27 02:13:14.123+02:00', converter.toEditable(d));
-        for (const date of localizedDates) {
-            assert.equal(d, converter.fromEditable(date));
-        }
-
-        const elem = document.createElement('span');
-        converter.render(elem, d);
-        assert.equal('2019-10-27 02:13:14.123+02:00', elem.textContent);
-        assert.equal('non-string', elem.className);
-
-        assertNotADate(converter, elem);
+    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
+    let converter = new c.DateTimeConverter('MILLISECONDS');
+    let d = new Date('2019-10-27T02:13:14.123+02:00');
+    assert.equal('2019-10-27 02:13:14.123+02:00', converter.toTSV(d));
+    assert.equal('2019-10-27 02:13:14.123+02:00', converter.toEditable(d));
+    for (const date of localizedDates) {
+        assert.equal(d, converter.fromEditable(date));
     }
 
-    runEdits(run);
+    const elem = document.createElement('span');
+    converter.render(elem, d);
+    assert.equal('2019-10-27 02:13:14.123+02:00', elem.textContent);
+    assert.equal('non-string', elem.className);
+
+    assertNotADate(converter, elem);
+
 });
 
 test('DateTimeConverter SECONDS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DateTimeConverter('SECONDS', locale);
-        let d = new Date('2019-10-27T02:13:14+02:00');
-        assert.equal('2019-10-27 02:13:14+02:00', converter.toTSV(d));
-        assert.equal('2019-10-27 02:13:14+02:00', converter.toEditable(d));
-        for (const date of localizedDates) {
-            assert.equal(d, converter.fromEditable(date));
-        }
-
-        const elem = document.createElement('span');
-        converter.render(elem, d);
-        assert.equal('2019-10-27 02:13:14+02:00', elem.textContent);
-        assert.equal('non-string', elem.className);
-
-        assertNotADate(converter, elem);
+    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
+    let converter = new c.DateTimeConverter('SECONDS');
+    let d = new Date('2019-10-27T02:13:14+02:00');
+    assert.equal('2019-10-27 02:13:14+02:00', converter.toTSV(d));
+    assert.equal('2019-10-27 02:13:14+02:00', converter.toEditable(d));
+    for (const date of localizedDates) {
+        assert.equal(d, converter.fromEditable(date));
     }
 
-    runEdits(run);
+    const elem = document.createElement('span');
+    converter.render(elem, d);
+    assert.equal('2019-10-27 02:13:14+02:00', elem.textContent);
+    assert.equal('non-string', elem.className);
+
+    assertNotADate(converter, elem);
+
 });
 
 test('DateTimeConverter MINUTES', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DateTimeConverter('MINUTES', locale);
-        let d = new Date('2019-10-27T02:13+02:00');
-        assert.equal('2019-10-27 02:13+02:00', converter.toTSV(d));
-        assert.equal('2019-10-27 02:13+02:00', converter.toEditable(d));
-        for (const date of localizedDates) {
-            assert.equal(d, converter.fromEditable(date));
-        }
-
-        const elem = document.createElement('span');
-        converter.render(elem, d);
-        assert.equal('2019-10-27 02:13+02:00', elem.textContent);
-        assert.equal('non-string', elem.className);
-
-        assertNotADate(converter, elem);
+    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
+    let converter = new c.DateTimeConverter('MINUTES');
+    let d = new Date('2019-10-27T02:13+02:00');
+    assert.equal('2019-10-27 02:13+02:00', converter.toTSV(d));
+    assert.equal('2019-10-27 02:13+02:00', converter.toEditable(d));
+    for (const date of localizedDates) {
+        assert.equal(d, converter.fromEditable(date));
     }
 
-    runEdits(run);
+    const elem = document.createElement('span');
+    converter.render(elem, d);
+    assert.equal('2019-10-27 02:13+02:00', elem.textContent);
+    assert.equal('non-string', elem.className);
+
+    assertNotADate(converter, elem);
+
 });
 
 test('DateTimeConverter HOURS', () => {
-    function run(locale, localizedDates) {
-        let converter = new c.DateTimeConverter('HOURS', locale);
-        let d = new Date('2019-10-27T02:00+02:00');
-        assert.equal('2019-10-27 02+02:00', converter.toTSV(d));
-        assert.equal('2019-10-27 02+02:00', converter.toEditable(d));
-        for (const date of localizedDates) {
-            assert.equal(d, converter.fromEditable(date));
-        }
+    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
 
-        const elem = document.createElement('span');
-        converter.render(elem, d);
-        assert.equal('2019-10-27 02+02:00', elem.textContent);
-        assert.equal('non-string', elem.className);
-
-        assertNotADate(converter, elem);
+    let converter = new c.DateTimeConverter('HOURS');
+    let d = new Date('2019-10-27T02:00+02:00');
+    assert.equal('2019-10-27 02+02:00', converter.toTSV(d));
+    assert.equal('2019-10-27 02+02:00', converter.toEditable(d));
+    for (const date of localizedDates) {
+        assert.equal(d, converter.fromEditable(date));
     }
 
-    runEdits(run);
+    const elem = document.createElement('span');
+    converter.render(elem, d);
+    assert.equal('2019-10-27 02+02:00', elem.textContent);
+    assert.equal('non-string', elem.className);
+
+    assertNotADate(converter, elem);
+
 });
 
 

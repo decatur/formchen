@@ -276,21 +276,21 @@ export class LocalDateParserClass {
         return parseFullDate(s);
     }
 
-    /**
-     * Parses dates with partial time of the form 2019-10-27 00:00, 10/27/2019T01:02, ...
-     * @param {string} s
-     * @returns {[number, number, number, number, number, number, number] | SyntaxError}
-     */
-    datePartialTime(s) {
-        const r = parseDateOptionalTimeTimezone(s);
-        if (r instanceof SyntaxError) {
-            return r
-        } else if (r.length !== 7) {
-            return new SyntaxError(s)
-        } else {
-            return r
-        }
-    }
+    // /**
+    //  * Parses dates with partial time of the form 2019-10-27 00:00, 10/27/2019T01:02, ...
+    //  * @param {string} s
+    //  * @returns {[number, number, number, number, number, number, number] | SyntaxError}
+    //  */
+    // datePartialTime(s) {
+    //     const r = parseDateOptionalTimeTimezone(s);
+    //     if (r instanceof SyntaxError) {
+    //         return r
+    //     } else if (r.length !== 7) {
+    //         return new SyntaxError(s)
+    //     } else {
+    //         return r
+    //     }
+    // }
 
     /**
      * Parses date times of the form 2019-10-27 00:00Z, 10/27/2019T01:02+01:00, ...
