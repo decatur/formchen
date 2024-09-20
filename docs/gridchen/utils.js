@@ -168,11 +168,11 @@ export function toLocaleISODateTimeString(d, period) {
 let localeDateParserSingleton = undefined;
 
 /**
- * @returns {LocalDateParser}
+ * @returns {LocalDateParserClass}
  */
 export function localeDateParser() {
     if (!localeDateParserSingleton) {
-        localeDateParserSingleton = createLocalDateParser();
+        localeDateParserSingleton = new LocalDateParserClass();
     }
     return localeDateParserSingleton;
 }
@@ -200,119 +200,114 @@ export class FullDate {
 
 }
 
-/**
- * The created parser can parse strings of the form YYYY-MM-DDTHH:mm:ss.sssZ,
- * see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#date_time_string_format
- * @returns {LocalDateParser}
- */
-function createLocalDateParser() {
-    /**
+ /**
      * @param {string} s
      * @returns {FullDate|SyntaxError}
      */
-    function parseFullDate(s) {
-        const parts = s.split('-');
-        if (parts.length === 3) {
-            return new FullDate(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+ function parseFullDate(s) {
+    const parts = s.split('-');
+    if (parts.length === 3) {
+        return new FullDate(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+    } else {
+        return new SyntaxError(s)
+    }
+}
+
+/**
+ * @param {string} s
+ * @returns {[number, number, number, number, number, number, number, number, number] | SyntaxError}
+ */
+function parseDateOptionalTimeTimezone(s) {
+    const dateTimeParts = s.trim().split(/\s+|T/);
+    const fullDateResult = parseFullDate(dateTimeParts[0]);
+    if (fullDateResult instanceof SyntaxError) {
+        return fullDateResult
+    } else if (dateTimeParts.length === 1) {
+        let parts = [...[fullDateResult.year, fullDateResult.month, fullDateResult.day], 0, 0, 0, 0];
+        return /** @type{[number, number, number, number, number, number, number, number, number]} */ (parts)
+    }
+
+    //  19:52:53.3434+00:00 ->
+    //   0                        1     2      3      4          5
+    //  ["19:52:53.123456+00:00", "19", ":52", ":53", ".123456", "+00:00"]
+    const m = dateTimeParts[1].match(/^(\d+)(:\d+)?(:\d+)?(\.[0-9]+)?(Z|[+-][0-9:]+)?$/);
+    if (!m) {
+        return new SyntaxError(s)
+    }
+
+    const hours = Number(m[1]);
+    const minutes = m[2] ? Number(m[2].substring(1)) : 0;
+    const seconds = m[3] ? Number(m[3].substring(1)) : 0;
+    let millis = 0;
+    if (m[4]) {
+        // Ignore sub-millis as JS Date does not support those.
+        // Example: ".1234567" -> .1234567 -> 123.4567 -> 123
+        millis = Math.floor(Number(m[4]) * 1000);
+    }
+    let timeZone = [];
+    if (m[5]) {
+        if (m[5] === 'Z') {
+            timeZone = [0, 0];
         } else {
+            // This will also take care of negative offsets, i.e. "-01:00" -> [-1, 0]
+            timeZone = m[5].split(':').map(v => Number(v));
+        }
+        if (timeZone.length !== 2 || someNaN(timeZone)) {
             return new SyntaxError(s)
         }
     }
 
+    // Array of length 9
+    return /** @type{[number, number, number, number, number, number, number, number, number]} */ ([...[fullDateResult.year, fullDateResult.month, fullDateResult.day], hours, minutes, seconds, millis, ...timeZone])
+}
+
+/**
+* The created parser can parse strings of the form YYYY-MM-DDTHH:mm:ss.sssZ,
+* see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#date_time_string_format
+*/
+export class LocalDateParserClass {
     /**
+     * Parses full dates of the form 2019-10-27, 10/27/2019, ...
+     * @param {string} s
+     * @returns {FullDate|SyntaxError}
+     */
+    fullDate(s) {
+        // This is currently only used for unit testing.
+        return parseFullDate(s);
+    }
+
+    /**
+     * Parses dates with partial time of the form 2019-10-27 00:00, 10/27/2019T01:02, ...
+     * @param {string} s
+     * @returns {[number, number, number, number, number, number, number] | SyntaxError}
+     */
+    datePartialTime(s) {
+        const r = parseDateOptionalTimeTimezone(s);
+        if (r instanceof SyntaxError) {
+            return r
+        } else if (r.length !== 7) {
+            return new SyntaxError(s)
+        } else {
+            return r
+        }
+    }
+
+    /**
+     * Parses date times of the form 2019-10-27 00:00Z, 10/27/2019T01:02+01:00, ...
      * @param {string} s
      * @returns {[number, number, number, number, number, number, number, number, number] | SyntaxError}
      */
-    function parseDateOptionalTimeTimezone(s) {
-        const dateTimeParts = s.trim().split(/\s+|T/);
-        const fullDateResult = parseFullDate(dateTimeParts[0]);
-        if (fullDateResult instanceof SyntaxError) {
-            return fullDateResult
-        } else if (dateTimeParts.length === 1) {
-            let parts = [...[fullDateResult.year, fullDateResult.month, fullDateResult.day], 0, 0, 0, 0];
-            return parts
-        }
-
-        //  19:52:53.3434+00:00 ->
-        //   0                        1     2      3      4          5
-        //  ["19:52:53.123456+00:00", "19", ":52", ":53", ".123456", "+00:00"]
-        const m = dateTimeParts[1].match(/^(\d+)(:\d+)?(:\d+)?(\.[0-9]+)?(Z|[+-][0-9:]+)?$/);
-        if (!m) {
+    dateTime(s) {
+        const r = parseDateOptionalTimeTimezone(s);
+        if ( r instanceof SyntaxError ) {
+            return r
+        } else if (r.length !== 9) {
             return new SyntaxError(s)
-        }
-
-        const hours = Number(m[1]);
-        const minutes = m[2] ? Number(m[2].substring(1)) : 0;
-        const seconds = m[3] ? Number(m[3].substring(1)) : 0;
-        let millis = 0;
-        if (m[4]) {
-            // Ignore sub-millis as JS Date does not support those.
-            // Example: ".1234567" -> .1234567 -> 123.4567 -> 123
-            millis = Math.floor(Number(m[4]) * 1000);
-        }
-        let timeZone = [];
-        if (m[5]) {
-            if (m[5] === 'Z') {
-                timeZone = [0, 0];
-            } else {
-                // This will also take care of negative offsets, i.e. "-01:00" -> [-1, 0]
-                timeZone = m[5].split(':').map(v => Number(v));
-            }
-            if (timeZone.length !== 2 || someNaN(timeZone)) {
-                return new SyntaxError(s)
-            }
-        }
-
-        // Array of length 9
-        return [...[fullDateResult.year, fullDateResult.month, fullDateResult.day], hours, minutes, seconds, millis, ...timeZone]
-    }
-
-    /**
-     * @implements {LocalDateParser}
-     */
-    class LocalDateParserClass {
-        /**
-         * Parses full dates of the form 2019-10-27, 10/27/2019, ...
-         * @param {string} s
-         * @returns {FullDate|SyntaxError}
-         */
-        fullDate(s) {
-            // This is currently only used for unit testing.
-            return parseFullDate(s);
-        }
-
-        /**
-         * Parses dates with partial time of the form 2019-10-27 00:00, 10/27/2019T01:02, ...
-         * @param {string} s
-         * @returns {{parts?: [number, number, number, number, number], error?:SyntaxError}}
-         */
-        datePartialTime(s) {
-            const r = parseDateOptionalTimeTimezone(s);
-            if (r instanceof SyntaxError) {
-                return r
-            } else if (r.length !== 7) {
-                return new SyntaxError(s)
-            } else {
-                return r
-            }
-        }
-
-        /**
-         * Parses date times of the form 2019-10-27 00:00Z, 10/27/2019T01:02+01:00, ...
-         * @param {string} s
-         * @returns {{parts?: [number, number, number, number, number, number, number, number, number], error?:SyntaxError}}
-         */
-        dateTime(s) {
-            const r = parseDateOptionalTimeTimezone(s);
-            if (r.parts && r.parts.length !== 9) {
-                return { error: new SyntaxError(s) }
-            }
+        } else {
             return r
         }
-
     }
 
-    return new LocalDateParserClass()
 }
 
 /**

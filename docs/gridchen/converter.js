@@ -637,32 +637,3 @@ export class DateTimeConverter {
     }
 }
 
-
-// /**
-//  * Parses a list of local date strings and returns a list of dates. This is only possible because we assert that
-//  * the date value must always increase.
-//  *
-//  * Example:
-//  * let dates = ['2019-10-27 01:00', '2019-10-27 02:00', '2019-10-27 02:15', '2019-10-27 02:00', '2019-10-27 02:15', '2019-10-27 03:00'];
-//  * localDateStringToDate(dates).map((d, i) => dates[i] + ' -> ' + d.toJSON()).join('\n')
-//  *  2019-10-27 01:00 -> 2019-10-26T23:00Z
-//  *  2019-10-27 02:00 -> 2019-10-27T00:00Z
-//  *  2019-10-27 02:15 -> 2019-10-27T00:15Z
-//  *  2019-10-27 02:00 -> 2019-10-27T01:00Z
-//  *  2019-10-27 02:15 -> 2019-10-27T01:15Z
-//  *  2019-10-27 03:00 -> 2019-10-27T02:00Z
-//  *
-//  * @param {Array<string>} dateStrings
-//  * @returns {Date[]}
-//  */
-// function localDateStringToDate(dateStrings) {
-//     let prevTime = undefined;
-//     return dateStrings.map(function (s) {
-//         let d = new Date(s);
-//         if (d.getTime() <= prevTime) {
-//             d = new Date(d.getTime() + 60 * 60 * 1000);
-//         }
-//         prevTime = d.getTime();
-//         return (d);
-//     });
-// }
