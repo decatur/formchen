@@ -54,54 +54,54 @@ const HOURS = resolvePeriod('HOURS');
 const MINUTES = resolvePeriod('MINUTES');
 const SECONDS = resolvePeriod('SECONDS');
 
-/**
- * @param {Date} d
- * @param {number} period
- * @returns {string}
- */
-export function toUTCDateString(d, period) {
-    let s = pad(d.getUTCFullYear());
-    if (period >= MONTHS) {
-        s += '-' + pad(1 + d.getUTCMonth());
-    }
-    if (period >= DAYS) {
-        s += '-' + pad(d.getUTCDate());
-    }
-    return s
-}
+// /**
+//  * @param {Date} d
+//  * @param {number} period
+//  * @returns {string}
+//  */
+// export function toUTCDateString(d, period) {
+//     let s = pad(d.getUTCFullYear());
+//     if (period >= MONTHS) {
+//         s += '-' + pad(1 + d.getUTCMonth());
+//     }
+//     if (period >= DAYS) {
+//         s += '-' + pad(d.getUTCDate());
+//     }
+//     return s
+// }
 
-/**
- * @param {Date} d
- * @param {number} period
- * @returns {string}
- */
-export function toUTCDatePartialTimeString(d, period) {
-    let s = toUTCDateString(d, period);
-    if (period >= HOURS) {
-        // We use space, not 'T' as time separator to apeace MS-Excel.
-        s += ' ' + toUTCTimeString(d, period);
-    }
-    return s;
-}
+// /**
+//  * @param {Date} d
+//  * @param {number} period
+//  * @returns {string}
+//  */
+// export function toUTCDatePartialTimeString(d, period) {
+//     let s = toUTCDateString(d, period);
+//     if (period >= HOURS) {
+//         // We use space, not 'T' as time separator to apeace MS-Excel.
+//         s += ' ' + toUTCTimeString(d, period);
+//     }
+//     return s;
+// }
 
-/**
- * @param {Date} d
- * @param {number} period
- * @returns {string}
- */
-function toUTCTimeString(d, period) {
-    let s = pad(d.getUTCHours());
-    if (period >= MINUTES) {
-        s += ':' + pad(d.getUTCMinutes());
-    }
-    if (period >= SECONDS) {
-        s += ':' + pad(d.getUTCSeconds());
-    }
-    if (period > SECONDS) {
-        s += '.' + String(d.getUTCMilliseconds()).padStart(3, '0');
-    }
-    return s;
-}
+// /**
+//  * @param {Date} d
+//  * @param {number} period
+//  * @returns {string}
+//  */
+// function toUTCTimeString(d, period) {
+//     let s = pad(d.getUTCHours());
+//     if (period >= MINUTES) {
+//         s += ':' + pad(d.getUTCMinutes());
+//     }
+//     if (period >= SECONDS) {
+//         s += ':' + pad(d.getUTCSeconds());
+//     }
+//     if (period > SECONDS) {
+//         s += '.' + String(d.getUTCMilliseconds()).padStart(3, '0');
+//     }
+//     return s;
+// }
 
 /**
  * @param {Date} d
@@ -122,15 +122,15 @@ function toTimeString(d, period) {
     return s;
 }
 
-/**
- * @param {Date} d
- * @param {number} period
- * @returns {string}
- */
-export function toUTCDateTimeString(d, period) {
-    let s = toUTCDatePartialTimeString(d, period);
-    return s + 'Z';
-}
+// /**
+//  * @param {Date} d
+//  * @param {number} period
+//  * @returns {string}
+//  */
+// export function toUTCDateTimeString(d, period) {
+//     let s = toUTCDatePartialTimeString(d, period);
+//     return s + 'Z';
+// }
 
 /**
  * @param {Date} d

@@ -1,5 +1,5 @@
 import { test, assert } from './utils.js'
-import {localeDateParser, toUTCDateTimeString, resolvePeriod, FullDate} from "../docs/gridchen/utils.js";
+import {localeDateParser, resolvePeriod, FullDate} from "../docs/gridchen/utils.js";
 
 test('FullDate', () => {
     let parser = localeDateParser();
@@ -14,11 +14,11 @@ test('DateTime', () => {
     assert.true(parser.dateTime('27.10.2019') instanceof SyntaxError);
 });
 
-test('toUTCDateTimeString', () => {
-    assert.equal('2020-01-04 01:02:03.012Z', toUTCDateTimeString(
-        new Date(Date.UTC(2020, 0, 4, 1, 2, 3, 12)),
-        resolvePeriod('MILLISECONDS')));
-});
+// test('toUTCDateTimeString', () => {
+//     assert.equal('2020-01-04 01:02:03.012Z', toUTCDateTimeString(
+//         new Date(Date.UTC(2020, 0, 4, 1, 2, 3, 12)),
+//         resolvePeriod('MILLISECONDS')));
+// });
 
 
 
