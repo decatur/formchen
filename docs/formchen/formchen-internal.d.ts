@@ -5,7 +5,6 @@
 import { JSONSchema, TransactionManager, Patch } from "../gridchen/gridchen"
 
 export interface Graph {
-    pathPrefix: string;
     add: (node: BaseNode) => void;
     getNodeById: (id: string) => BaseNode;
 }

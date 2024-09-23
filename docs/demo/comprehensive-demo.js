@@ -17,7 +17,6 @@ const schema = {
             }
         }
     },
-    pathPrefix: '',
     title: 'FieldObservation',
     type: 'object',
     properties: {

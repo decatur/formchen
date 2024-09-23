@@ -14,7 +14,6 @@ test('graph', () => {
         }
     };
 
-    schema.pathPrefix = '/prefix';
     const graph = new Graph('');
     const node1 = new HolderNode(graph, '', '', schema, null);
     const node2 = new HolderNode(graph, 'foo', 'foo', schema.properties.foo, node1);

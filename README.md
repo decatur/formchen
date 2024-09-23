@@ -43,7 +43,6 @@ This is a basic form which runs standalone or can be loaded from https://decatur
 
     const schema = {
         title: 'Person',
-        pathPrefix: '/person',
         type: 'object',
         properties: {
             name: {

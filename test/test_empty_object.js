@@ -6,7 +6,6 @@ import { GridChen } from "../docs/gridchen/webcomponent.js";
 
 test('Empty Object one Level', (test_name) => {
     const schema = {
-        pathPrefix: '',
         type: 'object',
         properties: {
             foo: {
@@ -40,7 +39,6 @@ test('Empty Object one Level', (test_name) => {
 
 test('Empty Object two Levels', (test_name) => {
     const schema = {
-        pathPrefix: '',
         type: 'object',
         properties: {
             foo: {
@@ -89,7 +87,6 @@ test('Empty Object two Levels', (test_name) => {
 
 test('Delete', (test_name) => {
     const schema = {
-        pathPrefix: '',
         type: 'object',
         properties: {
             foo: {
@@ -124,7 +121,6 @@ test('Delete', (test_name) => {
 
 test('Delete subtree', (test_name) => {
     const schema = {
-        pathPrefix: '',
         type: 'object',
         properties: {
             foo: {
@@ -173,7 +169,6 @@ test('Empty object with grid', (test_name) => {
                 }
             }
         },
-        pathPrefix: '',
         type: 'object',
         properties: {
             foo: {

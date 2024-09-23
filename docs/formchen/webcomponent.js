@@ -51,10 +51,8 @@ function querySelector(parent, selector) {
  */
 export class Graph {
     /**
-     * @param {string} pathPrefix
      */
-    constructor(pathPrefix) {
-        this.pathPrefix = pathPrefix;
+    constructor() {
         this.nodesById = {};
     }
 
@@ -151,8 +149,8 @@ export class BaseNodeClass {
         /** @implements {Patch} */
         class MyPatch {
             constructor() {
+                this.pathPrefix = '';
                 this.operations = [];
-                this.pathPrefix = graph.pathPrefix;
                 this.detail = null;
             }
             apply() {
@@ -352,9 +350,8 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         throw Error("Root schema must be an object")
     }
 
-    const pathPrefix = topSchema.pathPrefix || '';
     /** @type{Graph} */
-    const graph = new Graph(pathPrefix);
+    const graph = new Graph();
 
     let holder = null;
 
