@@ -12,7 +12,6 @@ export interface Graph {
 
 export interface BaseNode {
     tooltip: string;
-    id: string;
     graph: Graph;
     parent: HolderNode;
     schema: JSONSchema;

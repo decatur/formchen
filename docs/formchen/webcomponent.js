@@ -62,15 +62,15 @@ export class Graph {
      * @param {BaseNode} node 
      */
     add(node) {
-        this.nodesById[node.id] = node;
+        this.nodesById[node.path] = node;
     }
 
     /**
-     * @param {string} id 
+     * @param {string} path 
      * @returns {BaseNode}
      */
-    getNodeById(id) {
-        return this.nodesById[id]
+    getNodeById(path) {
+        return this.nodesById[path]
     }
 }
 
@@ -91,24 +91,20 @@ export class BaseNodeClass {
 
     /**
      * @param {Graph} graph
-     * @param {string} relId
      * @param {string | number} key
      * @param {JSONSchema} schema
      * @param {HolderNode} parent
      */
-    constructor(graph, relId, key, schema, parent) {
-        console.log(`relId=${relId} key=${key}`)
-        if (!parent && relId === '') {
-            this.id = schema.pathPrefix;
-        } else {
-            this.id = relId[0] === '/' ? relId : ((parent ? parent.id : '') + '/' + String(relId));
-        }
+    constructor(graph, key, schema, parent) {
+        this.key = key;
+        this.path = (parent ? parent.path + '/' + key : String(key));
+
         this.graph = graph;
         if (parent) {
             this.parent = parent;
             this.tm = parent.tm;
         }
-        this.key = key;
+        
         //if (this.key !== undefined) {
         //    this.path = (this.parent?this.parent.path + '/' + key:String(key));
         //}
@@ -122,7 +118,7 @@ export class BaseNodeClass {
         }
         this.schema = schema;
         if (schema.title == null) {
-            this.title = this.schema.title || String(relId);
+            this.title = this.schema.title || String(key);
         } else {
             this.title = schema.title;
         }
@@ -185,7 +181,7 @@ export class BaseNodeClass {
             op = { op: 'replace', path: this.path, value: obj, oldValue };
         }
 
-        op['nodeId'] = this.id;
+        op['nodeId'] = this.path;
         patch.operations.push(op);
 
         this._setValue(obj, false);
@@ -204,6 +200,8 @@ export class BaseNodeClass {
      */
     _setValue(obj, disabled) {
         this.path = (this.parent ? this.parent.path + '/' + this.key : String(this.key));
+
+        console.log(`path=${this.path} key=${this.key}`)
 
         if (this.parent && this.parent.obj) {
             if (obj == null) {
@@ -232,7 +230,7 @@ export class BaseNodeClass {
         let key = this.key;
         while (n && n.obj == null) {
             let empty = n.schema.type === 'array' ? [[], []] : [{}, {}];
-            operations.unshift({ op: 'add', path: n.path, value: empty[0], nodeId: n.id });
+            operations.unshift({ op: 'add', path: n.path, value: empty[0], nodeId: n.path });
             n.obj = empty[1];
             n.obj[key] = v;
             key = n.key;
@@ -270,7 +268,7 @@ export class BaseNodeClass {
                     oldValue = n.parent.obj[n.key];
                     delete n.parent.obj[n.key];
                 }
-                operations.push({ op: 'remove', path: n.path, oldValue, nodeId: n.id });
+                operations.push({ op: 'remove', path: n.path, oldValue, nodeId: n.path });
             } else {
                 break;
             }
@@ -293,16 +291,15 @@ export class BaseNodeClass {
 export class HolderNodeClass extends BaseNodeClass {
     /**
      * @param {Graph} graph
-     * @param {string} relId
      * @param {string | number} key
      * @param {JSONSchema} schema
      * @param {HolderNode} parent
      */
-    constructor(graph, relId, key, schema, parent) {
+    constructor(graph, key, schema, parent) {
         if (!['object', 'array'].includes(schema.type)) {
             throw Error('Invalid schema type: ' + schema.type);
         }
-        super(graph, relId, key, schema, parent);
+        super(graph, key, schema, parent);
         /** @type{BaseNode[]} */
         this.children = [];
     }
@@ -379,13 +376,12 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     }
 
     /**
-    * @param {string} relId 
     * @param {string | number} key 
     * @param {JSONSchema} schema 
     * @param {HolderNode} parent 
     * @returns {BaseNode}
     */
-    function createNode(relId, key, schema, parent) {
+    function createNode(key, schema, parent) {
         schema = resolveSchema(schema, String(key));
         let constructor;
         if (schema.format === 'grid' || schema.type === 'object' || schema.type === 'array') {
@@ -393,11 +389,11 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         } else {
             constructor = BaseNodeClass;
         }
-        return new constructor(graph, relId, key, schema, parent);
+        return new constructor(graph, key, schema, parent);
     }
 
     // registerGlobalTransactionManager();
-    const rootNode = createNode('', '', topSchema, holder);
+    const rootNode = createNode('', topSchema, holder);
     rootNode.tm = transactionManager;
     bindNode(rootNode, rootElement);
 
@@ -410,7 +406,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     function bindObject(node, container) {
         const properties = node.schema.properties || [];
         for (let [key, childSchema] of Object.entries(properties)) {
-            const childNode = createNode(key, key, childSchema, node);
+            const childNode = createNode(key, childSchema, node);
             bindNode(childNode, container);
         }
     }
@@ -421,9 +417,9 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
      */
     function bindGrid(node, containerElement) {
         const grid = /** @type{IGridChen} */ (containerElement.querySelector('.data-value'));
-        grid.id = node.id;
+        grid.id = node.path;
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
-        node.schema.pathPrefix = node.id;
+        node.schema.pathPrefix = node.path;
         const gridSchema = Object.assign({}, node.schema);
 
         const view = createView(gridSchema, null);
@@ -437,7 +433,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
         node.refreshUI = function () {
             view.applyJSONPatch([{ op: 'replace', path: '', value: node.obj }]);
-            grid.refresh(node.id);
+            grid.refresh(node.path);
         }
     }
 
@@ -447,13 +443,13 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
      */
     function bindTuple(node, container) {
         if (!Array.isArray(node.schema.prefixItems)) {
-            throw Error(`Node ${node.id} must have a prefixItems property`);
+            throw Error(`Node ${node.path} must have a prefixItems property`);
         }
 
         // Fixed length tuple.
         const tupleSchemas = /**@type{JSONSchema[]}*/ (node.schema.prefixItems);
         tupleSchemas.forEach((itemSchema, i) => {
-            const childNode = createNode(String(i), String(i), itemSchema, node);
+            const childNode = createNode(String(i), itemSchema, node);
             bindNode(childNode, container);
         });
     }
@@ -467,7 +463,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         const schema = node.schema;
 
         /** @type{?HTMLElement} */
-        let control = container.querySelector(`[data-path="${node.id}"]`);
+        let control = container.querySelector(`[data-path="${node.path}"]`);
 
         if (control) {
             let element = control.querySelector('.data-title');
@@ -489,7 +485,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         if (schema.type === 'object' || schema.type === 'array') {
             if (schema.format === 'grid') {
                 if (!control) {
-                    console.error(`Cannot find control for ${node.id}`);
+                    console.error(`Cannot find control for ${node.path}`);
                     return
                 }
                 bindGrid(/**@type{HolderNode}*/(node), control);
@@ -504,7 +500,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
         //console.log('bind: ' + path);
         if (!control) {
-            console.error(`Cannot find control for ${node.id}`);
+            console.error(`Cannot find control for ${node.path}`);
             return
         }
 
@@ -590,7 +586,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                     input.type = 'string';
                 }
             } else {
-                throw Error('Invalid schema at ' + node.id);
+                throw Error('Invalid schema at ' + node.path);
             }
 
             input.onchange = function () {
