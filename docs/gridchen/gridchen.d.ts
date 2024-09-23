@@ -29,6 +29,7 @@ export interface JSONSchema {
      * with each item having the object as its schema.
      */
     items?: JSONSchema | JSONSchema[];
+    prefixItems?: JSONSchema[];
     enum?: (string | number)[];
     readOnly?: boolean;
     height?: number;

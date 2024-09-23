@@ -97,6 +97,7 @@ export class BaseNodeClass {
      * @param {HolderNode} parent
      */
     constructor(graph, relId, key, schema, parent) {
+        console.log(`relId=${relId} key=${key}`)
         if (!parent && relId === '') {
             this.id = schema.pathPrefix;
         } else {
@@ -445,14 +446,16 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
      * @param {HTMLElement} container
      */
     function bindTuple(node, container) {
-        if (Array.isArray(node.schema.items)) {
-            // Fixed length tuple.
-            const tupleSchemas = /**@type{JSONSchema[]}*/ (node.schema.items);
-            for (let [key, childSchema] of Object.entries(tupleSchemas)) {
-                const childNode = createNode(key, key, childSchema, node);
-                bindNode(childNode, container);
-            }
+        if (!Array.isArray(node.schema.prefixItems)) {
+            throw Error(`Node ${node.id} must have a prefixItems property`);
         }
+
+        // Fixed length tuple.
+        const tupleSchemas = /**@type{JSONSchema[]}*/ (node.schema.prefixItems);
+        tupleSchemas.forEach((itemSchema, i) => {
+            const childNode = createNode(String(i), String(i), itemSchema, node);
+            bindNode(childNode, container);
+        });
     }
 
     /**
@@ -468,7 +471,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
         if (control) {
             let element = control.querySelector('.data-title');
-            
+
             if (element) {
                 if (!(element instanceof HTMLElement)) throw Error(element.tagName);
                 let title = /**@type{HTMLElement}*/ (control.querySelector('.data-title'));
@@ -484,10 +487,12 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         }
 
         if (schema.type === 'object' || schema.type === 'array') {
-            //console.log('bind: ' + path);
-
             if (schema.format === 'grid') {
-                if (control) bindGrid(/**@type{HolderNode}*/(node), control);
+                if (!control) {
+                    console.error(`Cannot find control for ${node.id}`);
+                    return
+                }
+                bindGrid(/**@type{HolderNode}*/(node), control);
             } else if (schema.type === 'object') {
                 bindObject(/**@type{HolderNode}*/(node), container);
             } else if (schema.type === 'array') {
@@ -500,11 +505,6 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         //console.log('bind: ' + path);
         if (!control) {
             console.error(`Cannot find control for ${node.id}`);
-            return
-            //throw new Error(`Cannot find control for ${node.id}`)
-        }
-
-        if (!container) {
             return
         }
 
@@ -520,11 +520,11 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 input.disabled = node.readOnly || disabled;
             };
 
-            input.onchange = function() {
+            input.onchange = function () {
                 let value = input.checked;
                 foo(value);
             }
-            
+
         } else if (schema.enum) {
             if (element.tagName != 'SELECT') throw Error(element.tagName);
             const input = /**@type{HTMLSelectElement} */ (element);
@@ -538,7 +538,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 input.disabled = node.readOnly || disabled;
             };
 
-            input.onchange = function() {
+            input.onchange = function () {
                 let value = input.value;
                 foo(value);
             }
@@ -574,16 +574,16 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                     converter = new NumberConverter(schema.fractionDigits || 2, undefined);
                     converter.isPercent = (schema.format === '%');
                 }
-                
+
             } else if (schema.format === 'date-time') {
                 converter = new DateTimeStringConverter(schema.period || 'HOURS');
-            // } else if (schema.format === 'date-partial-time') {
-            //     converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
+                // } else if (schema.format === 'date-partial-time') {
+                //     converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
             } else if (schema.format === 'full-date') {
                 converter = new FullDateConverter();
             } else if (schema.type === 'string') {
                 converter = new StringConverter();
-                
+
                 if (schema.format === 'color') {
                     input.type = 'color';
                 } else {
@@ -593,9 +593,9 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 throw Error('Invalid schema at ' + node.id);
             }
 
-            input.onchange = function() {
+            input.onchange = function () {
                 const newValue = converter.fromEditable(input.value.trim());
-                let value = (newValue === '')?undefined:newValue;
+                let value = (newValue === '') ? undefined : newValue;
                 foo(value);
             }
         }

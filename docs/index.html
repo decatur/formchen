@@ -19,11 +19,14 @@
         details.
     </p>
 
-    <form>
-        <label>View Generated Patch <textarea class="patch"></textarea></label>
-    </form>
 
-    <div class="form-chen" id="ROOT">
+    <h2>Simple Example</h2>
+
+    <div class="form-chen" id="BASIC">
+        <form>
+            <label>View Generated Patch <textarea class="patch"></textarea></label>
+        </form>
+
         <label data-path="/plant" class="label"><span class="data-title"></span> <input class="data-value"></label>
         <label data-path="/reference" class="label"><span class="data-title"></span> <input class="data-value"></label>
         <label data-path="/observer" class="label"><span class="data-title"></span> <select
@@ -39,6 +42,39 @@
                 class="data-value"></label>
     </div>
     <script type="module" src="./demo/basic-demo.js"></script>
+
+    <h2>Comprehensive Example</h2>
+
+    <div class="form-chen" id="COMPREHENSIVE">
+        <form>
+            <label>View Generated Patch <textarea class="patch"></textarea></label>
+        </form>
+
+        <label data-path="/someString" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someURI" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someEnum" class="label"><span class="data-title"></span> <select
+                class="data-value"></select></label>
+        <label data-path="/someDate" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someDateTime" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someBoolean" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someInteger" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someFloat" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/somePercentValue" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someColor" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/anObject/someOtherString" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <div data-path="/someMatrix">
+            <label class="data-title"> <span class="data-unit"></span></label>
+            <grid-chen class="data-value" style="display:block; height:10em"></grid-chen>
+        </div>
+        <div data-path="/anEmptyMatrix">
+            <label class="data-title"> <span class="data-unit"></span></label>
+            <grid-chen class="data-value" style="display:block; height:10em"></grid-chen>
+        </div>
+        <label data-path="/tuple/0" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/tuple/1" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/tuple/2" class="label"><span class="data-title"></span> <input class="data-value"></label>
+    </div>
+    <script type="module" src="./demo/comprehensive-demo.js"></script>
 
     <div id="Array of Row Objects">
         <h2>Array of row objects</h2>

@@ -81,13 +81,12 @@ const data = {
     isCompleted: true
 };
 
-const patchElement = /** @type{HTMLTextAreaElement} **/ (document.querySelector('.patch'));
-
-const rootElement = document.getElementById('/myPrefix');
+const container = document.getElementById("BASIC");
+const patchElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.patch'));
 
 const tm = utils.createTransactionManager();
 utils.registerUndo(document.body, tm);
-const _formchen = createFormChen(document.getElementById("ROOT"), schema, data, tm);
+const _formchen = createFormChen(container, schema, data, tm);
 
 tm.addEventListener('change', function () {
     patchElement.value = JSON.stringify(tm.patch, null, 2);
