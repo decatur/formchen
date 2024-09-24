@@ -1,77 +1,17 @@
 body {
     font-family: sans-serif;
     margin: 2em;
-    /* background-color: aliceblue; */
 }
 
-form {
-    width: 100%;
-}
-
-form label {
-    margin: 1em;
-}
-
-.controller,
-textarea {
-    margin-right: 2em;
-    width: 100%;
-    height: 15em;
+label {
     display: block;
-    background-color: inherit;
-    color: inherit;
 }
 
-.form-chen {
-    /*column-width: 500px;*/
-    /*column-rule: 1pt solid crimson;*/
-    padding: 1ex;
-}
-
-.form-chen input {
-    width: 25ex;
-    text-align: right;
-    background-color: inherit;
-    color: inherit;
-    border-width: 0.5pt;
-}
-
-.form-chen input[type=string] {
-    width: 25ex;
-    text-align: left;
-}
-
-.form-chen select {
-    width: 25ex;
-    background-color: inherit;
-    color: inherit;
-}
-
-.form-chen .error {
-    margin-top: 1ex;
-    border: 1px crimson dashed;
-}
-
-.form-chen label {
+.data-title {
     display: inline-block;
-    width: 300px;
-    break-inside: avoid;
+    width: 10em;
 }
 
-.form-chen .grid-label {
-    width: unset;
-}
-
-.form-chen .unit {
-    float: right;
-    padding-right: 1ex;
-}
-
-.form-chen grid-chen {
-    display: block;
-    height: 150px;
-}
-
-code {
-    white-space: pre;
+.patch {
+    display: none;
 }

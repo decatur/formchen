@@ -513,9 +513,9 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 input.disabled = node.readOnly || disabled;
             };
 
-            input.onchange = function () {
+            input.onchange = function (event) {
                 let value = input.checked;
-                foo(value);
+                commit(value, event);
             }
 
         } else if (schema.enum) {
@@ -531,9 +531,9 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 input.disabled = node.readOnly || disabled;
             };
 
-            input.onchange = function () {
+            input.onchange = function (event) {
                 let value = input.value;
-                foo(value);
+                commit(value, event);
             }
         } else {
             if (element.tagName != 'INPUT') throw Error(element.tagName);
@@ -586,17 +586,22 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 throw Error('Invalid schema at ' + node.path);
             }
 
-            input.onchange = function () {
+            input.onchange = function (event) {
                 const newValue = converter.fromEditable(input.value.trim());
                 let value = (newValue === '') ? undefined : newValue;
-                foo(value);
+                commit(value, event);
             }
         }
 
-        function foo(value) {
+        /**
+         * @param {string | boolean} value
+         * @param {Event} event
+         */
+        function commit(value, event) {
             const patch = node.setValue(value);
             const trans = node.tm.openTransaction();
             trans.patches.push(patch);
+            trans.context = () => { return event };
             trans.commit();
         };
 
@@ -634,6 +639,9 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
 // For replace operations on non-array fields only keep the lattest operation.
 // TODO: Consider using https://github.com/alshakero/json-squash
+/**
+ * @param {any} patch
+ */
 export function squash_formchen_patch(patch) {
     let scalar_fields = {};
     let array_fields = {};

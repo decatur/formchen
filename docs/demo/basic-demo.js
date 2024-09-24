@@ -81,7 +81,12 @@ const data = {
 };
 
 const container = document.getElementById("BASIC");
+
 const patchElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.patch'));
+const button = /** @type{HTMLButtonElement} **/ (container.querySelector('.show-patch'));
+button.onclick = () => {
+    patchElement.style.display = patchElement.style.display === 'block'?'none':'block';
+}
 
 const tm = utils.createTransactionManager();
 utils.registerUndo(document.body, tm);
@@ -89,5 +94,12 @@ const _formchen = createFormChen(container, schema, data, tm);
 
 tm.addEventListener('change', function () {
     patchElement.value = JSON.stringify(tm.patch, null, 2);
+    let transaction = tm.transactions[tm.transactions.length-1];
+    let event = transaction.context();
+    if (event) {
+        let target = /** @type{HTMLElement} */ (event.target);
+        target.nextSibling?.remove()
+        target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));
+    }
 });
 

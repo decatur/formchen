@@ -5,9 +5,7 @@ export function log(msg) {
 function error(a, b, msg) {
     const err = Error('assertEqual failed');
     console.error(err);
-    console.log(msg);
-    console.log('Expected ' + a);
-    console.log('Actual ' + b);
+    console.log(msg, 'Expected ' + a, 'Actual ' + b);
     throw err;
 }
 
