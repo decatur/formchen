@@ -18,8 +18,6 @@ export interface BaseNode {
     path: string;
     title: string;
     readOnly: boolean;
-    // readonly root: BaseNode;
-    tm: TransactionManager;
 
     getValue: () => any;
     setValue: (any) => Patch;

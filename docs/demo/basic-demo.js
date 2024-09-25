@@ -83,21 +83,31 @@ const data = {
 const container = document.getElementById("BASIC");
 
 const patchElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.patch'));
-const button = /** @type{HTMLButtonElement} **/ (container.querySelector('.show-patch'));
-button.onclick = () => {
-    patchElement.style.display = patchElement.style.display === 'block'?'none':'block';
+function refreshValue() {
+    patchElement.textContent = JSON.stringify((state === 'patch' ? tm.patch : formchen.value), null, 2);
+}
+let state = 'hide';
+for (let elem of container.querySelectorAll("input[type='radio']")) {
+    /** @type{HTMLElement} */(elem).onchange = (ev) => {
+        state = /** @type{HTMLInputElement} */(ev.target).value;
+        if (state == 'hide') { patchElement.style.display = 'none' }
+        else {
+            patchElement.style.display = 'block';
+            refreshValue();
+        }
+    }
 }
 
 const tm = utils.createTransactionManager();
 utils.registerUndo(document.body, tm);
-const _formchen = createFormChen(container, schema, data, tm);
+const formchen = createFormChen(container, schema, data, tm);
 
 tm.addEventListener('change', function () {
-    patchElement.value = JSON.stringify(tm.patch, null, 2);
-    let transaction = tm.transactions[tm.transactions.length-1];
-    let event = transaction.context();
-    if (event) {
-        let target = /** @type{HTMLElement} */ (event.target);
+    refreshValue();
+    let transaction = tm.transactions[tm.transactions.length - 1];
+    let target = transaction.target();
+    if (target) {
+        //let target = /** @type{HTMLElement} */ (event.target);
         target.nextSibling?.remove()
         target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));
     }

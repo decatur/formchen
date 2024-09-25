@@ -188,7 +188,7 @@ export interface MatrixView {
 export interface Transaction {
     patches: Patch[];
     commit: () => void;
-    context: () => void;
+    target: () => HTMLElement;
     readonly operations: JSONPatchOperation[]
 }
 
@@ -204,9 +204,9 @@ export interface TransactionManager {
     requestTransaction: (func: () => void) => Promise<void>;
 
     /**
-     * @param {(ops:JSONPatchOperation[]) => any} apply
+     * 
      */
-    openTransaction: (apply) => Transaction;
+    openTransaction: (target: HTMLElement) => Transaction;
 
     undo: () => void;
 

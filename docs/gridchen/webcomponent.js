@@ -602,7 +602,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             return
         }
 
-        const trans = tm.openTransaction();
+        const trans = tm.openTransaction(gridchenElement);
         const patch = createPatch();
         trans.patches.push(patch);
         const operations = patch.operations;
@@ -645,7 +645,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             return
         }
 
-        const trans = tm.openTransaction();
+        const trans = tm.openTransaction(gridchenElement);
         const patch = createPatch();
         trans.patches.push(patch);
         const operations = patch.operations;
@@ -664,7 +664,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             alert('This grid is locked!');
             return
         }
-        const trans = tm.openTransaction();
+        const trans = tm.openTransaction(gridchenElement);
         trans.patches.push(createPatch(viewModel.splice(selection.active.rowIndex)));
 
         commitTransaction(trans);
@@ -937,7 +937,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
 
             const model = viewModel.getModel();
             const operations = viewModel.setCell(rowIndex, colIndex, value);
-            const trans = tm.openTransaction();
+            const trans = tm.openTransaction(gridchenElement);
 
             if (model !== viewModel.getModel()) {
                 trans.patches.push(viewModel.updateHolder());
@@ -1097,7 +1097,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             alert('You have nothing to paste')
         }
 
-        const trans = tm.openTransaction();
+        const trans = tm.openTransaction(gridchenElement);
         const patch = createPatch();
         trans.patches.push(patch);
         const operations = patch.operations;

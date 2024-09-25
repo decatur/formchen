@@ -479,10 +479,10 @@ export function createTransactionManager() {
         }
 
         /**
-         * @param {(ops:JSONPatchOperation[]) => any} apply
+         * @param {HTMLElement} target
          * @returns {Transaction}
          */
-        openTransaction(apply) {
+        openTransaction(target) {
             const tm = this;
             return /**@type{Transaction}*/ ({
                 patches: [],
@@ -501,14 +501,13 @@ export function createTransactionManager() {
                     }
                     return flattend;
                 },
-                context() { }
+                target() { return target }
             });
         }
 
         undo() {
             const trans = this.transactions.pop();
             if (!trans) return;
-            trans.context();
             this.redoTransactions.push(trans);
             const reversedTransaction = /**@type{Transaction}*/ (Object.assign({}, trans));
             reversedTransaction.patches = [];
@@ -525,7 +524,6 @@ export function createTransactionManager() {
         redo() {
             const trans = this.redoTransactions.pop();
             if (!trans) return;
-            trans.context();
             this.transactions.push(trans);
             for (let patch of trans.patches) {
                 patch.apply(patch);

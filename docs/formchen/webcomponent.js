@@ -100,7 +100,6 @@ export class BaseNodeClass {
         this.graph = graph;
         if (parent) {
             this.parent = parent;
-            this.tm = parent.tm;
         }
         
         //if (this.key !== undefined) {
@@ -391,7 +390,6 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
     // registerGlobalTransactionManager();
     const rootNode = createNode('', topSchema, holder);
-    rootNode.tm = transactionManager;
     bindNode(rootNode, rootElement);
 
     rootNode.setValue(topObj);
@@ -420,9 +418,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         const gridSchema = Object.assign({}, node.schema);
 
         const view = createView(gridSchema, null);
-        let tm = node.tm;
-
-        grid.resetFromView(view, tm);
+         grid.resetFromView(view, transactionManager);
 
         view.updateHolder = function () {
             return node.setValue(view.getModel())
@@ -515,7 +511,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
             input.onchange = function (event) {
                 let value = input.checked;
-                commit(value, event);
+                commit(value, input);
             }
 
         } else if (schema.enum) {
@@ -533,7 +529,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
             input.onchange = function (event) {
                 let value = input.value;
-                commit(value, event);
+                commit(value, input);
             }
         } else {
             if (element.tagName != 'INPUT') throw Error(element.tagName);
@@ -589,19 +585,18 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             input.onchange = function (event) {
                 const newValue = converter.fromEditable(input.value.trim());
                 let value = (newValue === '') ? undefined : newValue;
-                commit(value, event);
+                commit(value, input);
             }
         }
 
         /**
          * @param {string | boolean} value
-         * @param {Event} event
+         * @param {HTMLElement} target
          */
-        function commit(value, event) {
+        function commit(value, target) {
             const patch = node.setValue(value);
-            const trans = node.tm.openTransaction();
+            const trans = transactionManager.openTransaction(target);
             trans.patches.push(patch);
-            trans.context = () => { return event };
             trans.commit();
         };
 

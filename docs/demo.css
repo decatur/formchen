@@ -3,7 +3,7 @@ body {
     margin: 2em;
 }
 
-label {
+label[data-path] {
     display: block;
 }
 
