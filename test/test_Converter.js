@@ -43,28 +43,28 @@ test('BooleanStringConverter', () => {
 });
 
 test('NumberConverter', () => {
-    function pi(locale, fractionDigits, piLongString, piShortString) {
-        const converter = new c.NumberConverter(fractionDigits, locale);
-        assert.equal(piLongString, converter.toTSV(Math.PI));
-        assert.equal(piLongString, converter.toEditable(Math.PI));
-        assert.equal(3.1415926536, converter.fromEditable(piLongString));
+    const elem = document.createElement('span');
 
-        const elem = document.createElement('span');
-        converter.render(elem, Math.PI);
-        assert.equal(piShortString, elem.textContent);
-        assert.equal('non-string', elem.className);
+    let converter = new c.NumberConverter(0);
+    assert.equal(NaN, converter.fromEditable('nan'));
 
-        converter.render(elem, {});
-        assert.equal('[object Object]', elem.textContent);
-        assert.equal('error', elem.className);
-    }
+    assert.equal(converter.toTSV(Math.PI).length, 12);
+    assert.equal(converter.toEditable(Math.PI), String(Math.PI));
+    assert.equal(converter.fromEditable('3'), 3);
 
-    pi('de', 2, '3,1415926536', '3,14');
-    pi('en', 2, '3.1415926536', '3.14');
-    pi('de', 0, '3,1415926536', '3');
-    pi('en', 0, '3.1415926536', '3');
+    converter = new c.NumberConverter(2);
+    assert.equal(converter.toTSV(Math.PI).length, 12);
+    assert.equal(converter.fromEditable('3.1415926536'), 3.1415926536);
 
-    const converter = new c.NumberConverter(0);
+    converter.render(elem, Math.PI);
+    assert.equal(elem.textContent.length, 4);
+    assert.equal('non-string', elem.className);
+
+    converter.render(elem, {});
+    assert.equal('[object Object]', elem.textContent);
+    assert.equal('error', elem.className);
+
+    converter = new c.NumberConverter(0);
     assert.equal(NaN, converter.fromEditable('NaN'));
 });
 

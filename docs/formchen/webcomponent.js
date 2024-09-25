@@ -12,6 +12,8 @@ import {
     StringConverter
 } from "../gridchen/converter.js";
 
+console.log('Formchen locale is ' + navigator.language);
+
 /**
  * Example:
  *      getValueByPointer({definitions:{foobar: 1}}, '#/definitions/foobar')
@@ -198,7 +200,7 @@ export class BaseNodeClass {
     _setValue(obj, disabled) {
         this.path = (this.parent ? this.parent.path + '/' + this.key : String(this.key));
 
-        console.log(`path=${this.path} key=${this.key}`)
+        // console.log(`path=${this.path} key=${this.key}`)
 
         if (this.parent && this.parent.obj) {
             if (obj == null) {
@@ -558,10 +560,9 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 if (typeof schema.maximum === 'number') input.max = String(schema.maximum);
 
                 if (schema.type === 'integer') {
-                    converter = new NumberConverter(0, undefined);
+                    converter = new NumberConverter(0);
                 } else {
-                    converter = new NumberConverter(schema.fractionDigits || 2, undefined);
-                    converter.isPercent = (schema.format === '%');
+                    converter = new NumberConverter(schema.fractionDigits || 2);
                 }
 
             } else if (schema.format === 'date-time') {

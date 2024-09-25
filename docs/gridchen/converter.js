@@ -251,9 +251,13 @@ export class BooleanStringConverter {
 export class NumberConverter {
     /**
      * @param {number} fractionDigits
-     * @param {string=} locale
      */
-    constructor(fractionDigits, locale) {
+    constructor(fractionDigits) {
+        // NumberConverter only works in conjuction wit input elements of type='number'.
+        // Regardles from the locale/language of the browser, such input elements value has always '.' as a decimal separator. 
+
+        const locale = navigator.language;
+
         /** @type {Intl.NumberFormat} */
         this.nf_render = Intl.NumberFormat(locale, {
             minimumFractionDigits: fractionDigits,
@@ -262,10 +266,6 @@ export class NumberConverter {
         // Default for maximumFractionDigits is 3.
         /** @type {Intl.NumberFormat} */
         this.nf_editable = new Intl.NumberFormat(locale, {maximumFractionDigits: 10});
-        let testNumber = this.nf_editable.format(1000.5); // 1.000,50 in de-DE or 1,000.5 in en
-        this.thousandSep = testNumber[1];
-        this.decimalSep = testNumber[5];  // Will be undefined for fractionDigits=0
-        this.isPercent = false;
     }
 
     /**
@@ -274,48 +274,29 @@ export class NumberConverter {
      */
     toTSV(n) {
         if (typeof n !== 'number') {
-            // Normalize String instances, i.e. new String('foo') -> 'foo'
             return String(n)
         }
-        let s;
-        if (this.isPercent) {
-            s = this.nf_editable.format(n * 100) + '%';
-        } else {
-            s = this.nf_editable.format(n);
-        }
-
-        if (this.thousandSep == ',') {
-            // Browsers do not support commas in input tags with type number or integer, sadly.
-            // So we strip it.
-            // See also https://stackoverflow.blog/2022/12/26/why-the-number-input-is-the-worst-input/
-            // Round tripping is hard, see 
-            // https://stackoverflow.com/questions/29255843/is-there-a-way-to-reverse-the-formatting-by-intl-numberformat-in-javascript
-            // https://stackoverflow.com/questions/15303940/how-to-handle-floats-and-decimal-separators-with-html5-input-type-number
-            s = s.replaceAll(',', '');
-        }
-        
-        return s
-    }
-
-    toEditable(n) {
-        return this.toTSV(n)
+        return this.nf_editable.format(n);
     }
 
     /**
-     * For example in locale de: parseNumber('1.000,2') -> 1000.2
+     * 
+     * @param {number|*} n
+     * @returns {string} The string value for a HTMLInputElement with type='number', i.e. decimal seperator is always a dot.
+     */
+    toEditable(n) {
+        return String(n)
+    }
+
+    /**
+     * @param {string} s The string value from a HTMLInputElement with type='number', i.e. decimal seperator is always a dot.
      */
     fromEditable(s) {
         s = s.trim();
         if (!s) return undefined;
         if (s.toLowerCase() === 'nan') return NaN;
-        const isPercent = s[s.length - 1] === '%';
-        if (isPercent) {
-            s = s.substr(0, s.length - 1);
-        }
-        let parts = s.split(this.decimalSep);
-        parts[0] = parts[0].split(this.thousandSep).join('');
-        const n = Number(parts.join('.'));
-        return isNaN(n) ? s : (isPercent ? n / 100 : n);
+        const n = Number(s);
+        return isNaN(n) ? s : n;
     }
 
     /**
@@ -335,11 +316,7 @@ export class NumberConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-            if (this.isPercent) {
-                element.textContent = this.nf_render.format(value * 100) + '%';
-            } else {
-                element.textContent = this.nf_render.format(value);
-            }
+            element.textContent = this.nf_render.format(value);
             element.className = 'non-string';
         }
     }

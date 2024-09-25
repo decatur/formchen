@@ -69,13 +69,7 @@ export interface Converter {
     toEditable: (a: (number | Date | string | boolean)) => string;
     createElement: () => HTMLElement;
     render: (element: HTMLElement, value: any) => void;
-    isPercent?: boolean;  // TODO: Deprecate or move to NumberConverter
 }
-
-// export interface Interval {
-//     min: number;
-//     sup: number;
-// }
 
 /**
  * A rectangular range of grid cells.

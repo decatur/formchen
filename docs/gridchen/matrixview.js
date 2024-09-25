@@ -77,9 +77,6 @@ function updateSchemaInPlace(schemas) {
                 fractionDigits = 0;
             }
             schema.converter = new c.NumberConverter(fractionDigits);
-            if (schema.format === '%') {
-                schema.converter.isPercent = true;
-            }
         } else if (schema.type === 'string' && schema.format === 'full-date') {
             schema.converter = new c.FullDateConverter();
         } 

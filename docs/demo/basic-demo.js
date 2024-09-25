@@ -82,21 +82,21 @@ const data = {
 
 const container = document.getElementById("BASIC");
 
-const patchElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.patch'));
+const patchElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.edits > code'));
 function refreshValue() {
     patchElement.textContent = JSON.stringify((state === 'patch' ? tm.patch : formchen.value), null, 2);
 }
 let state = 'hide';
-for (let elem of container.querySelectorAll("input[type='radio']")) {
-    /** @type{HTMLElement} */(elem).onchange = (ev) => {
-        state = /** @type{HTMLInputElement} */(ev.target).value;
+container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputElement} */ elem) => {
+    elem.onchange = (ev) => {
+        state = elem.value;
         if (state == 'hide') { patchElement.style.display = 'none' }
         else {
             patchElement.style.display = 'block';
             refreshValue();
         }
     }
-}
+})
 
 const tm = utils.createTransactionManager();
 utils.registerUndo(document.body, tm);

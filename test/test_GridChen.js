@@ -5,8 +5,6 @@ import {NumberConverter} from "../docs/gridchen/converter.js";
 import {Range} from "../docs/gridchen/selection.js";
 import {createTransactionManager} from "../docs/gridchen/utils.js";
 
-const decimalSep = new NumberConverter(1).decimalSep;
-
 const rowMatrixSchema = {
     title: 'test',
     type: 'array',
@@ -46,8 +44,8 @@ test('Edit Cell', async function () {
     const tm = createTransactionManager();
     gc.resetFromView(view, tm);
     gc._click(0, 0);
-    gc._keyboard('keydown', {key: " "});
-    gc._sendKeys('123 ');
+    gc._keyboard('keydown', {key: ""});
+    gc._sendKeys('123');
     gc._keyboard('keydown', {code: 'Tab'});
     gc._keyboard('keydown', {key: "a"});
     gc._sendKeys('bc ');
@@ -92,7 +90,11 @@ test('ColumnMatrix', () => {
     const gc = new GridChen();
     gc.resetFromView(createColumnMatrixView(schema, [[0], ['a']]));
     log('ViewportText');
-    assert.equal(`0${decimalSep}00a`, gc._textContent)
+    const converter = new NumberConverter(2);
+    const elem = document.createElement('span');
+    converter.render(elem, 0);
+
+    assert.equal(`${elem.textContent}a`, gc._textContent)
 
     gc._click(0, 0);
     gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});

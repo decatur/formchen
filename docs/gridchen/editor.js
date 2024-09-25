@@ -79,6 +79,15 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
             input.removeAttribute('list');
         }
 
+        if (currentSchema.type === 'number') {
+            input.setAttribute('type', 'number');
+        } else if (currentSchema.type === 'integer') {
+            input.setAttribute('type', 'number');
+            input.setAttribute('step', '1');
+        } else {
+            input.removeAttribute('type');
+        }
+
         input.readOnly = currentReadOnly;  // Must not use disabled!
 
         style.display = 'inline-block';

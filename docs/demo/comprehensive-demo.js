@@ -59,12 +59,6 @@ const schema = {
             unit: '[DD]',
             fractionDigits: 2
         },
-        somePercentValue: {
-            title: 'Some Percent Value',
-            type: 'number',
-            unit: '[%]',
-            fractionDigits: 1
-        },
         someColor: {
             title: 'Some Color',
             type: 'string',
@@ -116,7 +110,6 @@ const data = {
     someEnum: 'Frida Krum',
     someDate: '2019-01-01',
     someDateTime: '2019-01-01T00:00Z',
-    somePercentValue: 0.5,
     someBoolean: true,
     someInteger: 7,
     someFloat: 3.14,

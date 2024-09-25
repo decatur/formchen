@@ -71,12 +71,6 @@ test('FormChen', (test_name) => {
                 unit: '[DD]',
                 fractionDigits: 2
             },
-            somePercentValue: {
-                title: 'Some Percent Value',
-                type: 'number', format: '%',
-                unit: '[%]',
-                fractionDigits: 1
-            },
             someMatrix: {
                 title: 'Some Matrix',
                 $ref: '#/definitions/refSchema'
@@ -106,7 +100,6 @@ test('FormChen', (test_name) => {
         someBoolean: true,
         someInteger: 7,
         someFloat: 3.14,
-        somePercentValue: 0.5,
         someMatrix: [
             ['2019-01-01 00:00Z', 1, 2],
             ['2019-01-01 00:00Z', 3, 4],
@@ -178,12 +171,6 @@ test('FormChen', (test_name) => {
     input.value = '3,15';
     input.onchange(null);
     assert.equal({ op: "replace", path: "/someFloat", value: 3.15, oldValue: 3.14 }, tm.patch.pop());
-
-    input = /** @type{HTMLInputElement} */ (document.getElementById('/somePercentValue'));
-    assert.equal('50%', input.value);
-    input.value = '60%';
-    input.onchange(null);
-    assert.equal({ op: "replace", path: "/somePercentValue", value: 0.6, oldValue: 0.5 }, tm.patch.pop());
 
     /** @type{GridChen} */
     const gc = document.querySelector('grid-chen');
