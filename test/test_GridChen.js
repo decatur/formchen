@@ -1,9 +1,9 @@
 import {test, assert, log} from './utils.js'
-import {GridChen} from '../docs/gridchen/webcomponent.js'
-import {createColumnMatrixView, createRowMatrixView} from "../docs/gridchen/matrixview.js";
-import {NumberConverter} from "../docs/gridchen/converter.js";
-import {Range} from "../docs/gridchen/selection.js";
-import {createTransactionManager} from "../docs/gridchen/utils.js";
+import {GridChen} from '../formchen/gridchen/webcomponent.js'
+import {createColumnMatrixView, createRowMatrixView} from "../formchen/gridchen/matrixview.js";
+import {NumberConverter} from "../formchen/gridchen/converter.js";
+import {Range} from "../formchen/gridchen/selection.js";
+import {createTransactionManager} from "../formchen/gridchen/utils.js";
 
 const rowMatrixSchema = {
     title: 'test',

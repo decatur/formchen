@@ -1,8 +1,8 @@
-/** @import { JSONSchema } from "../gridchen/gridchen" */
+/** @import { JSONSchema } from "../formchen/gridchen/gridchen" */
 
-import { GridChen } from "../gridchen/webcomponent.js"
-import { createView } from "../gridchen/matrixview.js"
-import { createTransactionManager, registerUndo } from "../gridchen/utils.js";
+import { GridChen } from "../formchen/gridchen/webcomponent.js"
+import { createView } from "../formchen/gridchen/matrixview.js"
+import { createTransactionManager, registerUndo } from "../formchen/gridchen/utils.js";
 
 /**
  * @param {JSONSchema} schema

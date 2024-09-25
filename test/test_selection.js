@@ -1,5 +1,5 @@
 import { test, assert } from './utils.js'
-import {IndexToPixelMapper} from "../docs/gridchen/selection.js";
+import {IndexToPixelMapper} from "../formchen/gridchen/selection.js";
 
 test('cellIndexToPixelCoords', async function () {
     const elem = {getBoundingClientRect() { return new DOMRect(0, 0, NaN, NaN)}};

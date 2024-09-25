@@ -1,16 +1,16 @@
-/** @import { Patch, JSONPatchOperation, GridChen as IGridChen, JSONSchema, TransactionManager } from "../gridchen/gridchen" */
+/** @import { Patch, JSONPatchOperation, GridChen as IGridChen, JSONSchema, TransactionManager } from "./gridchen/gridchen" */
 /** @import { Graph as IGraph, BaseNode, HolderNode } from "./formchen-internal" */
 /** @import { IFormChen } from "./formchen" */
 
-import "../gridchen/webcomponent.js"
-import { createView } from "../gridchen/matrixview.js";
+import "./gridchen/webcomponent.js"
+import { createView } from "./gridchen/matrixview.js";
 import {
     NumberConverter,
     DateTimeStringConverter,
     // DatePartialTimeStringConverter,
     FullDateConverter,
     StringConverter
-} from "../gridchen/converter.js";
+} from "./gridchen/converter.js";
 
 console.log('Formchen locale is ' + navigator.language);
 

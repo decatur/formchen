@@ -1,5 +1,5 @@
 import { test, assert } from './utils.js'
-import {localeDateParser, resolvePeriod, FullDate} from "../docs/gridchen/utils.js";
+import {localeDateParser, resolvePeriod, FullDate} from "../formchen/gridchen/utils.js";
 
 test('FullDate', () => {
     let parser = localeDateParser();

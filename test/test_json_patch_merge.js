@@ -1,5 +1,5 @@
 import { test, assert, log } from './utils.js'
-import {dispense} from "../docs/gridchen/json_patch_merge.js";
+import {dispense} from "../formchen/gridchen/json_patch_merge.js";
 
 log('\x1B[41;93;4m####### Loading test/test_json_patch_merge.js')
 

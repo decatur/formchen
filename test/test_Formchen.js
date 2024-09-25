@@ -1,7 +1,7 @@
 import { test, assert } from './utils.js'
-import { createFormChen } from '../docs/formchen/webcomponent.js'
-import * as utils from '../docs/gridchen/utils.js';
-import { GridChen } from "../docs/gridchen/webcomponent.js";
+import { createFormChen } from '../formchen/webcomponent.js'
+import * as utils from '../formchen/gridchen/utils.js';
+import { GridChen } from "../formchen/gridchen/webcomponent.js";
 
 test('Atomic', (test_name) => {
     const container = document.getElementById(test_name);

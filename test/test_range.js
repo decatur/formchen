@@ -1,5 +1,5 @@
 import { test, assert } from './utils.js'
-import {Range} from "../docs/gridchen/selection.js";
+import {Range} from "../formchen/gridchen/selection.js";
 
 test('self intersection', async function () {
     const r1 = new Range(0, 0, 1, 1);

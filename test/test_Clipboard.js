@@ -1,10 +1,10 @@
-/** @import {JSONSchema } from "../docs/gridchen/gridchen" */
+/** @import {JSONSchema } from "../formchen/gridchen/gridchen" */
 
 import { test, async_test, assert, log } from './utils.js'
-import { createView } from "../docs/gridchen/matrixview.js";
-import { createTransactionManager } from "../docs/gridchen/utils.js"
-import { Range } from "../docs/gridchen/selection.js";
-import { GridChen } from "../docs/gridchen/webcomponent.js";
+import { createView } from "../formchen/gridchen/matrixview.js";
+import { createTransactionManager } from "../formchen/gridchen/utils.js"
+import { Range } from "../formchen/gridchen/selection.js";
+import { GridChen } from "../formchen/gridchen/webcomponent.js";
 
 log('\x1B[41;93;4m####### Loading test_Clipboard')
 

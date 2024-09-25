@@ -1,7 +1,7 @@
 import { test, assert } from './utils.js'
-import { createFormChen } from '../docs/formchen/webcomponent.js'
-import { createTransactionManager } from "../docs/gridchen/utils.js";
-import { GridChen } from "../docs/gridchen/webcomponent.js";
+import { createFormChen } from '../formchen/webcomponent.js'
+import { createTransactionManager } from "../formchen/gridchen/utils.js";
+import { GridChen } from "../formchen/gridchen/webcomponent.js";
 
 
 test('Empty Object one Level', (test_name) => {

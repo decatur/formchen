@@ -1,5 +1,5 @@
 import { test, assert, log } from './utils.js'
-import {tsvToMatrix} from '../docs/gridchen/webcomponent.js'
+import {tsvToMatrix} from '../formchen/gridchen/webcomponent.js'
 
 log('\x1B[41;93;4m####### Loading test/test_tsvToMatrix.js')
 
