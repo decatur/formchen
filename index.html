@@ -20,7 +20,7 @@
 
     <h2>Simple Example</h2>
 
-    <div class="form-chen" id="BASIC">
+    <div id="BasicDemo">
         <label data-path="/plant" class="label"><span class="data-title"></span> <input class="data-value"></label>
         <label data-path="/reference" class="label"><span class="data-title"></span> <input class="data-value"></label>
         <label data-path="/observer" class="label"><span class="data-title"></span> <select
@@ -35,23 +35,19 @@
         <label data-path="/isCompleted" class="label"><span class="data-title"></span> <input
                 class="data-value"></label>
 
-        <div class="edits">
+        <form class="edits">
             Edits
             <label><input type="radio" name="contact" value="hide" checked>Hide</label>
             <label><input type="radio" name="contact" value="value">Value</label>
             <label><input type="radio" name="contact" value="patch">Patch</label>
             <code></code>
-        </div>
+        </form>
     </div>
     <script type="module" src="./demo/basic-demo.js"></script>
 
     <h2>Comprehensive Example</h2>
 
-    <div class="form-chen" id="COMPREHENSIVE">
-        <form>
-            <label>View Generated Patch <textarea class="patch"></textarea></label>
-        </form>
-
+    <div id="ComprehensiveDemo">
         <label data-path="/someString" class="label"><span class="data-title"></span> <input class="data-value"></label>
         <label data-path="/someURI" class="label"><span class="data-title"></span> <input class="data-value"></label>
         <label data-path="/someEnum" class="label"><span class="data-title"></span> <select
@@ -79,7 +75,13 @@
         <label data-path="/tuple/1" class="label"><span class="data-title"></span> <input class="data-value"></label>
         <label data-path="/tuple/2" class="label"><span class="data-title"></span> <input class="data-value"></label>
 
-        <button class="show-patch">Show Patch</button>
+        <form class="edits">
+            Edits
+            <label><input type="radio" name="contact" value="hide" checked>Hide</label>
+            <label><input type="radio" name="contact" value="value">Value</label>
+            <label><input type="radio" name="contact" value="patch">Patch</label>
+            <code></code>
+        </form>
     </div>
     <script type="module" src="./demo/comprehensive-demo.js"></script>
 

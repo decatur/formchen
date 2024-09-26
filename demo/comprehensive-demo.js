@@ -17,7 +17,7 @@ const schema = {
             }
         }
     },
-    title: 'FieldObservation',
+    title: 'ComprehensiveDemo',
     type: 'object',
     properties: {
         someString: {
@@ -119,20 +119,41 @@ const data = {
         ["2019-01-02T00:00Z", 1, 2],
         ["2019-01-03T00:00Z", 2, 4]
     ],
-    tuple: ['To be taken to Paris.', 'Being in Hollywood', 'My friends were back'],
+    tuple: ['To be taken to Paris', 'Being in Hollywood', 'My friends were back'],
     arrayOfTimeSeries: [
         { country: 'Germany', prices: [['2019-01-01', '2019-02-01', 33]]},
         { country: 'France', prices: [['2019-02-01', '2019-03-01', 42]]}
     ]
 };
 
-const container = document.getElementById("COMPREHENSIVE");
-const patchElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.patch'));
-
+const container = document.getElementById(schema.title);
 const tm = utils.createTransactionManager();
 utils.registerUndo(document.body, tm);
-const _formchen = createFormChen(container, schema, data, tm);
+const formchen = createFormChen(container, schema, data, tm);
+
+const editsElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.edits > code'));
+function refreshEdits() {
+    editsElement.textContent = JSON.stringify((state === 'patch' ? tm.patch : formchen.value), null, 2);
+}
+
+let state = 'hide';
+container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputElement} */ elem) => {
+    elem.onchange = (ev) => {
+        state = elem.value;
+        if (state == 'hide') { editsElement.style.display = 'none' }
+        else {
+            editsElement.style.display = 'block';
+            refreshEdits();
+        }
+    }
+})
 
 tm.addEventListener('change', function () {
-    patchElement.value = JSON.stringify(tm.patch, null, 2);
+    refreshEdits();
+    let transaction = tm.transactions[tm.transactions.length - 1];
+    let target = transaction.target();
+    if (target) {
+        target.nextSibling?.remove()
+        target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));
+    }
 });

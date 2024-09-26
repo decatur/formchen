@@ -18,7 +18,7 @@ const schema = {
             }
         }
     },
-    title: 'FieldObservation',
+    title: 'BasicDemo',
     type: 'object',
     properties: {
         plant: {
@@ -80,34 +80,33 @@ const data = {
     isCompleted: true
 };
 
-const container = document.getElementById("BASIC");
-
-const patchElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.edits > code'));
-function refreshValue() {
-    patchElement.textContent = JSON.stringify((state === 'patch' ? tm.patch : formchen.value), null, 2);
-}
-let state = 'hide';
-container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputElement} */ elem) => {
-    elem.onchange = (ev) => {
-        state = elem.value;
-        if (state == 'hide') { patchElement.style.display = 'none' }
-        else {
-            patchElement.style.display = 'block';
-            refreshValue();
-        }
-    }
-})
-
+const container = document.getElementById(schema.title);
 const tm = utils.createTransactionManager();
 utils.registerUndo(document.body, tm);
 const formchen = createFormChen(container, schema, data, tm);
 
+const editsElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.edits > code'));
+function refreshEdits() {
+    editsElement.textContent = JSON.stringify((state === 'patch' ? tm.patch : formchen.value), null, 2);
+}
+
+let state = 'hide';
+container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputElement} */ elem) => {
+    elem.onchange = (ev) => {
+        state = elem.value;
+        if (state == 'hide') { editsElement.style.display = 'none' }
+        else {
+            editsElement.style.display = 'block';
+            refreshEdits();
+        }
+    }
+})
+
 tm.addEventListener('change', function () {
-    refreshValue();
+    refreshEdits();
     let transaction = tm.transactions[tm.transactions.length - 1];
     let target = transaction.target();
     if (target) {
-        //let target = /** @type{HTMLElement} */ (event.target);
         target.nextSibling?.remove()
         target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));
     }
