@@ -1,4 +1,4 @@
-/** @import { Patch, JSONPatchOperation, GridChen as IGridChen, JSONSchema, TransactionManager } from "./gridchen/gridchen" */
+/** @import { JSONPatchOperation, GridChen as IGridChen, JSONSchema, TransactionManager } from "./gridchen/gridchen" */
 /** @import { Graph as IGraph, BaseNode, HolderNode } from "./formchen-internal" */
 /** @import { IFormChen } from "./formchen" */
 
@@ -11,6 +11,7 @@ import {
     FullDateConverter,
     StringConverter
 } from "./gridchen/converter.js";
+import { Patch } from "./gridchen/utils.js";
 
 console.log('Formchen locale is ' + navigator.language);
 
@@ -147,20 +148,39 @@ export class BaseNodeClass {
         let oldValue = this.getValue();
         const graph = this.graph;
 
-        /** @implements {Patch} */
-        class MyPatch {
-            constructor() {
-                this.pathPrefix = '';
-                this.operations = [];
-                this.detail = null;
-            }
+        // /** @implements {Patch} */
+        // class MyPatch {
+        //     constructor() {
+        //         this.pathPrefix = '';
+        //         /** @type{JSONPatchOperation[]} */
+        //         this.operations = [];
+        //     }
+        //     apply() {
+        //         for (let op of this.operations) {
+        //             let node = graph.getNodeById(op.path);
+        //             node._setValue(op.value, false);
+        //         }
+        //     }
+        //     /**
+        //      * @returns {Patch}
+        //      */
+        //     reverse() {
+        //         const patch = new MyPatch();
+        //         patch.pathPrefix = '';
+        //         patch.operations = reversePatch(this.operations);
+        //         return patch;
+        //     }
+        // }
+
+        class MyPatch extends Patch {
             apply() {
                 for (let op of this.operations) {
-                    let node = graph.getNodeById(op.nodeId);
+                    let node = graph.getNodeById(op.path);
                     node._setValue(op.value, false);
                 }
             }
         }
+
 
         /** @type {Patch} */
         const patch = new MyPatch();
@@ -180,7 +200,6 @@ export class BaseNodeClass {
             op = { op: 'replace', path: this.path, value: obj, oldValue };
         }
 
-        op['nodeId'] = this.path;
         patch.operations.push(op);
 
         this._setValue(obj, false);
@@ -229,7 +248,7 @@ export class BaseNodeClass {
         let key = this.key;
         while (n && n.obj == null) {
             let empty = n.schema.type === 'array' ? [[], []] : [{}, {}];
-            operations.unshift({ op: 'add', path: n.path, value: empty[0], nodeId: n.path });
+            operations.unshift({ op: 'add', path: n.path, value: empty[0] });
             n.obj = empty[1];
             n.obj[key] = v;
             key = n.key;
@@ -267,7 +286,7 @@ export class BaseNodeClass {
                     oldValue = n.parent.obj[n.key];
                     delete n.parent.obj[n.key];
                 }
-                operations.push({ op: 'remove', path: n.path, oldValue, nodeId: n.path });
+                operations.push({ op: 'remove', path: n.path, oldValue });
             } else {
                 break;
             }
@@ -591,7 +610,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         }
 
         /**
-         * @param {string | boolean} value
+         * @param {string | number | boolean} value
          * @param {HTMLElement} target
          */
         function commit(value, target) {

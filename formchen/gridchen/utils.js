@@ -5,11 +5,35 @@
  * Module implementing, well, utilities.
  */
 
-/** @import { LocalDateParser, JSONPatchOperation, Patch, Transaction, TransactionManager } from "./gridchen" */
+/** @import { LocalDateParser, JSONPatchOperation, Transaction, TransactionManager } from "./gridchen" */
 
 
 // const DEBUG = (location.hostname === 'localhost');
 const DEBUG = false;
+
+export class Patch {
+    constructor() {
+        this.pathPrefix = '';
+        /** @type{JSONPatchOperation[]} */
+        this.operations = [];
+    }
+
+    apply() {
+        throw Error('Not implemented')
+    }
+    
+    /**
+     * @returns {Patch}
+     */
+    reverse() {
+        const patch = new Patch();
+        patch.apply = this.apply;
+        patch.pathPrefix = this.pathPrefix;
+        patch.operations = reversePatch(this.operations);
+        return patch;
+    }
+}
+
 
 /**
  * @param {HTMLElement} element
@@ -316,14 +340,14 @@ export class LocalDateParserClass {
 function reverseOp(op) {
     if (op.op === 'replace') {
         // {"op":"replace","path":"/0/1"}
-        return { op: op.op, path: op.path, value: op.oldValue, oldValue: op.value, nodeId: op.nodeId }
+        return { op: op.op, path: op.path, value: op.oldValue, oldValue: op.value }
     } else if (op.op === 'add') {
         // {"op":"add","path":"/-","value":null}
         // {"op":"add","path":"/1"}
-        return { op: 'remove', path: op.path, nodeId: op.nodeId }
+        return { op: 'remove', path: op.path }
     } else if (op.op === 'remove') {
         // {"op":"remove","path":"/1","oldValue":["2020-01-01",2]}
-        return { op: 'add', path: op.path, value: op.oldValue, nodeId: op.nodeId }
+        return { op: 'add', path: op.path, value: op.oldValue }
     }
     // No need to support move, copy, or test.
     throw new RangeError(op.op)
@@ -511,9 +535,8 @@ export function createTransactionManager() {
             this.redoTransactions.push(trans);
             const reversedTransaction = /**@type{Transaction}*/ (Object.assign({}, trans));
             reversedTransaction.patches = [];
-            for (let patch of Object.assign([], trans.patches).reverse()) {
-                const reversedPatch = /**@type{Patch}*/ (Object.assign({}, patch));
-                reversedPatch.operations = reversePatch(patch.operations);
+            for (let patch of trans.patches.slice().reverse()) {
+                const reversedPatch = patch.reverse();
                 reversedTransaction.patches.push(reversedPatch);
                 reversedPatch.apply(reversedPatch);
             }
@@ -526,7 +549,7 @@ export function createTransactionManager() {
             if (!trans) return;
             this.transactions.push(trans);
             for (let patch of trans.patches) {
-                patch.apply(patch);
+                patch.apply();
             }
             fireChange(trans);
         }
@@ -546,13 +569,7 @@ export function createTransactionManager() {
             for (let trans of this.transactions) {
                 allPatches.push(...trans.operations);
             }
-            return allPatches.map(function (op) {
-                if ('nodeId' in op) {
-                    op = Object.assign({}, op);
-                    delete op['nodeId']
-                }
-                return op
-            })
+            return allPatches
         }
     }
 

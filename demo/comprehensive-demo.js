@@ -150,8 +150,8 @@ container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputEl
 
 tm.addEventListener('change', function () {
     refreshEdits();
-    let transaction = tm.transactions[tm.transactions.length - 1];
-    let target = transaction.target();
+    let transaction = tm.transactions.at(-1);
+    let target = transaction?.target();
     if (target) {
         target.nextSibling?.remove()
         target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));

@@ -5,10 +5,10 @@
  * Module implementing the visual grid and scrolling behaviour.
  */
 
-/** @import { PlotEventDetail, Range as IRange, Patch, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, JSONSchema, MatrixView, Transaction, TransactionManager } from "./gridchen" */
+/** @import { PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, JSONSchema, MatrixView, Transaction, TransactionManager } from "./gridchen" */
 /** @import { GridSelectionAbstraction } from "./gridchen-internal" */
 
-import {logger, wrap} from "./utils.js";
+import {logger, Patch, reversePatch, wrap} from "./utils.js";
 import {createSelection, Range, IndexToPixelMapper} from "./selection.js";
 import * as edit from "./editor.js"
 import {renderPlot} from "./plotly_wrapper.js"
@@ -42,7 +42,7 @@ const light = {
  * @returns {number[]}
  */
 function colorVector(color) {
-    return color.substr(4).split(',').map(part => parseInt(part))
+    return color.substring(4).split(',').map(part => parseInt(part))
 }
 
 // We use document.body style for theming.
@@ -395,7 +395,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         // Note: First refresh, then commit!
         refresh(pathPrefix);
         trans.commit();
-        gridchenElement.dispatchEvent(new CustomEvent('change', {detail: {patch: trans.patches}}));
+        // gridchenElement.dispatchEvent(new CustomEvent('change', {detail: {patch: trans.patches}}));
     }
 
     /**
@@ -779,7 +779,8 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     function tmListener(patch) {
         viewModel.applyJSONPatch(patch.operations);
         viewModel.updateHolder();
-        const {rowIndex, columnIndex} = /**@type{{rowIndex: number, columnIndex: number}}*/ (patch.detail);
+        // Map "/47/11" => rowIndex=47, columnIndex=11
+        const [rowIndex, columnIndex] = patch.operations[0].path.split('/').slice(1).map(item => Number(item));
         selection.setRange(rowIndex, columnIndex, 1, 1);
         // TODO: refresh on transaction level!
         refresh(pathPrefix);
@@ -790,12 +791,17 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
      * @returns {Patch}
      */
     function createPatch(operations) {
-        return /** @type{Patch} */ ({
-            operations: operations || [],
-            pathPrefix,
-            apply: tmListener,
-            detail: {rowIndex: selection.active.rowIndex, columnIndex: selection.active.columnIndex}
-        });
+        class MyPatch extends Patch {
+            apply() {
+                tmListener(this)
+            }
+        }
+
+        const patch = new MyPatch();
+        patch.operations = operations || [];
+        patch.pathPrefix = pathPrefix;
+
+        return patch
     }
 
     function showInfo() {
@@ -892,8 +898,8 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             columns: columns
         });
         // gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
-        const evt = new CustomEvent('plot', {detail: detail});
-        renderPlot(evt.detail.graphElement, evt.detail.title, evt.detail.schemas, evt.detail.columns);
+        // const evt = new CustomEvent('plot', {detail: detail});
+        renderPlot(detail.graphElement, detail.title, detail.schemas, detail.columns);
     }
 
     function scrollIntoView(rowIndex, rowIncrement) {

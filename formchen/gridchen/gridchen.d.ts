@@ -144,14 +144,6 @@ export interface JSONPatchOperation {
     path: string;
     value?: any;
     oldValue?: any;
-    nodeId?: string;
-}
-
-export interface Patch {
-    apply: (Patch) => void;
-    pathPrefix: string;
-    detail: object;
-    operations: JSONPatchOperation[];
 }
 
 export type JSONPatch = JSONPatchOperation[];

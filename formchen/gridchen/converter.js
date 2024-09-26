@@ -44,6 +44,7 @@ export class StringConverter {
 
     /**
      * @param {string} s
+     * @returns {string}
      */
     fromEditable(s) {
         return s.trim();
@@ -93,6 +94,7 @@ export class URIConverter {
 
     /**
      * @param {string} s
+     * @returns {string}
      */
     fromEditable(s) {
         return s
@@ -211,6 +213,7 @@ export class BooleanStringConverter {
 
     /**
      * @param {string} s
+     * @returns {boolean | string}
      */
     fromEditable(s) {
         s = s.trim();
@@ -290,6 +293,7 @@ export class NumberConverter {
 
     /**
      * @param {string} s The string value from a HTMLInputElement with type='number', i.e. decimal seperator is always a dot.
+     * @returns {number | string}
      */
     fromEditable(s) {
         s = s.trim();
@@ -580,7 +584,7 @@ export class FullDateConverter {
     /**
      * Parses the full date format yyyy-mm-dd.
      * @param {string} s
-     * @returns {Date|string}
+     * @returns {string}
      */
     fromEditable(s) {
         let r = this.parser.fullDate(s);
