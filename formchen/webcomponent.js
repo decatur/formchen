@@ -1,5 +1,4 @@
 /** @import { JSONPatchOperation, GridChen as IGridChen, JSONSchema, TransactionManager } from "./gridchen/gridchen" */
-/** @import { BaseNode, HolderNode } from "./formchen-internal" */
 /** @import { IFormChen } from "./formchen" */
 
 import "./gridchen/webcomponent.js"
@@ -82,10 +81,7 @@ export class Graph {
  *         ------------------------              ------------------            ---------------
  */
 
-/**
- * @implements{BaseNode}
- */
-export class BaseNodeClass {
+export class BaseNode {
 
     /**
      * @param {Graph} graph
@@ -191,7 +187,7 @@ export class BaseNodeClass {
      * TODO: What is this doing?
      * @param {?} obj
      * @param {boolean} disabled
-     * @returns {HTMLInputElement?}
+     * @returns {HTMLInputElement | void}
      */
     _setValue(obj, disabled) {
         // this.path = (this.parent ? this.parent.path + '/' + this.key : String(this.key));
@@ -205,7 +201,7 @@ export class BaseNodeClass {
             } else {
                 this.parent.obj[this.key] = obj;
             }
-        } else if (obj !== undefined && this.constructor === BaseNodeClass) {
+        } else if (obj !== undefined && this.constructor === BaseNode) {
             throw Error('Value lost')
         }
 
@@ -282,10 +278,7 @@ export class BaseNodeClass {
     }
 }
 
-/** 
- * @implements{HolderNode} 
- */
-export class HolderNodeClass extends BaseNodeClass {
+export class HolderNode extends BaseNode {
     /**
      * @param {Graph} graph
      * @param {string | number} key
@@ -319,6 +312,7 @@ export class HolderNodeClass extends BaseNodeClass {
      * TODO: What is this doing?
      * @param {?} obj
      * @param {boolean} disabled
+     * @returns {void}
      */
     _setValue(obj, disabled) {
         if (obj == null) {
@@ -332,6 +326,8 @@ export class HolderNodeClass extends BaseNodeClass {
         for (let child of this.children) {
             this.visitChild(obj, child, disabled);
         }
+
+        return undefined
     }
 
 }
@@ -381,9 +377,9 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         schema = resolveSchema(schema, String(key));
         let constructor;
         if (schema.format === 'grid' || schema.type === 'object' || schema.type === 'array') {
-            constructor = HolderNodeClass
+            constructor = HolderNode
         } else {
-            constructor = BaseNodeClass;
+            constructor = BaseNode;
         }
         return new constructor(graph, key, schema, parent);
     }
