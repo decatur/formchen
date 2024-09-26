@@ -1,5 +1,5 @@
 import {test, assert, log} from './utils.js'
-import {GridChen} from '../formchen/gridchen/webcomponent.js'
+import {GridChen} from '../formchen/gridchen/gridchen.js'
 import {createColumnMatrixView, createRowMatrixView} from "../formchen/gridchen/matrixview.js";
 import {Range} from "../formchen/gridchen/selection.js";
 import {TransactionManager} from "../formchen/utils.js";

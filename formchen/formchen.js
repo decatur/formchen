@@ -1,7 +1,7 @@
-/** @import { JSONPatchOperation, GridChen as IGridChen, JSONSchema } from "./gridchen/gridchen" */
-/** @import { IFormChen } from "./formchen" */
+/** @import { JSONPatchOperation, GridChen as IGridChen, JSONSchema } from "../types/gridchen" */
+/** @import { IFormChen } from "../types/formchen" */
 
-import "./gridchen/webcomponent.js"
+import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
 import {
     NumberConverter,

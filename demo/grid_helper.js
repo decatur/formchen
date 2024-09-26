@@ -1,6 +1,6 @@
 /** @import { JSONSchema } from "../formchen/gridchen/gridchen" */
 
-import { GridChen } from "../formchen/gridchen/webcomponent.js"
+import { GridChen } from "../formchen/gridchen/gridchen.js"
 import { createView } from "../formchen/gridchen/matrixview.js"
 import { TransactionManager, registerUndo } from "../formchen/utils.js";
 
