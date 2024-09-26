@@ -1,5 +1,5 @@
 /** @import { JSONPatchOperation, GridChen as IGridChen, JSONSchema, TransactionManager } from "./gridchen/gridchen" */
-/** @import { Graph as IGraph, BaseNode, HolderNode } from "./formchen-internal" */
+/** @import { BaseNode, HolderNode } from "./formchen-internal" */
 /** @import { IFormChen } from "./formchen" */
 
 import "./gridchen/webcomponent.js"
@@ -49,9 +49,6 @@ function querySelector(parent, selector) {
     return element;
 }
 
-/**
- * @implements {IGraph}
- */
 export class Graph {
     /**
      */
@@ -148,35 +145,14 @@ export class BaseNodeClass {
         let oldValue = this.getValue();
         const graph = this.graph;
 
-        // /** @implements {Patch} */
-        // class MyPatch {
-        //     constructor() {
-        //         this.pathPrefix = '';
-        //         /** @type{JSONPatchOperation[]} */
-        //         this.operations = [];
-        //     }
-        //     apply() {
-        //         for (let op of this.operations) {
-        //             let node = graph.getNodeById(op.path);
-        //             node._setValue(op.value, false);
-        //         }
-        //     }
-        //     /**
-        //      * @returns {Patch}
-        //      */
-        //     reverse() {
-        //         const patch = new MyPatch();
-        //         patch.pathPrefix = '';
-        //         patch.operations = reversePatch(this.operations);
-        //         return patch;
-        //     }
-        // }
-
         class MyPatch extends Patch {
             apply() {
                 for (let op of this.operations) {
                     let node = graph.getNodeById(op.path);
-                    node._setValue(op.value, false);
+                    let elem = node._setValue(op.value, false);
+                    if (elem) {
+                        elem.focus();
+                    }
                 }
             }
         }
@@ -215,9 +191,11 @@ export class BaseNodeClass {
      * TODO: What is this doing?
      * @param {?} obj
      * @param {boolean} disabled
+     * @returns {HTMLInputElement?}
      */
     _setValue(obj, disabled) {
-        this.path = (this.parent ? this.parent.path + '/' + this.key : String(this.key));
+        // this.path = (this.parent ? this.parent.path + '/' + this.key : String(this.key));
+        // this.path = (parent ? parent.path + '/' + key : String(key));
 
         // console.log(`path=${this.path} key=${this.key}`)
 
@@ -231,7 +209,8 @@ export class BaseNodeClass {
             throw Error('Value lost')
         }
 
-        this.refreshUI(disabled);
+        return /** @type{HTMLInputElement} */ (this.refreshUI(disabled));
+
     }
 
     /**
@@ -565,6 +544,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                     input.defaultValue = input.value = converter.toEditable(value);
                 }
                 input.disabled = node.readOnly || disabled;
+                return input
             };
 
             if (schema.type === 'integer' || schema.type === 'number') {
