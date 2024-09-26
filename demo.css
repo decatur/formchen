@@ -12,16 +12,21 @@ label[data-path] {
     width: 10em;
 }
 
+code {
+    display: block;
+    font-family: monospace;
+    white-space: pre;
+    border: 1px solid #ddd;
+    border-left: 3px solid #f36d33;
+    background-color: #888;
+}
+
 .edits {
     background-color: #888;
 }
 
 .edits > code {
-    font-family: monospace;
     display: none;
-    white-space: pre;
-    border: 1px solid #ddd;
-    border-left: 3px solid #f36d33;
 }
 
 @media (prefers-color-scheme: dark) {

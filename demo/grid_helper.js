@@ -10,7 +10,7 @@ import { TransactionManager, registerUndo } from "../formchen/gridchen/utils.js"
  */
 export function create_grid(schema, data) {
     const container = document.getElementById(schema.title);
-    container.querySelector('code').innerText = JSON.stringify(data, null, 4);
+    container.querySelector('code').textContent = JSON.stringify(data, null, 2);
     const view = createView(schema, data);
     const gridElement = /** @type{GridChen} */ (container.querySelector('grid-chen'));
     const tm = new TransactionManager();
