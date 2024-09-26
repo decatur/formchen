@@ -5,7 +5,7 @@
  * Module implementing, well, utilities.
  */
 
-/** @import { LocalDateParser, JSONPatchOperation, TransactionManager } from "./gridchen" */
+/** @import { JSONPatchOperation, } from "./gridchen" */
 
 
 // const DEBUG = (location.hostname === 'localhost');
@@ -91,6 +91,7 @@ const SECONDS = resolvePeriod('SECONDS');
  * @property {Patch[]} patches
  * @property {F1Type} commit
  * @property {JSONPatchOperation[]} operations
+ * @property {HTMLElement} target
  */
 
 // /**
@@ -471,124 +472,114 @@ export function registerUndo(container, tm) {
     container.addEventListener('keydown', listener);
 }
 
-/**
- * Pure creator function for TransactionManager instances.
- * @returns {TransactionManager}
- */
-export function createTransactionManager() {
-    const listenersByType = { change: [] };
-    const resolves = [];
+export class TransactionManager {
+    constructor() {
+        this.clear();
+        this.listenersByType = { change: [] };
+        this.resolves = [];
+    }
 
-    function fireChange(transaction) {
+    fireChange(transaction) {
         const type = 'change';
-        for (let listener of listenersByType[type]) {
+        for (let listener of this.listenersByType[type]) {
             listener({ type, transaction });
         }
 
-        while (resolves.length) {
-            resolves.pop()();
+        while (this.resolves.length) {
+            this.resolves.pop()();
         }
+    }
+
+    addEventListener(type, listener) {
+        this.listenersByType[type].push(listener);
+    }
+
+    removeEventListener(type, listener) {
+        for (let l of this.listenersByType[type]) {
+            if (l === listener) {
+                delete this.listenersByType[type][l];
+            }
+        }
+    }
+
+    async requestTransaction(func) {
+        return new Promise(function (resolve) {
+            this.resolves.push(resolve);
+            func();
+        });
     }
 
     /**
-     * @implements {TransactionManager}
+     * @param {HTMLElement} target
+     * @returns {Transaction}
      */
-    class TransactionManager {
-        constructor() {
-            this.clear();
-        }
-
-        addEventListener(type, listener) {
-            listenersByType[type].push(listener);
-        }
-
-        removeEventListener(type, listener) {
-            for (let l of listenersByType[type]) {
-                if (l === listener) {
-                    delete listenersByType[type][l];
-                }
-            }
-        }
-
-        async requestTransaction(func) {
-            return new Promise(function (resolve) {
-                resolves.push(resolve);
-                func();
-            });
-        }
-
-        /**
-         * @param {HTMLElement} target
-         * @returns {Transaction}
-         */
-        openTransaction(target) {
-            const tm = this;
-            return /**@type{Transaction}*/ ({
-                patches: [],
-                commit() {
-                    tm.transactions.push(this);
-                    fireChange(this);
-                },
-                get operations() {
-                    const flattend = [];
-                    for (let patch of this.patches) {
-                        for (let op of patch.operations) {
-                            const clonedOp = Object.assign({}, op);
-                            clonedOp.path = patch.pathPrefix + op.path;
-                            flattend.push(clonedOp);
-                        }
+    openTransaction(target) {
+        const tm = this;
+        return /**@type{Transaction}*/ ({
+            patches: [],
+            commit() {
+                tm.transactions.push(this);
+                tm.fireChange(this);
+            },
+            get operations() {
+                const flattend = [];
+                for (let patch of this.patches) {
+                    for (let op of patch.operations) {
+                        const clonedOp = Object.assign({}, op);
+                        clonedOp.path = patch.pathPrefix + op.path;
+                        flattend.push(clonedOp);
                     }
-                    return flattend;
-                },
-                target() { return target }
-            });
-        }
-
-        undo() {
-            const trans = this.transactions.pop();
-            if (!trans) return;
-            this.redoTransactions.push(trans);
-            const reversedTransaction = /**@type{Transaction}*/ (Object.assign({}, trans));
-            reversedTransaction.patches = [];           
-            for (let patch of trans.patches.slice().reverse()) {
-                const reversedPatch = patch.reverse();
-                reversedTransaction.patches.push(reversedPatch);
-                reversedPatch.apply();
-            }
-
-            fireChange(reversedTransaction);
-        }
-
-        redo() {
-            const trans = this.redoTransactions.pop();
-            if (!trans) return;
-            this.transactions.push(trans);
-            for (let patch of trans.patches) {
-                patch.apply();
-            }
-            fireChange(trans);
-        }
-
-        clear() {
-            /** @type {Transaction[]} */
-            this.transactions = [];
-            /** @type {Transaction[]} */
-            this.redoTransactions = [];
-        }
-
-        /**
-         * @returns {JSONPatchOperation[]}
-         */
-        get patch() {
-            const allPatches = [];
-            for (let trans of this.transactions) {
-                allPatches.push(...trans.operations);
-            }
-            return allPatches
-        }
+                }
+                return flattend;
+            },
+            get target() { return target }
+        });
     }
 
-    return new TransactionManager();
+    undo() {
+        const trans = this.transactions.pop();
+        if (!trans) return;
+        this.redoTransactions.push(trans);
+        const reversedTransaction = /**@type{Transaction}*/ (Object.assign({}, trans));
+        reversedTransaction.patches = [];           
+        for (let patch of trans.patches.slice().reverse()) {
+            const reversedPatch = patch.reverse();
+            reversedTransaction.patches.push(reversedPatch);
+            reversedPatch.apply();
+        }
+
+        this.fireChange(reversedTransaction);
+    }
+
+    redo() {
+        const trans = this.redoTransactions.pop();
+        if (!trans) return;
+        this.transactions.push(trans);
+        for (let patch of trans.patches) {
+            patch.apply();
+        }
+        this.fireChange(trans);
+    }
+
+    clear() {
+        /** @type {Transaction[]} */
+        this.transactions = [];
+        /** @type {Transaction[]} */
+        this.redoTransactions = [];
+    }
+
+    /**
+     * Returns a flat patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
+     * of all performed transactions.
+     * @returns {JSONPatchOperation[]}
+     */
+    get patch() {
+        const allPatches = [];
+        for (let trans of this.transactions) {
+            allPatches.push(...trans.operations);
+        }
+        return allPatches
+    }
 }
 
 let logCounter = 0;

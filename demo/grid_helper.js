@@ -2,7 +2,7 @@
 
 import { GridChen } from "../formchen/gridchen/webcomponent.js"
 import { createView } from "../formchen/gridchen/matrixview.js"
-import { createTransactionManager, registerUndo } from "../formchen/gridchen/utils.js";
+import { TransactionManager, registerUndo } from "../formchen/gridchen/utils.js";
 
 /**
  * @param {JSONSchema} schema
@@ -13,7 +13,7 @@ export function create_grid(schema, data) {
     container.querySelector('code').innerText = JSON.stringify(data, null, 4);
     const view = createView(schema, data);
     const gridElement = /** @type{GridChen} */ (container.querySelector('grid-chen'));
-    const tm = createTransactionManager();
+    const tm = new TransactionManager();
     registerUndo(document.body, tm);
     tm.addEventListener('change', function (evt) {
         console.log(view.getModel());

@@ -3,7 +3,7 @@ import {GridChen} from '../formchen/gridchen/webcomponent.js'
 import {createColumnMatrixView, createRowMatrixView} from "../formchen/gridchen/matrixview.js";
 import {NumberConverter} from "../formchen/gridchen/converter.js";
 import {Range} from "../formchen/gridchen/selection.js";
-import {createTransactionManager} from "../formchen/gridchen/utils.js";
+import {TransactionManager} from "../formchen/gridchen/utils.js";
 
 const rowMatrixSchema = {
     title: 'test',
@@ -41,7 +41,7 @@ test('Edit Cell', async function () {
         [NaN, 'b']
     ];
     const view = createRowMatrixView(rowMatrixSchema, rows);
-    const tm = createTransactionManager();
+    const tm = new TransactionManager();
     gc.resetFromView(view, tm);
     gc._click(0, 0);
     gc._keyboard('keydown', {key: ""});
@@ -126,7 +126,7 @@ test('RowMatrix', () => {
 test('Delete Selected Rows', () => {
     const gc = new GridChen();
     const rows = [[0, 'a'], [1, 'b']];
-    const tm = createTransactionManager();
+    const tm = new TransactionManager();
     gc.resetFromView(createRowMatrixView(rowMatrixSchema, rows), tm);
     gc._click(0, 0);
     // Delete first row

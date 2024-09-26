@@ -2,7 +2,7 @@
 
 import { test, async_test, assert, log } from './utils.js'
 import { createView } from "../formchen/gridchen/matrixview.js";
-import { createTransactionManager } from "../formchen/gridchen/utils.js"
+import { TransactionManager } from "../formchen/gridchen/utils.js"
 import { Range } from "../formchen/gridchen/selection.js";
 import { GridChen } from "../formchen/gridchen/webcomponent.js";
 
@@ -23,7 +23,7 @@ const schema = {
     }
 };
 
-const tm = createTransactionManager();
+const tm = new TransactionManager();
 
 test('copy', async function () {
     const rows = [

@@ -1,6 +1,6 @@
 import { test, assert } from './utils.js'
 import { createFormChen } from '../formchen/webcomponent.js'
-import { createTransactionManager } from "../formchen/gridchen/utils.js";
+import { TransactionManager } from "../formchen/gridchen/utils.js";
 import { GridChen } from "../formchen/gridchen/webcomponent.js";
 
 
@@ -15,7 +15,7 @@ test('Empty Object one Level', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const tm = createTransactionManager();
+    const tm = new TransactionManager();
     const fc = createFormChen(container, schema, null, tm);
 
     let input = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));
@@ -56,7 +56,7 @@ test('Empty Object two Levels', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const tm = createTransactionManager();
+    const tm = new TransactionManager();
     const fc = createFormChen(container, schema, null, tm);
 
     let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/test/foo"]`).querySelector('.data-value'));
@@ -104,7 +104,7 @@ test('Delete', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const tm = createTransactionManager();
+    const tm = new TransactionManager();
     const fc = createFormChen(container, schema, { bar: { foobar: 'foobar' } }, tm);
 
     let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/bar/foobar"]`).querySelector('.data-value'));
@@ -138,7 +138,7 @@ test('Delete subtree', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const tm = createTransactionManager();
+    const tm = new TransactionManager();
     const fc = createFormChen(container, schema, { bar: { foobar: 'foobar' } }, tm);
 
     let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));
@@ -179,7 +179,7 @@ test('Empty object with grid', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const tm = createTransactionManager();
+    const tm = new TransactionManager();
     const fc = createFormChen(container, schema, null, tm);
 
     const gc = /** @type{GridChen} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));

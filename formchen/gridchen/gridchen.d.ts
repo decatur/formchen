@@ -171,43 +171,9 @@ export interface MatrixView {
     updateHolder: () => Patch;
 }
 
-// export interface Transaction {
-//     patches: Patch[];
-//     commit: () => void;
-//     target: () => HTMLElement;
-//     readonly operations: JSONPatchOperation[]
-// }
-
 export interface TransactionEvent {
     type: string;
     transaction: Transaction;
-}
-
-export interface TransactionManager {
-
-    addEventListener: (type: string, listener: (evt: TransactionEvent) => void) => void;
-
-    requestTransaction: (func: () => void) => Promise<void>;
-
-    /**
-     * 
-     */
-    openTransaction: (target: HTMLElement) => Transaction;
-
-    undo: () => void;
-
-    redo: () => void;
-
-    /**
-     * Clears the accumulated transactions.
-     */
-    clear: () => void;
-
-    /**
-     * Returns a flat patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
-     * of all performed transactions.
-     */
-    readonly patch: JSONPatch;
 }
 
 enum CellEditMode {

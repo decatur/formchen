@@ -127,7 +127,7 @@ const data = {
 };
 
 const container = document.getElementById(schema.title);
-const tm = utils.createTransactionManager();
+const tm = new utils.TransactionManager();
 utils.registerUndo(document.body, tm);
 const formchen = createFormChen(container, schema, data, tm);
 
@@ -151,7 +151,7 @@ container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputEl
 tm.addEventListener('change', function () {
     refreshEdits();
     let transaction = tm.transactions.at(-1);
-    let target = transaction?.target();
+    let target = transaction?.target;
     if (target) {
         target.nextSibling?.remove()
         target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));

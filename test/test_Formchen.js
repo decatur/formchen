@@ -109,7 +109,7 @@ test('FormChen', (test_name) => {
 
     
     const container = document.getElementById(test_name);
-    const tm = utils.createTransactionManager();
+    const tm = new utils.TransactionManager();
     utils.registerUndo(document.body, tm);
     const fc = createFormChen(container, schema, data, tm);
 
