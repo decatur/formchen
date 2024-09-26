@@ -1,5 +1,5 @@
 
-import { createFormChen } from "../formchen/webcomponent.js"
+import { createFormChen } from "../formchen/formchen.js"
 import * as utils from "../formchen/utils.js";
 
 const schema = {
