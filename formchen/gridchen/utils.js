@@ -5,7 +5,7 @@
  * Module implementing, well, utilities.
  */
 
-/** @import { LocalDateParser, JSONPatchOperation, Transaction, TransactionManager } from "./gridchen" */
+/** @import { LocalDateParser, JSONPatchOperation, TransactionManager } from "./gridchen" */
 
 
 // const DEBUG = (location.hostname === 'localhost');
@@ -33,6 +33,8 @@ export class Patch {
         return patch;
     }
 }
+
+
 
 
 /**
@@ -77,6 +79,19 @@ const DAYS = resolvePeriod('DAYS');
 const HOURS = resolvePeriod('HOURS');
 const MINUTES = resolvePeriod('MINUTES');
 const SECONDS = resolvePeriod('SECONDS');
+
+/**
+ * @callback F1Type
+ * @returns {void}
+ */
+
+/**
+ * The complete Triforce, or one or more components of the Triforce.
+ * @typedef {Object} Transaction
+ * @property {Patch[]} patches
+ * @property {F1Type} commit
+ * @property {JSONPatchOperation[]} operations
+ */
 
 // /**
 //  * @param {Date} d
@@ -534,11 +549,11 @@ export function createTransactionManager() {
             if (!trans) return;
             this.redoTransactions.push(trans);
             const reversedTransaction = /**@type{Transaction}*/ (Object.assign({}, trans));
-            reversedTransaction.patches = [];
+            reversedTransaction.patches = [];           
             for (let patch of trans.patches.slice().reverse()) {
                 const reversedPatch = patch.reverse();
                 reversedTransaction.patches.push(reversedPatch);
-                reversedPatch.apply(reversedPatch);
+                reversedPatch.apply();
             }
 
             fireChange(reversedTransaction);

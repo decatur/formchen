@@ -5,8 +5,10 @@
  * Module implementing the visual grid and scrolling behaviour.
  */
 
-/** @import { PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, JSONSchema, MatrixView, Transaction, TransactionManager } from "./gridchen" */
+/** @import { PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, JSONSchema, MatrixView, TransactionManager } from "./gridchen" */
 /** @import { GridSelectionAbstraction } from "./gridchen-internal" */
+/** @import { Transaction } from "./utils" */
+
 
 import {logger, Patch, reversePatch, wrap} from "./utils.js";
 import {createSelection, Range, IndexToPixelMapper} from "./selection.js";

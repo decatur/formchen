@@ -171,12 +171,12 @@ export interface MatrixView {
     updateHolder: () => Patch;
 }
 
-export interface Transaction {
-    patches: Patch[];
-    commit: () => void;
-    target: () => HTMLElement;
-    readonly operations: JSONPatchOperation[]
-}
+// export interface Transaction {
+//     patches: Patch[];
+//     commit: () => void;
+//     target: () => HTMLElement;
+//     readonly operations: JSONPatchOperation[]
+// }
 
 export interface TransactionEvent {
     type: string;
