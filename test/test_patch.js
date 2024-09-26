@@ -1,5 +1,5 @@
 import { test, assert, log } from './utils.js'
-import {applyJSONPatch} from "../formchen/gridchen/utils.js";
+import {applyJSONPatch} from "../formchen/utils.js";
 
 function apply(o, op) {
     return applyJSONPatch(o, [op])

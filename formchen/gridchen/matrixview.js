@@ -5,11 +5,11 @@
  * Module implementing data (model) abstraction for some common matrix representations.
  */
 
-/** @import { JSONSchema, MatrixView, GridSchema, ColumnSchema, JSONPatch, JSONPatchOperation, Patch } from "./gridchen" */
+/** @import { JSONSchema, MatrixView, GridSchema, ColumnSchema, JSONPatch, JSONPatchOperation } from "./gridchen" */
 /** @import { Interval } from "./gridchen-internal" */
 
 import * as c from "./converter.js";
-import { applyJSONPatch } from './utils.js'
+import { applyJSONPatch, Patch } from '../utils.js'
 
 const numeric = new Set(['number', 'integer']);
 

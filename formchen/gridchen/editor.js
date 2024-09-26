@@ -8,7 +8,7 @@
 /** @import { CellEditMode } from "../gridchen/gridchen" */
 /** @import { Selection } from "./gridchen-internal" */
 
-import {logger} from "./utils.js";
+import {logger} from "../utils.js";
 
 export const HIDDEN = /** @type{CellEditMode.HIDDEN} */ ('hidden');
 export const INPUT = /** @type{CellEditMode.INPUT} */ ('input');

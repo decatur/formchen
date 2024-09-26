@@ -1,6 +1,6 @@
 import { test, assert } from './utils.js'
 import { createFormChen } from '../formchen/webcomponent.js'
-import { TransactionManager } from "../formchen/gridchen/utils.js";
+import { TransactionManager } from "../formchen/utils.js";
 import { GridChen } from "../formchen/gridchen/webcomponent.js";
 
 

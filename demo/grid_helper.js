@@ -2,7 +2,7 @@
 
 import { GridChen } from "../formchen/gridchen/webcomponent.js"
 import { createView } from "../formchen/gridchen/matrixview.js"
-import { TransactionManager, registerUndo } from "../formchen/gridchen/utils.js";
+import { TransactionManager, registerUndo } from "../formchen/utils.js";
 
 /**
  * @param {JSONSchema} schema

@@ -7,10 +7,10 @@
 
 /** @import { PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, JSONSchema, MatrixView } from "./gridchen" */
 /** @import { GridSelectionAbstraction } from "./gridchen-internal" */
-/** @import { TransactionManager, Transaction } from "./utils" */
+/** @import { TransactionManager, Transaction } from "../utils" */
 
 
-import {logger, Patch, reversePatch, wrap} from "./utils.js";
+import {logger, Patch, reversePatch, wrap} from "../utils.js";
 import {createSelection, Range, IndexToPixelMapper} from "./selection.js";
 import * as edit from "./editor.js"
 import {renderPlot} from "./plotly_wrapper.js"

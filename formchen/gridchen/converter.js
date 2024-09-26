@@ -8,7 +8,7 @@
 /** @import { Converter } from "./gridchen" */
 
 
-import * as utils from './utils.js'
+import * as utils from '../utils.js'
 
 /**
  * @returns {HTMLSpanElement}

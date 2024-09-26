@@ -10,7 +10,7 @@ import {
     FullDateConverter,
     StringConverter
 } from "./gridchen/converter.js";
-import { Patch, TransactionManager } from "./gridchen/utils.js";
+import { Patch, TransactionManager } from "./utils.js";
 
 console.log('Formchen locale is ' + navigator.language);
 

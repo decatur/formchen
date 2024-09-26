@@ -8,7 +8,7 @@
 /** @import { Interval, Selection as ISelection, GridSelectionAbstraction } from "./gridchen-internal" */
 /** @import { Range as IRange } from "./gridchen" */
 
-import {logger, wrap} from "./utils.js";
+import {logger, wrap} from "../utils.js";
 
 /**
  * A rectangular area.

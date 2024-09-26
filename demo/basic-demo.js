@@ -1,6 +1,6 @@
 
 import { createFormChen } from "../formchen/webcomponent.js"
-import * as utils from "../formchen/gridchen/utils.js";
+import * as utils from "../formchen/utils.js";
 
 const schema = {
     definitions: {

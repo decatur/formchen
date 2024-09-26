@@ -1,8 +1,8 @@
-/** @import { Patch, JSONPatchOperation, GridChen as IGridChen, JSONSchema, TransactionManager } from "../docs/gridchen/gridchen" */
+/** @import { JSONSchema } from "../formchen/gridchen/gridchen" */
 
 import {test, assert} from './utils.js'
 import {createView} from '../formchen/gridchen/matrixview.js'
-import {applyJSONPatch, reversePatch} from '../formchen/gridchen/utils.js'
+import {applyJSONPatch, reversePatch} from '../formchen/utils.js'
 
 let apply;
 if (window['jsonpatch']) {
