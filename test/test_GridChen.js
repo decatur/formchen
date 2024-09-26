@@ -12,7 +12,7 @@ const rowMatrixSchema = {
         type: 'array',
         items:
             [
-                {title: 'number', type: 'number', width: 0},
+                {title: 'number', type: 'integer', width: 0},
                 {title: 'string', type: 'string', width: 0}
             ]
     }
@@ -83,18 +83,14 @@ test('ColumnMatrix', () => {
         type: 'array',
         items:
             [
-                {type: 'array', items: {title: 'number', type: 'number', width: 0}},
+                {type: 'array', items: {title: 'number', type: 'integer', width: 0}},
                 {type: 'array', items: {title: 'string', type: 'string', width: 0}}
             ]
     };
     const gc = new GridChen();
     gc.resetFromView(createColumnMatrixView(schema, [[0], ['a']]));
     log('ViewportText');
-    const converter = new NumberConverter(2);
-    const elem = document.createElement('span');
-    converter.render(elem, 0);
-
-    assert.equal(`${elem.textContent}a`, gc._textContent)
+    assert.equal('0a', gc._textContent)
 
     gc._click(0, 0);
     gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});
@@ -111,7 +107,7 @@ test('RowMatrix', () => {
     const gc = new GridChen();
     gc.resetFromView(createRowMatrixView(rowMatrixSchema, [[0, 'a']]));
     log('ViewportText');
-    assert.equal(`0${decimalSep}00a`, gc._textContent)
+    assert.equal('0a', gc._textContent)
 
     gc._click(0, 0);
     gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});

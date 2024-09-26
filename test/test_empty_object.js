@@ -59,8 +59,8 @@ test('Empty Object two Levels', (test_name) => {
     const tm = new TransactionManager();
     const fc = createFormChen(container, schema, null, tm);
 
-    let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/test/foo"]`).querySelector('.data-value'));
-    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/test/bar/foobar"]`).querySelector('.data-value'));
+    let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));
+    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/bar/foobar"]`).querySelector('.data-value'));
 
     foobarInput.value = 'bar';
     foobarInput.onchange(null);

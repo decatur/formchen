@@ -503,8 +503,9 @@ export class TransactionManager {
     }
 
     async requestTransaction(func) {
+        const self = this;
         return new Promise(function (resolve) {
-            this.resolves.push(resolve);
+            self.resolves.push(resolve);
             func();
         });
     }

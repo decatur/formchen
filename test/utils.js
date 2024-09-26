@@ -4,7 +4,7 @@ export function log(msg) {
 
 function error(a, b, msg) {
     const err = Error('assertEqual failed');
-    console.error(err);
+    // console.error(err);
     console.log(msg, 'Expected ' + a, 'Actual ' + b);
     throw err;
 }
@@ -72,26 +72,14 @@ export const assert = {
 export function test(test_name, func) {
     if (window.location.hash === '' || window.location.hash == '#' + test_name) {
         log('Running ' + test_name);
-        try {
-            func(test_name);
-            log('Ok ' + test_name);
-        } catch (err) {
-            // console.log(err);
-            log('Failed ' + test_name);
-        }
+        func(test_name);
     }
 }
 
 export async function async_test(test_name, func) {
     if (window.location.hash === '' || window.location.hash == '#' + test_name) {
         log('Running ' + test_name);
-        try {
-            await func(test_name);
-            log('Ok ' + test_name);
-        } catch (err) {
-            // console.log(err);
-            log('Failed ' + test_name);
-        }
+        await func(test_name);
     }
 }
 

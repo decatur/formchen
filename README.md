@@ -16,6 +16,12 @@ See https://decatur.github.io/formchen/index.html
 
 Both pages https://decatur.github.io/formchen/index.html and https://decatur.github.io/formchen/test/testrunner.html should load without errors or warnings in the javascript console.
 
+Check both pages with
+1. different browsers
+2. different locales/languages
+
+Check https://decatur.github.io/formchen/index.html with both light and dark mode.
+
 
 # Development
 
