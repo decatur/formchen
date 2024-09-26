@@ -2,6 +2,8 @@
 import { createFormChen } from "../formchen/formchen.js"
 import * as utils from "../formchen/utils.js";
 
+(function func() {
+// ==== Begin Displayed Code ====
 const schema = {
     definitions: {
         "measurements": {
@@ -85,6 +87,8 @@ const tm = new utils.TransactionManager();
 utils.registerUndo(document.body, tm);
 const formchen = createFormChen(container, schema, data, tm);
 
+// ==== End Displayed Code ====
+
 const editsElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.edits > code'));
 function refreshEdits() {
     editsElement.textContent = JSON.stringify((state === 'patch' ? tm.patch : formchen.value), null, 2);
@@ -111,4 +115,10 @@ tm.addEventListener('change', function () {
         target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));
     }
 });
+
+const srcElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.src'));
+srcElement.textContent = func.toString().split('====')[2].slice(0, -3).trim();
+})()
+
+
 
