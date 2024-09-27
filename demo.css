@@ -3,12 +3,12 @@ body {
     margin: 2em;
 }
 
-label[data-path] {
+label {
     display: block;
-    margin: 1ex;
+    margin-top: 1ex;
 }
 
-.data-value {
+input, select {
     display: block;
 }
 
@@ -30,8 +30,16 @@ code {
     background-color: #888;
 }
 
-.edits>code {
+.edits code {
     display: none;
+}
+
+.edits input {
+    display: inline !important;
+}
+
+.edits label {
+    display: inline !important;
 }
 
 @media (prefers-color-scheme: dark) {}

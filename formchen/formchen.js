@@ -36,18 +36,6 @@ function getElementById(id) {
     return element;
 }
 
-/**
- * @param {HTMLElement} parent
- * @param {string} selector
- * @returns {HTMLElement}
- */
-function querySelector(parent, selector) {
-    /**@type{HTMLElement | null}*/
-    let element = parent.querySelector(selector);
-    if (!element) throw Error(`No such element with selector ${selector}`);
-    return element;
-}
-
 export class Graph {
     /**
      */
@@ -97,7 +85,7 @@ export class BaseNode {
         if (parent) {
             this.parent = parent;
         }
-        
+
         //if (this.key !== undefined) {
         //    this.path = (this.parent?this.parent.path + '/' + key:String(key));
         //}
@@ -405,17 +393,16 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
     /**
      * @param {HolderNode} node
-     * @param {HTMLElement} containerElement
+     * @param {IGridChen} grid
      */
-    function bindGrid(node, containerElement) {
-        const grid = /** @type{IGridChen} */ (containerElement.querySelector('.data-value'));
+    function bindGrid(node, grid) {
         grid.id = node.path;
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
         node.schema.pathPrefix = node.path;
         const gridSchema = Object.assign({}, node.schema);
 
         const view = createView(gridSchema, null);
-         grid.resetFromView(view, transactionManager);
+        grid.resetFromView(view, transactionManager);
 
         view.updateHolder = function () {
             return node.setValue(view.getModel())
@@ -452,9 +439,28 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
      */
     function bindNode(node, container) {
         const schema = node.schema;
+        const path = node.path;
 
         /** @type{?HTMLElement} */
-        let control = container.querySelector(`[data-path="${node.path}"]`);
+        let control;
+        /** @type{?HTMLElement} */
+        let element = container.querySelector(`[name="${path}"]`);
+        if (element) {
+            // <label><span class="data-title"></span><input name="/plant"></label>
+            control = element.closest('label')
+        } else {
+            element = document.getElementById(path);
+            if (element) {
+                // <label for="/reference"><span class="data-title"></span></label><input id="/reference">
+                control = container.querySelector(`[for="${path}"]`);
+            } else {
+                control = container.querySelector(`[data-path="${path}"]`);
+                if (control) {
+                    // <label data-path="/latitude" class="label"><span class="data-title"></span><input class="data-value"></label>
+                    element = control.querySelector('.data-value');
+                }
+            }
+        }
 
         if (control) {
             let element = control.querySelector('.data-title');
@@ -479,7 +485,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                     console.error(`Cannot find control for ${node.path}`);
                     return
                 }
-                bindGrid(/**@type{HolderNode}*/(node), control);
+                bindGrid(/**@type{HolderNode}*/(node), element);
             } else if (schema.type === 'object') {
                 bindObject(/**@type{HolderNode}*/(node), container);
             } else if (schema.type === 'array') {
@@ -495,7 +501,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             return
         }
 
-        const element = /** @type{HTMLElement} */ (querySelector(control, '.data-value'));
+
 
         if (schema.type === 'boolean') {
             if (element.tagName != 'INPUT') throw Error(element.tagName);

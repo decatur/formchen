@@ -22,17 +22,15 @@
 
     <div id="BasicDemo">
         <code class="src"></code>
-        <label data-path="/plant" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/reference" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/observer" class="label"><span class="data-title"></span> <select
-                class="data-value"></select></label>
-        <label data-path="/start" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label><span class="data-title"></span><input name="/plant"></label>
+        <label for="/reference"><span class="data-title"></span></label><input id="/reference">
+        <label><span class="data-title"></span><select name="/observer"></select></label>
+        <label><span class="data-title"></span><input name="/start"></label>
         <label data-path="/latitude" class="label"><span class="data-title"></span> <input class="data-value"></label>
         <label data-path="/longitude" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <div data-path="/measurements">
-            <label class="data-title"> <span class="data-unit"></span></label>
-            <grid-chen class="data-value" style="display:block; height:10em"></grid-chen>
-        </div>
+        <label><span class="data-title"></span><grid-chen name="/measurements"
+                style="display:block; height:10em"></grid-chen>
+        </label>
         <label data-path="/isCompleted" class="label"><span class="data-title"></span> <input
                 class="data-value"></label>
 
