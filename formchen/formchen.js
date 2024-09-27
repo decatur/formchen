@@ -184,10 +184,9 @@ export class BaseNode {
     }
 
     /**
-     * TODO: What is this doing?
      * @param {?} obj
      * @param {boolean} disabled
-     * @returns {HTMLInputElement | void}
+     * @returns {?HTMLInputElement}
      */
     _setValue(obj, disabled) {
         // this.path = (this.parent ? this.parent.path + '/' + this.key : String(this.key));
@@ -205,7 +204,7 @@ export class BaseNode {
             throw Error('Value lost')
         }
 
-        return /** @type{HTMLInputElement} */ (this.refreshUI(disabled));
+        return /** @type{?HTMLInputElement} */ (this.refreshUI(disabled));
 
     }
 
@@ -272,9 +271,11 @@ export class BaseNode {
     }
 
     /**
-     * @param {boolean} disabled 
+     * @param {boolean} disabled
+     * @returns {?HTMLInputElement}
      */
     refreshUI(disabled) {
+        return undefined
     }
 }
 
@@ -312,7 +313,7 @@ export class HolderNode extends BaseNode {
      * TODO: What is this doing?
      * @param {?} obj
      * @param {boolean} disabled
-     * @returns {void}
+     * @returns {?HTMLInputElement}
      */
     _setValue(obj, disabled) {
         if (obj == null) {
@@ -423,6 +424,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         node.refreshUI = function () {
             view.applyJSONPatch([{ op: 'replace', path: '', value: node.obj }]);
             grid.refresh(node.path);
+            return undefined;
         }
     }
 
@@ -503,6 +505,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 const value = this.getValue();
                 input.checked = (value == null ? false : value);
                 input.disabled = node.readOnly || disabled;
+                return undefined;
             };
 
             input.onchange = function (event) {
@@ -521,6 +524,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             node.refreshUI = function (disabled) {
                 input.value = this.getValue();
                 input.disabled = node.readOnly || disabled;
+                return undefined;
             };
 
             input.onchange = function (event) {

@@ -5,6 +5,11 @@ body {
 
 label[data-path] {
     display: block;
+    margin: 1ex;
+}
+
+.data-value {
+    display: block;
 }
 
 .data-title {
@@ -25,11 +30,8 @@ code {
     background-color: #888;
 }
 
-.edits > code {
+.edits>code {
     display: none;
 }
 
-@media (prefers-color-scheme: dark) {
-
-}
-
+@media (prefers-color-scheme: dark) {}
