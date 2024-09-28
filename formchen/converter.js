@@ -5,7 +5,7 @@
  * Module implementing data mapping for some common data types.
  */
 
-/** @import { Converter } from "../types/gridchen" */
+/** @import { Converter } from "./types" */
 
 
 import * as utils from './utils.js'

@@ -1,4 +1,4 @@
-/** @import {JSONSchema } from "../types/gridchen" */
+/** @import {JSONSchema } from "../formchen/types" */
 
 import { test, async_test, assert, log } from './utils.js'
 import { createView } from "../formchen/gridchen/matrixview.js";

@@ -5,8 +5,7 @@
  * Module implementing two-way hierachical data binding.
  */
 
-/** @import { JSONPatchOperation, GridChen as IGridChen, JSONSchema } from "../types/gridchen" */
-/** @import { IFormChen } from "../types/formchen" */
+/** @import { IFormChen, JSONPatchOperation, GridChen as IGridChen, JSONSchema } from "./types" */
 
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";

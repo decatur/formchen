@@ -5,7 +5,7 @@
  * Module implementing edit and display (for read-only cells) capabilities for cell values.
  */
 
-/** @import { Selection, CellEditMode } from "../../types/gridchen" */
+/** @import { Selection, CellEditMode } from "../types" */
 
 import {logger} from "../utils.js";
 

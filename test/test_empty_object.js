@@ -1,4 +1,4 @@
-/** @import { JSONPatchOperation } from "../types/gridchen" */
+/** @import { JSONPatchOperation } from "../formchen/types" */
 
 import { test, assert } from './utils.js'
 import { createFormChen } from '../formchen/formchen.js'

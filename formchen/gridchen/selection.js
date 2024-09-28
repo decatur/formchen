@@ -5,7 +5,7 @@
  * Module implementing Excel style multi area selection behaviour on a grid.
  */
 
-/** @import { Interval, Selection as ISelection, GridSelectionAbstraction, Range as IRange } from "../../types/gridchen" */
+/** @import { Interval, Selection as ISelection, GridSelectionAbstraction, Range as IRange } from "../types" */
 
 import {logger, wrap} from "../utils.js";
 

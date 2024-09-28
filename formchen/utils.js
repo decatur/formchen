@@ -5,7 +5,7 @@
  * Module implementing, well, utilities.
  */
 
-/** @import { JSONPatchOperation, } from "../types/gridchen" */
+/** @import { JSONPatchOperation, } from "./types" */
 
 
 // const DEBUG = (location.hostname === 'localhost');
