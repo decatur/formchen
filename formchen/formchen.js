@@ -38,7 +38,7 @@ function getElementById(id) {
     return element;
 }
 
-export class Graph {
+export class NodeTree {
     /**
      */
     constructor() {
@@ -63,7 +63,7 @@ export class Graph {
 
 /**
  * BaseNode decorates a (possibly nested) JavaScript value and its type (via JSON Schema).
- * It also makes the type graph navigable from child to parent and from parent to child.
+ * It also makes the type tree navigable from child to parent and from parent to child.
  *
  *         ------------------------              ------------------            ---------------
  * obj    | {foo: {bar: 'foobar'}} |   parent   | {bar: 'foobar'}} |  parent  |               |
@@ -74,16 +74,16 @@ export class Graph {
 export class BaseNode {
 
     /**
-     * @param {Graph} graph
+     * @param {NodeTree} tree
      * @param {string | number} key
      * @param {JSONSchema} schema
      * @param {HolderNode} parent
      */
-    constructor(graph, key, schema, parent) {
+    constructor(tree, key, schema, parent) {
         this.key = key;
         this.path = (parent ? parent.path + '/' + key : String(key));
 
-        this.graph = graph;
+        this.tree = tree;
         if (parent) {
             this.parent = parent;
         }
@@ -110,7 +110,7 @@ export class BaseNode {
             parent.children.push(this);
         }
 
-        graph.add(this);
+        tree.add(this);
     }
 
     getValue() {
@@ -126,12 +126,12 @@ export class BaseNode {
      */
     patchValue(obj) {
         let oldValue = this.getValue();
-        const graph = this.graph;
+        const tree = this.tree;
 
         class MyPatch extends Patch {
             apply() {
                 for (let op of this.operations) {
-                    let node = graph.getNodeById(op.path);
+                    let node = tree.getNodeById(op.path);
                     let elem = node.setValue(op.value, false);
                     if (elem) {
                         elem.focus();
@@ -261,16 +261,16 @@ export class BaseNode {
 
 export class HolderNode extends BaseNode {
     /**
-     * @param {Graph} graph
+     * @param {NodeTree} tree
      * @param {string | number} key
      * @param {JSONSchema} schema
      * @param {HolderNode} parent
      */
-    constructor(graph, key, schema, parent) {
+    constructor(tree, key, schema, parent) {
         if (!['object', 'array'].includes(schema.type)) {
             throw Error('Invalid schema type: ' + schema.type);
         }
-        super(graph, key, schema, parent);
+        super(tree, key, schema, parent);
         /** @type{BaseNode[]} */
         this.children = [];
     }
@@ -326,8 +326,8 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         throw Error("Root schema must be an object")
     }
 
-    /** @type{Graph} */
-    const graph = new Graph();
+    /** @type{NodeTree} */
+    const rootTree = new NodeTree();
 
     let holder = null;
 
@@ -362,7 +362,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         } else {
             constructor = BaseNode;
         }
-        return new constructor(graph, key, schema, parent);
+        return new constructor(rootTree, key, schema, parent);
     }
 
     // registerGlobalTransactionManager();
@@ -645,7 +645,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
          * @returns {BaseNode}
          */
         getNodeById(id) {
-            return graph.getNodeById(id);
+            return rootTree.getNodeById(id);
         }
     }
 
