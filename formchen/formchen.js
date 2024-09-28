@@ -446,17 +446,17 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         /** @type{?HTMLElement} */
         let element = container.querySelector(`[name="${path}"]`);
         if (element) {
-            // <label><span class="data-title"></span><input name="/plant"></label>
+            // Case <label><span class="data-title"></span><input name="/plant"></label>
             control = element.closest('label')
         } else {
             element = document.getElementById(path);
             if (element) {
-                // <label for="/reference"><span class="data-title"></span></label><input id="/reference">
+                // Case <label for="/reference"><span class="data-title"></span></label><input id="/reference">
                 control = container.querySelector(`[for="${path}"]`);
             } else {
                 control = container.querySelector(`[data-path="${path}"]`);
                 if (control) {
-                    // <label data-path="/latitude" class="label"><span class="data-title"></span><input class="data-value"></label>
+                    // Case <label data-path="/latitude" class="label"><span class="data-title"></span><input class="data-value"></label>
                     element = control.querySelector('.data-value');
                 }
             }
@@ -485,6 +485,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                     console.error(`Cannot find control for ${node.path}`);
                     return
                 }
+
                 bindGrid(/**@type{HolderNode}*/(node), element);
             } else if (schema.type === 'object') {
                 bindObject(/**@type{HolderNode}*/(node), container);
@@ -502,10 +503,10 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         }
 
 
-
         if (schema.type === 'boolean') {
+            if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
             if (element.tagName != 'INPUT') throw Error(element.tagName);
-            const input = /**@type{HTMLInputElement} */ (element);
+            const input = element;
             input.type = 'checkbox';
             node.refreshUI = function (disabled) {
                 const value = this.getValue();
@@ -520,8 +521,8 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             }
 
         } else if (schema.enum) {
-            if (element.tagName != 'SELECT') throw Error(element.tagName);
-            const input = /**@type{HTMLSelectElement} */ (element);
+            if (!(element instanceof HTMLSelectElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+            const input = element;
             schema.enum.forEach(function (optionName) {
                 const option = document.createElement('option');
                 option.textContent = String(optionName);
@@ -537,9 +538,38 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 let value = input.value;
                 commit(value, input);
             }
+        } else if (schema.type === 'string') {
+            if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+            const input = element;
+            const converter = new StringConverter();
+            node.refreshUI = function (disabled) {
+                const value = this.getValue();
+                if (value == null) {
+                    input.defaultValue = input.value = '';
+                } else {
+                    input.defaultValue = input.value = converter.toEditable(value);
+                }
+                input.disabled = node.readOnly || disabled;
+                return input
+            };
+
+            if (input instanceof HTMLInputElement) {
+                if (schema.format === 'color') {
+                    input.type = 'color';
+                } else {
+                    input.type = 'string';
+                }
+            }
+
+            input.onchange = function (event) {
+                const newValue = converter.fromEditable(input.value.trim());
+                let value = (newValue === '') ? undefined : newValue;
+                commit(value, input);
+            }
+
         } else {
-            if (element.tagName != 'INPUT') throw Error(element.tagName);
-            const input = /**@type{HTMLInputElement} */ (element);
+            if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+            const input = element;
             let converter;
 
             node.refreshUI = function (disabled) {
@@ -576,14 +606,6 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 //     converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
             } else if (schema.format === 'full-date') {
                 converter = new FullDateConverter();
-            } else if (schema.type === 'string') {
-                converter = new StringConverter();
-
-                if (schema.format === 'color') {
-                    input.type = 'color';
-                } else {
-                    input.type = 'string';
-                }
             } else {
                 throw Error('Invalid schema at ' + node.path);
             }
