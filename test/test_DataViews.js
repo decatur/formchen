@@ -1,4 +1,4 @@
-/** @import { JSONSchema } from "../formchen/gridchen/gridchen" */
+/** @import { JSONSchema } from "../formchen/types" */
 
 import {test, assert} from './utils.js'
 import {createView} from '../formchen/gridchen/matrixview.js'

@@ -5,11 +5,11 @@
  * Module implementing the visual grid and scrolling behaviour.
  */
 
-/** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, JSONSchema, MatrixView } from "../types" */
+/** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, MatrixView } from "../types" */
 /** @import { TransactionManager, Transaction } from "../utils" */
 
 
-import { logger, Patch, reversePatch, wrap } from "../utils.js";
+import { logger, Patch, wrap } from "../utils.js";
 import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import * as edit from "./editor.js"
 import { renderPlot } from "./plotly_wrapper.js"
@@ -513,6 +513,10 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         }
     }
 
+    /**
+     * @param {IRange} range 
+     * @returns 
+     */
     function getCell(range) {
         let r = range.offset(-firstRow, 0);
         if (r.rowIndex < 0 || r.rowIndex >= cellMatrix.length) {
@@ -906,6 +910,10 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         renderPlot(detail.graphElement, detail.title, detail.schemas, detail.columns);
     }
 
+    /**
+     * @param {number} rowIndex 
+     * @param {number} rowIncrement 
+     */
     function scrollIntoView(rowIndex, rowIncrement) {
         if (firstRow === 0 && rowIncrement < 0) {
             return;
@@ -930,6 +938,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     let rowCount = 0;
     const indexMapper = new IndexToPixelMapper(cellParent, rowHeight, columnEnds);
 
+    /**
+     * @param {string} value
+     */
     function commitCellEdit(value) {
         logger.log('commitCellEdit');
         getCell(selection.active).style.display = 'inline-block';
@@ -937,11 +948,11 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         if (!activeCell.isReadOnly()) {
             const rowIndex = selection.active.rowIndex;
             const colIndex = selection.active.columnIndex;
-
+            let v;
             if (value === '') {
-                value = undefined;
+                v = undefined;
             } else {
-                value = schemas[colIndex].converter.fromEditable(value.trim());
+                v = schemas[colIndex].converter.fromEditable(value);
                 //value = value.replace(/\\n/g, '\n');
             }
 
@@ -961,16 +972,17 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         container.focus({ preventScroll: true });
     }
 
-    /** @type {Array<Array<HTMLElement>>} */
+    /** @type {HTMLElement[][]} */
     let cellMatrix = Array(viewPortRowCount);
     let pageIncrement = Math.max(1, viewPortRowCount);
 
-    function setFirstRow(_firstRow) {
-        indexMapper.firstRow = _firstRow;
+    /**
+     * @param {number} firstRow 
+     */
+    function setFirstRow(firstRow) {
+        indexMapper.firstRow = firstRow;
         refreshHeaders();
         selection.hide();
-
-        firstRow = _firstRow;
         scrollBar.setValue(firstRow);
 
         updateViewportRows(getRangeData(
@@ -979,6 +991,10 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         selection.show();
     }
 
+    /**
+     * @param {number} vpRowIndex 
+     * @param {number} colIndex 
+     */
     function createCell(vpRowIndex, colIndex) {
         const schema = schemas[colIndex];
         const elem = schema.converter.createElement();
@@ -994,6 +1010,11 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     // Elements for row highlighting
     const rowElements = [];
 
+    /**
+     * 
+     * @param {number} vpRowIndex 
+     * @returns {HTMLElement}
+     */
     function createRow(vpRowIndex) {
         const rowElement = document.createElement('div');
         let style = rowElement.style;
@@ -1006,7 +1027,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
 
     /**
      * @param {IRange} range
-     * @returns {Array<Array<?>>}
+     * @returns {any[][]}
      */
     function getRangeData(range) {
         let matrix = Array(range.rowCount);

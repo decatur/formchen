@@ -183,7 +183,9 @@ export function createSelection(uiRefresher, grid) {
         /**@type{IRange[]}*/
         areas;
         uiRefresher;
+        /**@type{KeyboardEvent?} */
         lastEvt;
+        /**@type{boolean} */
         headerSelected;
 
         constructor() {
@@ -213,6 +215,12 @@ export function createSelection(uiRefresher, grid) {
             }
         }
 
+        /**
+         * @param {number} rowIndex 
+         * @param {number} columnIndex 
+         * @param {number} rowCount 
+         * @param {number} columnCount 
+         */
         setRange(rowIndex, columnIndex, rowCount, columnCount) {
             if (this.areas) {
                 this.hide();
@@ -235,14 +243,19 @@ export function createSelection(uiRefresher, grid) {
         }
 
         /**
-         * @param evt
-         * @param cellParent
+         * @param {MouseEvent} evt
+         * @param {HTMLDivElement} cellParent
          * @param {IndexToPixelMapper} indexMapper
          */
         startSelection(evt, cellParent, indexMapper) {
             _startSelection(evt, this, cellParent, indexMapper);
         }
 
+        /**
+         * @param {number} rowIncrement 
+         * @param {number} columnIncrement 
+         * @param {boolean} doExpand 
+         */
         move(rowIncrement, columnIncrement, doExpand) {
             const selection = this;
             const pilot = selection.pilot;
@@ -298,6 +311,11 @@ export function createSelection(uiRefresher, grid) {
             const selection = this;
             const pilot = selection.pilot;
 
+            /**
+             * @param {number} rowIncrement 
+             * @param {number} columnIncrement 
+             * @param {boolean} doExpand 
+             */
             function move(rowIncrement, columnIncrement, doExpand) {
                 evt.preventDefault();
                 evt.stopImmediatePropagation();

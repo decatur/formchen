@@ -66,6 +66,11 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
         commitCellEdit(value);
     }
 
+    /**
+     * @param {string} top 
+     * @param {string} left 
+     * @param {string} width 
+     */
     function showInput(top, left, width) {
         const style = input.style;
         style.top = top;

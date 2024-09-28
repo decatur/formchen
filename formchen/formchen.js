@@ -24,17 +24,7 @@ console.log('Loading Formchen with locale ' + navigator.language);
  * @returns {object}
  */
 function getValueByPointer(obj, pointer) {
-    return pointer.substr(2).split('/').reduce(((res, prop) => res[prop]), obj);
-}
-
-/**
- * @param {string} id
- * @returns {HTMLElement}
- */
-function getElementById(id) {
-    let element = document.getElementById(id);
-    if (!element) throw Error(`No such element with id ${id}`);
-    return element;
+    return pointer.substring(2).split('/').reduce(((res, prop) => res[prop]), obj);
 }
 
 class NodeTree {
@@ -258,9 +248,9 @@ class BaseNode {
     }
 
     /**
-     * @param {boolean} disabled
+     * @param {boolean} _disabled
      */
-    refreshUI(disabled) {
+    refreshUI(_disabled) {
         throw Error()
     }
 }
@@ -311,9 +301,9 @@ class LeafNode extends BaseNode {
     }
 
     /**
-     * @param {boolean} disabled
+     * @param {boolean} _disabled
      */
-    refreshUI(disabled) {
+    refreshUI(_disabled) {
         return undefined
     }
 }
@@ -370,9 +360,9 @@ class HolderNode extends BaseNode {
     }
 
     /**
-     * @param {boolean} disabled
+     * @param {boolean} _disabled
      */
-    refreshUI(disabled) {
+    refreshUI(_disabled) {
     }
 
 }
@@ -512,7 +502,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 input.disabled = node.readOnly || disabled;
             };
 
-            input.onchange = function (event) {
+            input.onchange = function (_event) {
                 let value = input.checked;
                 commit(value, input);
             }
@@ -530,7 +520,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 input.disabled = node.readOnly || disabled;
             };
 
-            input.onchange = function (event) {
+            input.onchange = function (_event) {
                 let value = input.value;
                 commit(value, input);
             }
@@ -556,7 +546,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 }
             }
 
-            input.onchange = function (event) {
+            input.onchange = function (_event) {
                 const newValue = converter.fromEditable(input.value.trim());
                 let value = (newValue === '') ? undefined : newValue;
                 commit(value, input);
@@ -604,7 +594,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 throw Error('Invalid schema at ' + node.path);
             }
 
-            input.onchange = function (event) {
+            input.onchange = function () {
                 const newValue = converter.fromEditable(input.value.trim());
                 let value = (newValue === '') ? undefined : newValue;
                 commit(value, input);
@@ -687,7 +677,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 /**
  * @param {any} patch
  */
-export function squash_formchen_patch(patch) {
+function squash_formchen_patch(patch) {
     let scalar_fields = {};
     let array_fields = {};
     let squashed = [];

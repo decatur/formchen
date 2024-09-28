@@ -24,8 +24,8 @@ function range(count) {
  * Compare function for all supported data types, i.e. string, numeric, date types, boolean.
  * undefined, null and NaN always compare as bigger in compliance to Excel.
  * TODO: This is not true; Excel compares #VALUE! as smaller! (What about #VALUE! vs undefined?)
- * @param a
- * @param b
+ * @param {string | number | Date | boolean} a
+ * @param {string | number | Date | boolean} b
  * @returns {number}
  */
 function compare(a, b) {

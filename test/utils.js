@@ -1,3 +1,6 @@
+/**
+ * @param {string} msg 
+ */
 export function log(msg) {
     console.log(msg);
 }
@@ -69,6 +72,17 @@ export const assert = {
     true: assertTrue
 };
 
+/**
+ * @callback F1Type
+ * @param {string} test_name 
+ * @returns {void}
+ */
+
+/**
+ * 
+ * @param {string} test_name 
+ * @param {F1Type} func 
+ */
 export function test(test_name, func) {
     if (window.location.hash === '' || window.location.hash == '#' + test_name) {
         log('Running ' + test_name);

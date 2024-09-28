@@ -35,12 +35,22 @@ export class Patch {
 }
 
 
+/**
+ * @callback F2Type
+ * @param {Event} event
+ * @returns {void}
+ */
 
+/**
+ * @callback F3Type
+ * @param {Event} event
+ * @returns {void}
+ */
 
 /**
  * @param {HTMLElement} element
- * @param {(Event) => any} func
- * @returns {(Event) => any}
+ * @param {F2Type} func
+ * @returns {F3Type}
  */
 export function wrap(element, func) {
     return function (evt) {
