@@ -144,10 +144,10 @@ test('Delete subtree', (test_name) => {
     let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));
     let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/bar/foobar"]`).querySelector('.data-value'));
 
-    fc.getNodeById('/bar').setValue(undefined);
+    fc.getNodeById('/bar').patchValue(undefined);
     assert.equal('', foobarInput.value);
 
-    fc.getNodeById('/foo').setValue(undefined);
+    fc.getNodeById('/foo').patchValue(undefined);
     assert.equal('', fooInput.value);
     assert.equal(undefined, fc.value);
 });

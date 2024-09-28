@@ -124,7 +124,7 @@ export class BaseNode {
      * @param {?} obj
      * @returns {Patch}
      */
-    setValue(obj) {
+    patchValue(obj) {
         let oldValue = this.getValue();
         const graph = this.graph;
 
@@ -132,7 +132,7 @@ export class BaseNode {
             apply() {
                 for (let op of this.operations) {
                     let node = graph.getNodeById(op.path);
-                    let elem = node._setValue(op.value, false);
+                    let elem = node.setValue(op.value, false);
                     if (elem) {
                         elem.focus();
                     }
@@ -140,7 +140,6 @@ export class BaseNode {
             }
         }
 
-        /** @type {Patch} */
         const patch = new MyPatch();
 
         if (obj === oldValue) {
@@ -160,7 +159,7 @@ export class BaseNode {
 
         patch.operations.push(op);
 
-        this._setValue(obj, false);
+        this.setValue(obj, false);
 
         if (obj == null) {
             patch.operations.push(...this.clearPathToRoot());
@@ -174,7 +173,7 @@ export class BaseNode {
      * @param {boolean} disabled
      * @returns {?HTMLInputElement}
      */
-    _setValue(obj, disabled) {
+    setValue(obj, disabled) {
         if (this.parent && this.parent.obj) {
             if (obj == null) {
                 delete this.parent.obj[this.key];
@@ -287,7 +286,7 @@ export class HolderNode extends BaseNode {
      * @param {boolean} disabled
      */
     visitChild(obj, child, disabled) {
-        child._setValue((obj == null ? undefined : obj[child.key]), disabled);
+        child.setValue((obj == null ? undefined : obj[child.key]), disabled);
     }
 
     /**
@@ -296,14 +295,14 @@ export class HolderNode extends BaseNode {
      * @param {boolean} disabled
      * @returns {?HTMLInputElement}
      */
-    _setValue(obj, disabled) {
+    setValue(obj, disabled) {
         if (obj == null) {
             delete this.obj;
         } else {
             this.obj = obj;
         }
 
-        super._setValue(obj, disabled);
+        super.setValue(obj, disabled);
 
         for (let child of this.children) {
             this.visitChild(obj, child, disabled);
@@ -370,7 +369,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     const rootNode = createNode('', topSchema, holder);
     bindNode(rootNode, rootElement);
 
-    rootNode.setValue(topObj);
+    rootNode.patchValue(topObj);
 
     /**
      * @param {HolderNode} node
@@ -398,7 +397,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         grid.resetFromView(view, transactionManager);
 
         view.updateHolder = function () {
-            return node.setValue(view.getModel())
+            return node.patchValue(view.getModel())
         };
 
         node.refreshUI = function () {
@@ -616,7 +615,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
          * @param {HTMLElement} target
          */
         function commit(value, target) {
-            const patch = node.setValue(value);
+            const patch = node.patchValue(value);
             const trans = transactionManager.openTransaction(target);
             trans.patches.push(patch);
             trans.commit();
