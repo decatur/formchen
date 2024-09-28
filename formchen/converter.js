@@ -5,10 +5,10 @@
  * Module implementing data mapping for some common data types.
  */
 
-/** @import { Converter } from "./gridchen" */
+/** @import { Converter } from "../types/gridchen" */
 
 
-import * as utils from '../utils.js'
+import * as utils from './utils.js'
 
 /**
  * @returns {HTMLSpanElement}

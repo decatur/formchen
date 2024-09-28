@@ -1,5 +1,5 @@
 import { test, assert } from './utils.js'
-import * as c from "../formchen/gridchen/converter.js";
+import * as c from "../formchen/converter.js";
 
 test('URIConverter', (test_name) => {
     const converter = new c.URIConverter();
