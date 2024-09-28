@@ -1,18 +1,20 @@
+/**
+ * Author: Wolfgang Kühn 2019-2024
+ * Source located at https://github.com/decatur/formchen
+ *
+ * Module implementing two-way hierachical data binding.
+ */
+
 /** @import { JSONPatchOperation, GridChen as IGridChen, JSONSchema } from "../types/gridchen" */
 /** @import { IFormChen } from "../types/formchen" */
 
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
-import {
-    NumberConverter,
-    DateTimeStringConverter,
-    // DatePartialTimeStringConverter,
-    FullDateConverter,
-    StringConverter
-} from "./converter.js";
+import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter } from "./converter.js";
 import { Patch, TransactionManager } from "./utils.js";
+import { GridChen } from "./gridchen/gridchen.js";
 
-console.log('Formchen locale is ' + navigator.language);
+console.log('Loading Formchen with locale ' + navigator.language);
 
 /**
  * Example:
@@ -86,9 +88,6 @@ export class BaseNode {
             this.parent = parent;
         }
 
-        //if (this.key !== undefined) {
-        //    this.path = (this.parent?this.parent.path + '/' + key:String(key));
-        //}
         if (typeof schema.readOnly === 'boolean') {
             this.readOnly = schema.readOnly
         } else if (typeof schema.editable === 'boolean') {
@@ -141,7 +140,6 @@ export class BaseNode {
             }
         }
 
-
         /** @type {Patch} */
         const patch = new MyPatch();
 
@@ -177,11 +175,6 @@ export class BaseNode {
      * @returns {?HTMLInputElement}
      */
     _setValue(obj, disabled) {
-        // this.path = (this.parent ? this.parent.path + '/' + this.key : String(this.key));
-        // this.path = (parent ? parent.path + '/' + key : String(key));
-
-        // console.log(`path=${this.path} key=${this.key}`)
-
         if (this.parent && this.parent.obj) {
             if (obj == null) {
                 delete this.parent.obj[this.key];
@@ -486,6 +479,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                     return
                 }
 
+                if (!(element instanceof GridChen)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
                 bindGrid(/**@type{HolderNode}*/(node), element);
             } else if (schema.type === 'object') {
                 bindObject(/**@type{HolderNode}*/(node), container);

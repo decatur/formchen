@@ -1,11 +1,11 @@
 /**
- * Author: Wolfgang Kühn 2019-2021
- * Source located at https://github.com/decatur/gridchen
+ * Author: Wolfgang Kühn 2019-2024
+ * Source located at https://github.com/decatur/formchen
  *
  * Module implementing, well, utilities.
  */
 
-/** @import { JSONPatchOperation, } from "./gridchen" */
+/** @import { JSONPatchOperation, } from "../types/gridchen" */
 
 
 // const DEBUG = (location.hostname === 'localhost');

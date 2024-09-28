@@ -1,12 +1,11 @@
 /**
- * Author: Wolfgang Kühn 2019-2021
- * Source located at https://github.com/decatur/gridchen
+ * Author: Wolfgang Kühn 2019-2024
+ * Source located at https://github.com/decatur/formchen
  *
  * Module implementing the visual grid and scrolling behaviour.
  */
 
-/** @import { PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, JSONSchema, MatrixView } from "./gridchen" */
-/** @import { GridSelectionAbstraction } from "./gridchen-internal" */
+/** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, JSONSchema, MatrixView } from "../../types/gridchen" */
 /** @import { TransactionManager, Transaction } from "../utils" */
 
 

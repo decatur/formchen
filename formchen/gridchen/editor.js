@@ -1,12 +1,11 @@
 /**
- * Author: Wolfgang Kühn 2019-2021
- * Source located at https://github.com/decatur/gridchen/gridchen
+ * Author: Wolfgang Kühn 2019-2024
+ * Source located at https://github.com/decatur/formchen
  *
  * Module implementing edit and display (for read-only cells) capabilities for cell values.
  */
 
-/** @import { CellEditMode } from "../gridchen/gridchen" */
-/** @import { Selection } from "./gridchen-internal" */
+/** @import { Selection, CellEditMode } from "../../types/gridchen" */
 
 import {logger} from "../utils.js";
 

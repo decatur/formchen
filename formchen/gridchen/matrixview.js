@@ -1,12 +1,11 @@
 /**
- * Author: Wolfgang Kühn 2019
- * Source located at https://github.com/decatur/gridchen/gridchen
+ * Author: Wolfgang Kühn 2019-2024
+ * Source located at https://github.com/decatur/formchen
  *
  * Module implementing data (model) abstraction for some common matrix representations.
  */
 
-/** @import { JSONSchema, MatrixView, GridSchema, ColumnSchema, JSONPatch, JSONPatchOperation } from "../../types/gridchen" */
-/** @import { Interval } from "./gridchen-internal" */
+/** @import { Interval, JSONSchema, MatrixView, GridSchema, ColumnSchema, JSONPatch, JSONPatchOperation } from "../../types/gridchen" */
 
 import * as c from "../converter.js";
 import { applyJSONPatch, Patch } from '../utils.js'

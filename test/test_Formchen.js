@@ -96,7 +96,7 @@ test('FormChen', (test_name) => {
         someURI: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
         someEnum: 'Mona Lisa',
         someDate: '2019-01-01',
-        someDateTime: '2019-01-01T00:00Z',
+        someDateTime: '2019-01-01 01+01:00',
         someBoolean: true,
         someInteger: 7,
         someFloat: 3.14,
@@ -145,7 +145,7 @@ test('FormChen', (test_name) => {
     assert.equal('2019-01-01 01+01:00', input.value);
     input.value = '2020-01-01T00:00Z';
     input.onchange(null);
-    assert.equal({ op: "replace", path: "/someDateTime", value: '2020-01-01T01+01:00', oldValue: '2019-01-01T00:00Z' }, tm.patch.pop());
+    assert.equal({ op: "replace", path: "/someDateTime", value: '2020-01-01T00:00Z', oldValue: '2019-01-01 01+01:00' }, tm.patch.pop());
 
     input = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/someBoolean"]`).querySelector('.data-value'));
     assert.equal(true, input.checked);

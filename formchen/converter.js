@@ -1,6 +1,6 @@
 /**
- * Author: dsdsdWolfgang Kühn 2019-2021
- * Source located at https://github.com/decatur/gridchen/gridchen
+ * Author: Wolfgang Kühn 2019-2024
+ * Source located at https://github.com/decatur/formchen
  *
  * Module implementing data mapping for some common data types.
  */

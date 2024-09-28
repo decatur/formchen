@@ -1,12 +1,11 @@
 /**
- * Author: Wolfgang Kühn 2019-2021
- * Source located at https://github.com/decatur/gridchen
+ * Author: Wolfgang Kühn 2019-2024
+ * Source located at https://github.com/decatur/formchen
  *
  * Module implementing Excel style multi area selection behaviour on a grid.
  */
 
-/** @import { Interval, Selection as ISelection, GridSelectionAbstraction } from "./gridchen-internal" */
-/** @import { Range as IRange } from "./gridchen" */
+/** @import { Interval, Selection as ISelection, GridSelectionAbstraction, Range as IRange } from "../../types/gridchen" */
 
 import {logger, wrap} from "../utils.js";
 
