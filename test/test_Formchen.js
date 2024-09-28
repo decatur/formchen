@@ -73,6 +73,7 @@ test('FormChen', (test_name) => {
             },
             someMatrix: {
                 title: 'Some Matrix',
+                type: 'array',
                 $ref: '#/definitions/refSchema'
             },
             anObject: {
@@ -86,6 +87,7 @@ test('FormChen', (test_name) => {
             },
             anEmptyMatrix: {
                 title: 'An Undefined Matrix',
+                type: 'array',
                 $ref: '#/definitions/refSchema'
             }
         }

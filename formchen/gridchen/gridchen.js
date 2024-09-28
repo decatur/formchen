@@ -9,10 +9,10 @@
 /** @import { TransactionManager, Transaction } from "../utils" */
 
 
-import {logger, Patch, reversePatch, wrap} from "../utils.js";
-import {createSelection, Range, IndexToPixelMapper} from "./selection.js";
+import { logger, Patch, reversePatch, wrap } from "../utils.js";
+import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import * as edit from "./editor.js"
-import {renderPlot} from "./plotly_wrapper.js"
+import { renderPlot } from "./plotly_wrapper.js"
 
 //////////////////////
 // Start Configuration
@@ -66,7 +66,7 @@ const scrollBarWidth = scrollBarThumbWidth + 2 * scrollBarBorderWidth;
 //const numeric = new Set(['number', 'integer']);
 
 function rangeIterator(count) {
-    return Array.from({length: count}, (_, i) => i);
+    return Array.from({ length: count }, (_, i) => i);
 }
 
 
@@ -130,7 +130,10 @@ export class GridChen extends HTMLElement {
         this.insertEmptyRow = undefined;
         /** @type{(string, KeyboardEventInit) => void} */
         this._keyboard = undefined;
+        this._sendKeys = undefined;
+        this._click = undefined;
     }
+
 
     /**
      * @param {MatrixView} view
@@ -144,7 +147,7 @@ export class GridChen extends HTMLElement {
             this.shadowRoot.removeChild(this.shadowRoot.firstChild);
         } else {
             // First initialize creates shadow dom.
-            this.attachShadow({mode: 'open'});
+            this.attachShadow({ mode: 'open' });
         }
         // Attention: Possible Layout Thrashing.
         // Default value needed for unit testing and flex layouts.
@@ -355,8 +358,8 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     schemas
         .filter(schema => Math.abs(schema.sortDirection) === 1)
         .slice(1).forEach(function (schema) {
-        delete schema.sortDirection;
-    });
+            delete schema.sortDirection;
+        });
 
     const headerRow = document.createElement('div');
     headerRow.id = 'headerRow';
@@ -378,7 +381,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
      * @param {string} path
      */
     function refresh(path) {
-		pathPrefix = path;				  
+        pathPrefix = path;
         rowCount = viewModel.rowCount();
         // TODO: Can we do better, i.e. send event to selection.grid?
         gridAbstraction.rowCount = rowCount;
@@ -538,7 +541,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         evt.preventDefault();
         // We need to prevent scroll, otherwise the evt coordinates do not relate anymore
         // with the target element coordinates. OR move this after call of index()!
-        container.focus({preventScroll: true});
+        container.focus({ preventScroll: true });
 
         selection.startSelection(/**@type{MouseEvent}*/(evt), cellParent, indexMapper);
     }));
@@ -955,7 +958,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             commitTransaction(trans);
         }
 
-        container.focus({preventScroll: true});
+        container.focus({ preventScroll: true });
     }
 
     /** @type {Array<Array<HTMLElement>>} */
@@ -1007,10 +1010,10 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
      */
     function getRangeData(range) {
         let matrix = Array(range.rowCount);
-        for (let i = 0, rowIndex = range.rowIndex; rowIndex < range.rowIndex + range.rowCount; i++ , rowIndex++) {
+        for (let i = 0, rowIndex = range.rowIndex; rowIndex < range.rowIndex + range.rowCount; i++, rowIndex++) {
             matrix[i] = Array(range.columnCount);
             if (rowIndex >= rowCount) continue;
-            for (let j = 0, colIndex = range.columnIndex; colIndex < range.columnIndex + range.columnCount; colIndex++ , j++) {
+            for (let j = 0, colIndex = range.columnIndex; colIndex < range.columnIndex + range.columnCount; colIndex++, j++) {
                 matrix[i][j] = viewModel.getCell(rowIndex, colIndex);
             }
         }
@@ -1064,10 +1067,10 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         /** @type{JSONPatchOperation[]} */
         let patch = [];
 
-        for (let i = 0; rowIndex < endRowIndex; i++ , rowIndex++) {
+        for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
             let colIndex = topColIndex;
 
-            for (let j = 0; colIndex < endColIndex; colIndex++ , j++) {
+            for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                 let s = matrix[i][j];
                 let value;
                 if (s !== undefined) {
@@ -1228,7 +1231,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
      * Hidden API for unit testing.
      * Dispatches a mousedown&mouseup event in the middle of the specified cell.
      */
-    gridchenElement['_click'] = function (rowIndex, columnIndex) {
+    gridchenElement._click = function (rowIndex, columnIndex) {
         const pixelCoords = indexMapper.cellIndexToPixelCoords(rowIndex, columnIndex);
         cellParent.dispatchEvent(new MouseEvent('mousedown', pixelCoords));
         cellParent.dispatchEvent(new MouseEvent('mouseup', pixelCoords));
@@ -1246,23 +1249,17 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         }
     };
 
-    gridchenElement['_sendKeys'] = function (keys) {
-        if (editor.mode !== edit.HIDDEN) {
-            editor._sendKeys(keys);
-        } else if (!activeCell.isReadOnly()) {
-            activeCell.enterInputMode(keys);
-        }
-    };
+
 
     Object.defineProperty(gridchenElement, '_textContent',
-        {get: () => cellParent.textContent, configurable: true}
+        { get: () => cellParent.textContent, configurable: true }
     );
 
     gridchenElement['refresh'] = refresh;
 
     // TODO: Move this to MatrixView.
     gridchenElement['insertEmptyRow'] = function (rowIndex, options) {
-        options = Object.assign({fadeOutDuration: 10000}, options || {});
+        options = Object.assign({ fadeOutDuration: 10000 }, options || {});
         viewModel.splice(rowIndex);
         if (viewModel.getRowStyles) {
             viewModel.getRowStyles()[rowIndex] = {

@@ -724,8 +724,6 @@ export function createColumnMatrixView(jsonSchema, columns) {
      * @implements {MatrixView}
      */
     class ColumnMatrixView extends MatrixViewClass {
-        schema;
-
         constructor() {
             super();
             this.schema = schema;

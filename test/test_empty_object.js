@@ -1,3 +1,5 @@
+/** @import { JSONPatchOperation } from "../types/gridchen" */
+
 import { test, assert } from './utils.js'
 import { createFormChen } from '../formchen/formchen.js'
 import { TransactionManager } from "../formchen/utils.js";
@@ -22,6 +24,7 @@ test('Empty Object one Level', (test_name) => {
 
     input.value = 'foo';
     input.onchange(null);
+    /** @type{JSONPatchOperation[]} */
     let expected = [
         { op: 'add', path: "", value: {} },
         { op: 'add', path: "/foo", value: "foo" }
@@ -64,6 +67,7 @@ test('Empty Object two Levels', (test_name) => {
 
     foobarInput.value = 'bar';
     foobarInput.onchange(null);
+    /** @type{JSONPatchOperation[]} */
     let expected = [
         { op: 'add', path: "", value: {} },
         { op: 'add', path: "/bar", value: {} },

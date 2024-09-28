@@ -14,7 +14,7 @@ export interface JSONSchema {
     maximum?: number;
     format?: string;
     tooltip?: string;
-    editable?: boolean;
+    readOnly?: boolean;
     title?: string;
     pathPrefix?: string,
     type: string;
@@ -51,8 +51,7 @@ export interface ColumnSchema {
     // TODO: Rename according ISO
     period?: string;
     enum?: (string | number)[];
-    readOnly?: boolean; // TODO: Remove
-    editable?: boolean;
+    readOnly?: boolean; 
 }
 
 export interface GridSchema {

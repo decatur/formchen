@@ -38,7 +38,7 @@ function getElementById(id) {
     return element;
 }
 
-export class NodeTree {
+class NodeTree {
     /**
      */
     constructor() {
@@ -64,14 +64,31 @@ export class NodeTree {
 /**
  * BaseNode decorates a (possibly nested) JavaScript value and its type (via JSON Schema).
  * It also makes the type tree navigable from child to parent and from parent to child.
- *
- *         ------------------------              ------------------            ---------------
- * obj    | {foo: {bar: 'foobar'}} |   parent   | {bar: 'foobar'}} |  parent  |               |
- * key    | ''                     |     <-     | 'foo'            |    <-    | 'bar'         |
- *         ------------------------              ------------------            ---------------
+ *                                                                    
+                                      
+            ┌───────────────────────────────────────────┐           
+            │ obj:  {foo: {bar: 'foobar'}, bar: 1}      │           
+            │ key:  ''                                  │
+            | path: ''                                  |
+            └─────┬─────────────────────────────┬───────┘           
+                  │                             │                   
+                  │                             │                   
+                  ▼                             ▼                   
+     ┌────────────────────────┐      ┌───────────────────────┐   
+     │ obj:  {bar: 'foobar'}} │      │                       │   
+     │ key:  'foo'            │      │ key:  'bar'           │   
+     │ path: '/foo'           |      | path: '/foo/bar'      |
+     └────────────┬───────────┘      └───────────────────────┘   
+                  │                                                 
+                  │                                                 
+                  ▼                                                 
+          ┌──────────────────┐                                         
+          │ key:  'bar'      │
+          │ path: '/foo/bar' │
+          └──────────────────┘                                         
  */
 
-export class BaseNode {
+class BaseNode {
 
     /**
      * @param {NodeTree} tree
@@ -80,6 +97,7 @@ export class BaseNode {
      * @param {HolderNode} parent
      */
     constructor(tree, key, schema, parent) {
+        if (new.target === BaseNode) throw new Error('BaseNode cannot be instantiated')
         this.key = key;
         this.path = (parent ? parent.path + '/' + key : String(key));
 
@@ -90,8 +108,6 @@ export class BaseNode {
 
         if (typeof schema.readOnly === 'boolean') {
             this.readOnly = schema.readOnly
-        } else if (typeof schema.editable === 'boolean') {
-            this.readOnly = !schema.editable;
         } else if (parent) {
             // Inherit read only.
             this.readOnly = parent.readOnly;
@@ -114,28 +130,18 @@ export class BaseNode {
     }
 
     getValue() {
-        if (this.parent && this.parent.obj) {
-            return this.parent.obj[this.key]
-        }
-        return undefined;
+        throw Error()
     }
 
-    /**
-     * @param {?} obj
-     * @returns {Patch}
-     */
     patchValue(obj) {
         let oldValue = this.getValue();
-        const tree = this.tree;
-
+        const node = this;
         class MyPatch extends Patch {
             apply() {
                 for (let op of this.operations) {
-                    let node = tree.getNodeById(op.path);
-                    let elem = node.setValue(op.value, false);
-                    if (elem) {
-                        elem.focus();
-                    }
+                    let n = node.tree.getNodeById(op.path);
+                    n.setValue(op.value, false);
+                    if (n instanceof LeafNode) n.formElement.focus();
                 }
             }
         }
@@ -171,7 +177,6 @@ export class BaseNode {
     /**
      * @param {?} obj
      * @param {boolean} disabled
-     * @returns {?HTMLInputElement}
      */
     setValue(obj, disabled) {
         if (this.parent && this.parent.obj) {
@@ -184,7 +189,7 @@ export class BaseNode {
             throw Error('Value lost')
         }
 
-        return /** @type{?HTMLInputElement} */ (this.refreshUI(disabled));
+        this.refreshUI(disabled);
 
     }
 
@@ -252,14 +257,66 @@ export class BaseNode {
 
     /**
      * @param {boolean} disabled
-     * @returns {?HTMLInputElement}
+     */
+    refreshUI(disabled) {
+        throw Error()
+    }
+}
+
+class LeafNode extends BaseNode {
+
+    /**
+     * @param {NodeTree} tree
+     * @param {string | number} key
+     * @param {JSONSchema} schema
+     * @param {HolderNode} parent
+     */
+    constructor(tree, key, schema, parent) {
+        super(tree, key, schema, parent);
+        /** @type{HTMLElement} */
+        this.formElement;
+    }
+
+    getValue() {
+        if (this.parent && this.parent.obj) {
+            return this.parent.obj[this.key]
+        }
+        return undefined;
+    }
+
+    /**
+     * @param{number | string | boolean} value
+     * @returns {JSONPatchOperation[]}
+     */
+    createPathToRoot(value) {
+        /** @type{JSONPatchOperation[]} */
+        let operations = [];
+        /** @type{HolderNode} */
+        let n = this.parent;
+        let v = value;
+        /** @type{string | number} */
+        let key = this.key;
+        while (n && n.obj == null) {
+            let empty = n.schema.type === 'array' ? [[], []] : [{}, {}];
+            operations.unshift({ op: 'add', path: n.path, value: empty[0] });
+            n.obj = empty[1];
+            n.obj[key] = v;
+            key = n.key;
+            v = n.obj;
+            n = n.parent;
+        }
+        return operations
+    }
+
+    /**
+     * @param {boolean} disabled
      */
     refreshUI(disabled) {
         return undefined
     }
 }
 
-export class HolderNode extends BaseNode {
+class HolderNode extends BaseNode {
     /**
      * @param {NodeTree} tree
      * @param {string | number} key
@@ -290,7 +347,6 @@ export class HolderNode extends BaseNode {
     }
 
     /**
-     * TODO: What is this doing?
      * @param {?} obj
      * @param {boolean} disabled
      * @returns {?HTMLInputElement}
@@ -309,6 +365,12 @@ export class HolderNode extends BaseNode {
         }
 
         return undefined
+    }
+
+    /**
+     * @param {boolean} disabled
+     */
+    refreshUI(disabled) {
     }
 
 }
@@ -360,7 +422,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         if (schema.format === 'grid' || schema.type === 'object' || schema.type === 'array') {
             constructor = HolderNode
         } else {
-            constructor = BaseNode;
+            constructor = LeafNode;
         }
         return new constructor(rootTree, key, schema, parent);
     }
@@ -403,7 +465,6 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         node.refreshUI = function () {
             view.applyJSONPatch([{ op: 'replace', path: '', value: node.obj }]);
             grid.refresh(node.path);
-            return undefined;
         }
     }
 
@@ -489,12 +550,15 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             return
         }
 
+        if (!(node instanceof LeafNode)) throw Error();
+
         //console.log('bind: ' + path);
         if (!control) {
             console.error(`Cannot find control for ${node.path}`);
             return
         }
 
+        node.formElement = element;
 
         if (schema.type === 'boolean') {
             if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
@@ -502,10 +566,9 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             const input = element;
             input.type = 'checkbox';
             node.refreshUI = function (disabled) {
-                const value = this.getValue();
+                const value = node.getValue();
                 input.checked = (value == null ? false : value);
                 input.disabled = node.readOnly || disabled;
-                return undefined;
             };
 
             input.onchange = function (event) {
@@ -522,9 +585,8 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
                 input.appendChild(option);
             });
             node.refreshUI = function (disabled) {
-                input.value = this.getValue();
+                input.value = node.getValue();
                 input.disabled = node.readOnly || disabled;
-                return undefined;
             };
 
             input.onchange = function (event) {
@@ -536,14 +598,13 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             const input = element;
             const converter = new StringConverter();
             node.refreshUI = function (disabled) {
-                const value = this.getValue();
+                const value = node.getValue();
                 if (value == null) {
                     input.defaultValue = input.value = '';
                 } else {
                     input.defaultValue = input.value = converter.toEditable(value);
                 }
                 input.disabled = node.readOnly || disabled;
-                return input
             };
 
             if (input instanceof HTMLInputElement) {
@@ -566,14 +627,13 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             let converter;
 
             node.refreshUI = function (disabled) {
-                const value = this.getValue();
+                const value = node.getValue();
                 if (value == null) {
                     input.defaultValue = input.value = '';
                 } else {
                     input.defaultValue = input.value = converter.toEditable(value);
                 }
                 input.disabled = node.readOnly || disabled;
-                return input
             };
 
             if (schema.type === 'integer' || schema.type === 'number') {
