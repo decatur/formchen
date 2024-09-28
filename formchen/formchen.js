@@ -41,47 +41,50 @@ class NodeTree {
     /**
      */
     constructor() {
-        this.nodesById = {};
+        this.nodesByPath = {};
     }
 
     /**
      * @param {BaseNode} node 
      */
     add(node) {
-        this.nodesById[node.path] = node;
+        this.nodesByPath[node.path] = node;
     }
 
     /**
      * @param {string} path 
      * @returns {BaseNode}
      */
-    getNodeById(path) {
-        return this.nodesById[path]
+    getNode(path) {
+        return this.nodesByPath[path]
     }
 }
 
 /**
- * BaseNode decorates a (possibly nested) JavaScript value and its type (via JSON Schema).
+ * HolderNode and LeafNode decorate a (possibly nested) JavaScript value and its type (via JSON Schema).
  * It also makes the type tree navigable from child to parent and from parent to child.
  *                                                                    
                                       
-            ┌───────────────────────────────────────────┐           
+            ┌───────────────────────────────────────────┐ 
+            │               HolderNode                  │         
             │ obj:  {foo: {bar: 'foobar'}, bar: 1}      │           
             │ key:  ''                                  │
             | path: ''                                  |
             └─────┬─────────────────────────────┬───────┘           
                   │                             │                   
                   │                             │                   
-                  ▼                             ▼                   
-     ┌────────────────────────┐      ┌───────────────────────┐   
-     │ obj:  {bar: 'foobar'}} │      │                       │   
-     │ key:  'foo'            │      │ key:  'bar'           │   
-     │ path: '/foo'           |      | path: '/foo/bar'      |
-     └────────────┬───────────┘      └───────────────────────┘   
+                  ▼                             ▼        
+     ┌────────────────────────┐                        
+     │       LeafNode         │      ┌──────────────────┐   
+     │ obj:  {bar: 'foobar'}} │      │    LeafNode      │   
+     │ key:  'foo'            │      │ key:  'bar'      │   
+     │ path: '/foo'           |      | path: '/foo/bar' |
+     └────────────┬───────────┘      └──────────────────┘   
                   │                                                 
                   │                                                 
                   ▼                                                 
           ┌──────────────────┐                                         
+          │    LeafNode      │   
           │ key:  'bar'      │
           │ path: '/foo/bar' │
           └──────────────────┘                                         
@@ -138,7 +141,7 @@ class BaseNode {
         class MyPatch extends Patch {
             apply() {
                 for (let op of this.operations) {
-                    let n = node.tree.getNodeById(op.path);
+                    let n = node.tree.getNode(op.path);
                     n.setValue(op.value, false);
                     if (n instanceof LeafNode) n.formElement.focus();
                 }
@@ -417,30 +420,28 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     */
     function createNode(key, schema, parent) {
         schema = resolveSchema(schema, String(key));
-        let constructor;
+        let node;
         if (schema.format === 'grid' || schema.type === 'object' || schema.type === 'array') {
-            constructor = HolderNode
+            node = new HolderNode(rootTree, key, schema, parent);
+            bindHolderNode(node);
         } else {
-            constructor = LeafNode;
+            node = new LeafNode(rootTree, key, schema, parent);
+            bindLeafNode(node);
         }
-        return new constructor(rootTree, key, schema, parent);
+        return node;
     }
 
     // registerGlobalTransactionManager();
     const rootNode = createNode('', topSchema, holder);
-    bindNode(rootNode, rootElement);
-
     rootNode.patchValue(topObj);
 
     /**
      * @param {HolderNode} node
-     * @param {HTMLElement} container
      */
-    function bindObject(node, container) {
+    function bindObject(node) {
         const properties = node.schema.properties || [];
         for (let [key, childSchema] of Object.entries(properties)) {
-            const childNode = createNode(key, childSchema, node);
-            bindNode(childNode, container);
+            createNode(key, childSchema, node);
         }
     }
 
@@ -469,9 +470,8 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
     /**
      * @param {HolderNode} node
-     * @param {HTMLElement} container
      */
-    function bindTuple(node, container) {
+    function bindTuple(node) {
         if (!Array.isArray(node.schema.prefixItems)) {
             throw Error(`Node ${node.path} must have a prefixItems property`);
         }
@@ -479,84 +479,26 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         // Fixed length tuple.
         const tupleSchemas = /**@type{JSONSchema[]}*/ (node.schema.prefixItems);
         tupleSchemas.forEach((itemSchema, i) => {
-            const childNode = createNode(String(i), itemSchema, node);
-            bindNode(childNode, container);
+            createNode(String(i), itemSchema, node);
         });
     }
 
     /**
      * 
-     * @param {BaseNode} node 
-     * @param {HTMLElement} container
+     * @param {LeafNode} node 
      */
-    function bindNode(node, container) {
+    function bindLeafNode(node) {
+        const container = rootElement;
         const schema = node.schema;
         const path = node.path;
 
-        /** @type{?HTMLElement} */
-        let control;
-        /** @type{?HTMLElement} */
-        let element = container.querySelector(`[name="${path}"]`);
-        if (element) {
-            // Case <label><span class="data-title"></span><input name="/plant"></label>
-            control = element.closest('label')
-        } else {
-            element = document.getElementById(path);
-            if (element) {
-                // Case <label for="/reference"><span class="data-title"></span></label><input id="/reference">
-                control = container.querySelector(`[for="${path}"]`);
-            } else {
-                control = container.querySelector(`[data-path="${path}"]`);
-                if (control) {
-                    // Case <label data-path="/latitude" class="label"><span class="data-title"></span><input class="data-value"></label>
-                    element = control.querySelector('.data-value');
-                }
-            }
-        }
-
-        if (control) {
-            let element = control.querySelector('.data-title');
-
-            if (element) {
-                if (!(element instanceof HTMLElement)) throw Error(element.tagName);
-                let title = /**@type{HTMLElement}*/ (control.querySelector('.data-title'));
-                title.textContent = node.title;
-                //if (node.parent && node.parent.parent !== undefined) {
-                //    title.textContent = node.parent.title + ' ' + node.title;
-                // }
-                if (node.tooltip) {
-                    title.title = node.tooltip;
-                }
-
-            }
-        }
-
-        if (schema.type === 'object' || schema.type === 'array') {
-            if (schema.format === 'grid') {
-                if (!control) {
-                    console.error(`Cannot find control for ${node.path}`);
-                    return
-                }
-
-                if (!(element instanceof GridChen)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
-                bindGrid(/**@type{HolderNode}*/(node), element);
-            } else if (schema.type === 'object') {
-                bindObject(/**@type{HolderNode}*/(node), container);
-            } else if (schema.type === 'array') {
-                bindTuple(/**@type{HolderNode}*/(node), container);
-            }
-
-            return
-        }
-
-        if (!(node instanceof LeafNode)) throw Error();
-
-        //console.log('bind: ' + path);
-        if (!control) {
+        let control = new Control(container, path, node);
+        if (!control.element) {
             console.error(`Cannot find control for ${node.path}`);
             return
         }
 
+        const element = control.element;
         node.formElement = element;
 
         if (schema.type === 'boolean') {
@@ -680,9 +622,37 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
             trans.commit();
         };
 
-        let unit = control.querySelector('.data-unit');
+        let unit = control.control.querySelector('.data-unit');
         if (unit && schema.unit) {
             unit.textContent = `[${schema.unit}]`;
+        }
+
+    }
+
+    /**
+     * 
+     * @param {HolderNode} node 
+     */
+    function bindHolderNode(node) {
+        const schema = node.schema;
+        const path = node.path;
+
+        let control = new Control(rootElement, path, node);
+
+        if (schema.format === 'grid') {
+            if (!control.element) {
+                console.error(`Cannot find control for ${path}`);
+                return
+            }
+
+            if (!(control.element instanceof GridChen)) throw Error(`Form element at path ${path} must be an input, but found a ${control.element.tagName}`);
+            bindGrid(/**@type{HolderNode}*/(node), control.element);
+        } else if (schema.type === 'object') {
+            bindObject(/**@type{HolderNode}*/(node));
+        } else if (schema.type === 'array') {
+            bindTuple(/**@type{HolderNode}*/(node));
+        } else {
+            throw Error();
         }
 
     }
@@ -704,7 +674,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
          * @returns {BaseNode}
          */
         getNodeById(id) {
-            return rootTree.getNodeById(id);
+            return rootTree.getNode(id);
         }
     }
 
@@ -747,3 +717,49 @@ export function squash_formchen_patch(patch) {
 
     return squashed;
 }
+
+class Control {
+    /**
+    * @param {HTMLElement} container
+    * @param {string} path
+    * @param {BaseNode} node
+    */
+    constructor(container, path, node) {
+        /** @type{?HTMLElement} */
+        this.control;
+        /** @type{?HTMLElement} */
+        this.element = container.querySelector(`[name="${path}"]`);
+
+        if (this.element) {
+            // Case <label><span class="data-title"></span><input name="/plant"></label>
+            this.control = this.element.closest('label')
+        } else {
+            this.element = document.getElementById(path);
+            if (this.element) {
+                // Case <label for="/reference"><span class="data-title"></span></label><input id="/reference">
+                this.control = container.querySelector(`[for="${path}"]`);
+            } else {
+                this.control = container.querySelector(`[data-path="${path}"]`);
+                if (this.control) {
+                    // Case <label data-path="/latitude" class="label"><span class="data-title"></span><input class="data-value"></label>
+                    this.element = this.control.querySelector('.data-value');
+                }
+            }
+        }
+
+        if (this.control) {
+            let title = this.control.querySelector('.data-title');
+
+            if (title) {
+                if (!(title instanceof HTMLElement)) throw Error(title.tagName);
+                title.textContent = node.title;
+                if (node.tooltip) {
+                    title.title = node.tooltip;
+                }
+
+            }
+        }
+    }
+
+}
+

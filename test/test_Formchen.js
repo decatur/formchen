@@ -168,7 +168,7 @@ test('FormChen', (test_name) => {
     assert.equal({ op: "replace", path: "/someFloat", value: 3.15, oldValue: 3.14 }, tm.patch.pop());
 
     /** @type{GridChen} */
-    const gc = (container.querySelector(`[data-path="/someMatrix"]`).querySelector('.data-value'));
+    const gc = (container.querySelector(`[name="/someMatrix"]`));
     gc._keyboard('keydown', { key: " " });
     gc._sendKeys('2020-01-01 00:00Z');
     gc._keyboard('keydown', { code: 'Enter' });

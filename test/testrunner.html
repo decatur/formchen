@@ -12,62 +12,55 @@
     </p>
 
     <div id="Empty Object one Level">
-        <label data-path="/foo" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label><span class="data-title"></span> <input name="/foo"></label>
     </div>
 
     <div id="Empty Object two Levels">
-        <label data-path="/foo" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/bar/foobar" class="label"><span class="data-title"></span> <input
-                class="data-value"></label>
+        <label data-path="/foo"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/bar/foobar"><span class="data-title"></span> <input class="data-value"></label>
     </div>
 
     <div id="Delete">
-        <label data-path="/foo" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/bar/foobar" class="label"><span class="data-title"></span> <input
-                class="data-value"></label>
+        <label data-path="/foo"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/bar/foobar"><span class="data-title"></span> <input class="data-value"></label>
     </div>
 
     <div id="Delete subtree">
-        <label data-path="/foo" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/bar/foobar" class="label"><span class="data-title"></span> <input
-                class="data-value"></label>
+        <label data-path="/foo"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/bar/foobar"><span class="data-title"></span> <input class="data-value"></label>
     </div>
 
     <div id="Empty object with grid">
-        <div data-path="/foo">
-            <label class="data-title"> <span class="data-unit"></span></label>
-            <grid-chen class="data-value" style="display:block; height:200px"></grid-chen>
-        </div>
+        <label class="data-title"> <span class="data-unit"></span>
+            <grid-chen name="/foo" style="display:block; height:200px"></grid-chen>
+        </label>
     </div>
     <script type="module" src="./test_empty_object.js"></script>
 
     <div id="Atomic">
-        <label data-path="/foobar" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/foobar"><span class="data-title"></span> <input class="data-value"></label>
     </div>
-    
+
     <div id="FormChen">
-        <label data-path="/someString" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someURI" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someEnum" class="label"><span class="data-title"></span> <select
-                class="data-value"></select></label>
-        <label data-path="/someDate" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someDateTime" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someBoolean" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someInteger" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someFloat" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someColor" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/anObject/someOtherString" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <div data-path="/someMatrix">
-            <label class="data-title"> <span class="data-unit"></span></label>
-            <grid-chen class="data-value" style="display:block; height:10em"></grid-chen>
-        </div>
-        <div data-path="/anEmptyMatrix">
-            <label class="data-title"> <span class="data-unit"></span></label>
-            <grid-chen class="data-value" style="display:block; height:10em"></grid-chen>
-        </div>
-        <label data-path="/tuple/0" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/tuple/1" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/tuple/2" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someString"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someURI"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someEnum"><span class="data-title"></span> <select class="data-value"></select></label>
+        <label data-path="/someDate"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someDateTime"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someBoolean"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someInteger"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someFloat"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/someColor"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/anObject/someOtherString"><span class="data-title"></span> <input class="data-value"></label>
+        <label class="data-title">
+            <grid-chen name="/someMatrix" style="display:block; height:10em"></grid-chen>
+        </label>
+        <label class="data-title">
+            <grid-chen name="/anEmptyMatrix" style="display:block; height:10em"></grid-chen>
+        </label>
+        <label data-path="/tuple/0"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/tuple/1"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/tuple/2"><span class="data-title"></span> <input class="data-value"></label>
     </div>
     <script type="module" src="./test_Formchen.js"></script>
 

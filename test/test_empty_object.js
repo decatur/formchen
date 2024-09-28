@@ -20,7 +20,7 @@ test('Empty Object one Level', (test_name) => {
     const tm = new TransactionManager();
     const fc = createFormChen(container, schema, null, tm);
 
-    let input = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));
+    let input = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/foo"]`));
 
     input.value = 'foo';
     input.onchange(null);
@@ -185,8 +185,7 @@ test('Empty object with grid', (test_name) => {
     const container = document.getElementById(test_name);
     const tm = new TransactionManager();
     const fc = createFormChen(container, schema, null, tm);
-
-    const gc = /** @type{GridChen} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));
+    const gc = /** @type{GridChen} */ (container.querySelector(`[name="/foo"]`));
 
     gc._click(0, 0);  // NoOp because cell 0,0 is selected by default.
     gc._sendKeys('2020-01-01 00:00Z');

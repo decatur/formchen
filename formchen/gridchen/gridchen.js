@@ -1237,6 +1237,14 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         cellParent.dispatchEvent(new MouseEvent('mouseup', pixelCoords));
     };
 
+    gridchenElement._sendKeys = function (keys) {
+        if (editor.mode !== edit.HIDDEN) {
+            editor._sendKeys(keys);
+        } else if (!activeCell.isReadOnly()) {
+            activeCell.enterInputMode(keys);
+        }
+    };
+
     /**
      * Hidden API for unit testing.
      * Dispatches the specified keyboard event.

@@ -26,13 +26,13 @@
         <label for="/reference"><span class="data-title"></span></label><input id="/reference">
         <label><span class="data-title"></span><select name="/observer"></select></label>
         <label><span class="data-title"></span><input name="/start"></label>
-        <label data-path="/latitude" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/longitude" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label data-path="/latitude"><span class="data-title"></span> <input class="data-value"></label>
+        <label><span class="data-title"></span> <input name="/longitude"></label>
         <label><span class="data-title"></span><grid-chen name="/measurements"
                 style="display:block; height:10em"></grid-chen>
         </label>
-        <label data-path="/isCompleted" class="label"><span class="data-title"></span> <input
-                class="data-value"></label>
+        <label><span class="data-title"></span> <input
+                name="/isCompleted"></label>
 
         <form class="edits">
             Edits
@@ -47,32 +47,29 @@
     <h2>Comprehensive Example</h2>
 
     <div id="ComprehensiveDemo">
-        <label data-path="/someString" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someURI" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someEnum" class="label"><span class="data-title"></span> <select
-                class="data-value"></select></label>
-        <label data-path="/someDate" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someDateTime" class="label"><span class="data-title"></span> <input
-                class="data-value"></label>
-        <label data-path="/someBoolean" class="label"><span class="data-title"></span> <input
-                class="data-value"></label>
-        <label data-path="/someInteger" class="label"><span class="data-title"></span> <input
-                class="data-value"></label>
-        <label data-path="/someFloat" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/someColor" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/anObject/someOtherString" class="label"><span class="data-title"></span> <input
-                class="data-value"></label>
-        <div data-path="/someMatrix">
-            <label class="data-title"> <span class="data-unit"></span></label>
-            <grid-chen class="data-value" style="display:block; height:10em"></grid-chen>
+        <label><span class="data-title"></span> <input name="/someString"></label>
+        <label><span class="data-title"></span> <input name="/someURI"></label>
+        <label><span class="data-title"></span> <select name="/someEnum"></select></label>
+        <label><span class="data-title"></span> <input name="/someDate"></label>
+        <label><span class="data-title"></span> <input
+                name="/someDateTime"></label>
+        <label><span class="data-title"></span> <input name="/someBoolean"></label>
+        <label><span class="data-title"></span> <input name="/someInteger"></label>
+        <label><span class="data-title"></span> <input name="/someFloat"></label>
+        <label><span class="data-title"></span> <input name="/someColor"></label>
+        <label><span class="data-title"></span> <input
+                name="/anObject/someOtherString"></label>
+        <div>
+            <label class="data-title"></label>
+            <grid-chen name="/someMatrix" style="display:block; height:10em"></grid-chen>
         </div>
-        <div data-path="/anEmptyMatrix">
-            <label class="data-title"> <span class="data-unit"></span></label>
-            <grid-chen class="data-value" style="display:block; height:10em"></grid-chen>
+        <div>
+            <label class="data-title"></span></label>
+            <grid-chen name="/anEmptyMatrix" style="display:block; height:10em"></grid-chen>
         </div>
-        <label data-path="/tuple/0" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/tuple/1" class="label"><span class="data-title"></span> <input class="data-value"></label>
-        <label data-path="/tuple/2" class="label"><span class="data-title"></span> <input class="data-value"></label>
+        <label><span class="data-title"></span> <input name="/tuple/0"></label>
+        <label><span class="data-title"></span> <input name="/tuple/1"></label>
+        <label><span class="data-title"></span> <input name="/tuple/2"></label>
 
         <form class="edits">
             Edits
