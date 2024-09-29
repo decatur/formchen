@@ -18,7 +18,7 @@
         details.
     </p>
 
-    <h2>Simple Example</h2>
+    <h2>Basic Example</h2>
 
     <div id="BasicDemo">
         <code class="src"></code>
@@ -31,8 +31,7 @@
         <label><span class="data-title"></span><grid-chen name="/measurements"
                 style="display:block; height:10em"></grid-chen>
         </label>
-        <label><span class="data-title"></span> <input
-                name="/isCompleted"></label>
+        <label><span class="data-title"></span> <input name="/isCompleted"></label>
 
         <form class="edits">
             Edits
@@ -41,8 +40,135 @@
             <label><input type="radio" name="contact" value="patch">Patch</label>
             <code></code>
         </form>
+
+        <script type="module">
+            import { createFormChen } from "./formchen/formchen.js"
+            import * as utils from "./formchen/utils.js";
+            import { REPR } from "./test/utils.js";
+
+            const schema = {
+                definitions: {
+                    "measurements": {
+                        title: 'Measurements',
+                        type: 'array',
+                        format: 'grid',
+                        items: {
+                            type: 'array',  // tuple schema
+                            items: [
+                                { title: 'TimeStamp', width: 200, type: 'string', format: 'date-time', period: 'HOURS' },
+                                { title: 'Age [d]', width: 100, type: 'number' },
+                                { title: 'Weight [g]', width: 100, type: 'number' }
+                            ]
+                        }
+                    }
+                },
+                title: 'BasicDemo',
+                type: 'object',
+                properties: {
+                    plant: {
+                        title: 'Plant',
+                        description: 'The name of the plant',
+                        type: 'string'
+                    },
+                    reference: {
+                        title: 'Reference',
+                        type: 'string',
+                        format: 'uri'
+                    },
+                    observer: {
+                        title: 'Observer',
+                        type: 'string',
+                        enum: ['Frida Krum', 'Tilda Swift']
+                    },
+                    start: {
+                        title: 'Started',
+                        type: 'string',
+                        format: 'date-time'
+                    },
+                    latitude: {
+                        title: 'Latitude',
+                        type: 'number',
+                        unit: '[DD]',
+                        fractionDigits: 5
+                    },
+                    longitude: {
+                        title: 'Longitude',
+                        type: 'number',
+                        unit: '[DD]',
+                        fractionDigits: 5
+                    },
+                    measurements: {
+                        title: 'Daylight Measurements',
+                        type: 'array',
+                        $ref: '#/definitions/measurements'
+                    },
+                    isCompleted: {
+                        title: 'Is Completed',
+                        type: 'boolean'
+                    }
+                }
+            };
+
+            const data = {
+                plant: 'Rubus idaeus',
+                reference: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
+                observer: 'Frida Krum',
+                start: '2019-01-01T00:00Z',
+                latitude: 41.40338,
+                longitude: 2.17403,
+                measurements: [
+                    ["2019-01-01T00:00Z", 0, 0],
+                    ["2019-02-01T00:00Z", 1, 2],
+                    ["2019-03-01T00:00Z", 2, 4]
+                ],
+                isCompleted: true
+            };
+
+            const container = document.getElementById(schema.title);
+            const tm = new utils.TransactionManager();
+            utils.registerUndo(document.body, tm);
+            const formchen = createFormChen(container, schema, data, tm);
+
+            // ==== End Displayed Code ====
+
+            const editsElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.edits > code'));
+            function refreshEdits() {
+                editsElement.textContent = REPR.stringify((state === 'patch' ? tm.patch : formchen.value), null, 2);
+            }
+
+            let state = 'hide';
+            container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputElement} */ elem) => {
+                elem.onchange = (ev) => {
+                    state = elem.value;
+                    if (state == 'hide') { editsElement.style.display = 'none' }
+                    else {
+                        editsElement.style.display = 'block';
+                        refreshEdits();
+                    }
+                }
+            })
+
+            tm.addEventListener('change', function () {
+                refreshEdits();
+                let transaction = tm.transactions.at(-1);
+                let target = transaction?.target;
+                if (target) {
+                    target.nextSibling?.remove()
+                    target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));
+                }
+            });
+
+            const srcElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.src'));
+            const script = container.querySelector('script').textContent;
+            srcElement.textContent = script.split('// ====')[0].replace(new RegExp('\n            ', 'g'), '\n');
+            //let schemaString =script.match(/schema = ([^;]*)/)[1];
+            //srcElement.textContent = schemaString.replace(new RegExp('\n            ', 'g'), '\n');
+
+            //let schemaString =script.match(/schema = ([^;]*)/)[1];
+            srcElement.textContent = REPR.stringify(schema, null, 2);
+
+        </script>
     </div>
-    <script type="module" src="./demo/basic-demo.js"></script>
 
     <h2>Comprehensive Example</h2>
 
@@ -51,14 +177,12 @@
         <label><span class="data-title"></span> <input name="/someURI"></label>
         <label><span class="data-title"></span> <select name="/someEnum"></select></label>
         <label><span class="data-title"></span> <input name="/someDate"></label>
-        <label><span class="data-title"></span> <input
-                name="/someDateTime"></label>
+        <label><span class="data-title"></span> <input name="/someDateTime"></label>
         <label><span class="data-title"></span> <input name="/someBoolean"></label>
         <label><span class="data-title"></span> <input name="/someInteger"></label>
         <label><span class="data-title"></span> <input name="/someFloat"></label>
         <label><span class="data-title"></span> <input name="/someColor"></label>
-        <label><span class="data-title"></span> <input
-                name="/anObject/someOtherString"></label>
+        <label><span class="data-title"></span> <input name="/anObject/someOtherString"></label>
         <div>
             <label class="data-title"></label>
             <grid-chen name="/someMatrix" style="display:block; height:10em"></grid-chen>

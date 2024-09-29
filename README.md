@@ -31,6 +31,12 @@ https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#t
 * https://docs.joshuatz.com/cheatsheets/js/jsdoc
 * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
 
+# VSCode Extensions
+
+* Error Lens
+* Live Preview
+
+
 
 
 
