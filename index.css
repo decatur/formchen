@@ -17,29 +17,34 @@ input, select, textarea {
     width: 10em;
 }
 
+.demo {
+    border-left: 3px solid #f36d33;
+    padding-left: 1em;
+}
+
 code {
     display: block;
     font-family: monospace;
     white-space: pre;
-    border: 1px solid #ddd;
-    border-left: 3px solid #f36d33;
-    background-color: #888;
+    /*border: 1px solid #ddd;
+    background-color: #888;*/
 }
 
-.edits {
-    background-color: #888;
+.views {
+    /*background-color: #888;*/
 }
 
-.edits code {
+.views code {
     display: none;
 }
 
-.edits input {
+.views input {
     display: inline !important;
 }
 
-.edits label {
+.views label {
     display: inline !important;
+    border: 1px solid;
 }
 
 @media (prefers-color-scheme: dark) {}

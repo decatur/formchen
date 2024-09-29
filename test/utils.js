@@ -167,3 +167,38 @@ export const REPR = {
     }
 };
 
+/**
+ * 
+ * @param {HTMLElement} container 
+ */
+export function bindViews(container, schema, valueCallback, tm) {
+    const codeElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.views > code'));
+
+    container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputElement} */ elem) => {
+        elem.onchange = (ev) => {
+            const state = elem.value;
+            if (state == 'page') { 
+                codeElement.style.display = 'none';
+                container.querySelector('div').style.display = 'block';
+            } else {
+                container.querySelector('div').style.display = 'none';
+                codeElement.style.display = 'block';
+                if (state == 'schema') {
+                    codeElement.textContent = REPR.stringify(schema, null, 2);
+                } else if (state == 'data') {
+                    codeElement.textContent = REPR.stringify(valueCallback(), null, 2);
+                } else if (state == 'patch') {
+                    codeElement.textContent = REPR.stringify(tm.patch, null, 2);
+                } else if (state == 'script') {
+                    let script = container.querySelector('script').textContent;
+                    script = script.split('// ====')[0].replace(new RegExp('\n            ', 'g'), '\n');
+                    script = script.replace(/schema = ([^;]*)/, 'schema = {...}');
+                    script = script.replace(/data = ([^;]*)/, 'data = {...}')
+                    codeElement.textContent = script;
+                }
+                
+            }
+        }
+    })
+}
+

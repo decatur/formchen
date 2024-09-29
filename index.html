@@ -20,31 +20,32 @@
 
     <h2>Basic Example</h2>
 
-    <div id="BasicDemo">
-        <code class="src"></code>
-        <label><span class="data-title"></span><textarea name="/plant"></textarea></label>
-        <label for="/reference"><span class="data-title"></span></label><input id="/reference">
-        <label><span class="data-title"></span><select name="/observer"></select></label>
-        <label><span class="data-title"></span><input name="/start"></label>
-        <label data-path="/latitude"><span class="data-title"></span> <input class="data-value"></label>
-        <label><span class="data-title"></span> <input name="/longitude"></label>
-        <label><span class="data-title"></span><grid-chen name="/measurements"
-                style="display:block; height:10em"></grid-chen>
-        </label>
-        <label><span class="data-title"></span> <input name="/isCompleted"></label>
-
-        <form class="edits">
-            Edits
-            <label><input type="radio" name="contact" value="hide" checked>Hide</label>
-            <label><input type="radio" name="contact" value="value">Value</label>
-            <label><input type="radio" name="contact" value="patch">Patch</label>
+    <div id="BasicDemo" class="demo">
+        <form class="views">
+            <label>Page<input type="radio" name="view" value="page" checked></label><label>Data<input type="radio" name="view" value="data"></label>
+            <label>Patch<input type="radio" name="view" value="patch"></label>
+            <label>Schema<input type="radio" name="view" value="schema"></label>
+            <label>Script<input type="radio" name="view" value="script"></label>
             <code></code>
         </form>
+
+        <div>
+            <label><span class="data-title"></span><textarea name="/plant"></textarea></label>
+            <label for="/reference"><span class="data-title"></span></label><input id="/reference">
+            <label><span class="data-title"></span><select name="/observer"></select></label>
+            <label><span class="data-title"></span><input name="/start"></label>
+            <label data-path="/latitude"><span class="data-title"></span> <input class="data-value"></label>
+            <label><span class="data-title"></span> <input name="/longitude"></label>
+            <label><span class="data-title"></span><grid-chen name="/measurements"
+                    style="display:block; height:10em"></grid-chen>
+            </label>
+            <label><span class="data-title"></span> <input name="/isCompleted"></label>
+        </div>
 
         <script type="module">
             import { createFormChen } from "./formchen/formchen.js"
             import * as utils from "./formchen/utils.js";
-            import { REPR } from "./test/utils.js";
+            import { REPR, bindViews } from "./test/utils.js";
 
             const schema = {
                 definitions: {
@@ -127,45 +128,66 @@
             const container = document.getElementById(schema.title);
             const tm = new utils.TransactionManager();
             utils.registerUndo(document.body, tm);
-            const formchen = createFormChen(container, schema, data, tm);
+            const formchen = createFormChen(container.querySelector('div'), schema, data, tm);
+            function value() {
+                return formchen.value
+            }
 
             // ==== End Displayed Code ====
 
-            const editsElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.edits > code'));
-            function refreshEdits() {
-                editsElement.textContent = REPR.stringify((state === 'patch' ? tm.patch : formchen.value), null, 2);
-            }
+            const codeElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.views > code'));
+            // function refreshEdits() {
+            //     editsElement.textContent = REPR.stringify((state === 'patch' ? tm.patch : formchen.value), null, 2);
+            // }
 
-            let state = 'hide';
-            container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputElement} */ elem) => {
-                elem.onchange = (ev) => {
-                    state = elem.value;
-                    if (state == 'hide') { editsElement.style.display = 'none' }
-                    else {
-                        editsElement.style.display = 'block';
-                        refreshEdits();
-                    }
-                }
-            })
+            //const srcElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.src'));
+            // let state = 'hide';
+            bindViews(container, schema, value, tm);
+            // container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputElement} */ elem) => {
+            //     elem.onchange = (ev) => {
+            //         const state = elem.value;
+            //         if (state == 'page') { 
+            //             codeElement.style.display = 'none';
+            //             container.querySelector('div').style.display = 'block';
+            //         } else {
+            //             container.querySelector('div').style.display = 'none';
+            //             codeElement.style.display = 'block';
+            //             if (state == 'schema') {
+            //                 codeElement.textContent = REPR.stringify(schema, null, 2);
+            //             } else if (state == 'data') {
+            //                 codeElement.textContent = REPR.stringify(formchen.value, null, 2);
+            //             } else if (state == 'patch') {
+            //                 codeElement.textContent = REPR.stringify(tm.patch, null, 2);
+            //             } else if (state == 'script') {
+            //                 let script = container.querySelector('script').textContent;
+            //                 script = script.split('// ====')[0].replace(new RegExp('\n            ', 'g'), '\n');
+            //                 script = script.replace(/schema = ([^;]*)/, 'schema = {...}');
+            //                 script = script.replace(/data = ([^;]*)/, 'data = {...}')
+            //                 codeElement.textContent = script;
+            //             }
+                        
+            //         }
+            //     }
+            // })
 
-            tm.addEventListener('change', function () {
-                refreshEdits();
-                let transaction = tm.transactions.at(-1);
-                let target = transaction?.target;
-                if (target) {
-                    target.nextSibling?.remove()
-                    target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));
-                }
-            });
+            // tm.addEventListener('change', function () {
+            //     //refreshEdits();
+            //     let transaction = tm.transactions.at(-1);
+            //     let target = transaction?.target;
+            //     if (target) {
+            //         target.nextSibling?.remove()
+            //         target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));
+            //     }
+            // });
 
-            const srcElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.src'));
-            const script = container.querySelector('script').textContent;
-            srcElement.textContent = script.split('// ====')[0].replace(new RegExp('\n            ', 'g'), '\n');
-            //let schemaString =script.match(/schema = ([^;]*)/)[1];
-            //srcElement.textContent = schemaString.replace(new RegExp('\n            ', 'g'), '\n');
+            // const srcElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.src'));
+            // const script = container.querySelector('script').textContent;
+            // srcElement.textContent = script.split('// ====')[0].replace(new RegExp('\n            ', 'g'), '\n');
+            // //let schemaString =script.match(/schema = ([^;]*)/)[1];
+            // //srcElement.textContent = schemaString.replace(new RegExp('\n            ', 'g'), '\n');
 
-            //let schemaString =script.match(/schema = ([^;]*)/)[1];
-            srcElement.textContent = REPR.stringify(schema, null, 2);
+            // //let schemaString =script.match(/schema = ([^;]*)/)[1];
+            // srcElement.textContent = REPR.stringify(schema, null, 2);
 
         </script>
     </div>
