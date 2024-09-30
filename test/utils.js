@@ -124,8 +124,8 @@ export const REPR = {
     stringify(v, replacer, depth, level) {
         level = level || 0;
         depth = depth || 0;
-        const nl0 = '\n' + Array.from({length: level * depth}, () => '  ').join('');
-        const nl1 = nl0 + Array.from({length: depth}, () => '  ').join('');
+        const nl0 = '\n' + Array.from({ length: level * depth }, () => '  ').join('');
+        const nl1 = nl0 + Array.from({ length: depth }, () => '  ').join('');
         const out = [];
         if (v == null) {
             out.push('null');
@@ -136,7 +136,7 @@ export const REPR = {
         } else if (v.constructor === Date) {
             out.push('new Date("' + v.toISOString().replace(':00.000Z', 'Z') + '")');
         } else if (Array.isArray(v)) {
-            const nestedArray=Array.isArray(v[0]);
+            const nestedArray = Array.isArray(v[0]);
             out.push('[');
             if (nestedArray) {
                 out.push(nl1);
@@ -167,17 +167,41 @@ export const REPR = {
     }
 };
 
+
 /**
  * 
  * @param {HTMLElement} container 
+ * @returns {HTMLElement}
  */
-export function bindViews(container, schema, valueCallback, tm) {
-    const codeElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.views > code'));
+function createRadioGroup(container) {
 
-    container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputElement} */ elem) => {
+    for (let value of ['Page', 'Data', 'Patch', 'Schema', 'Script']) {
+        let label = document.createElement('label');
+        label.textContent = value;
+        let input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'tabs';
+        input.value = value.toLowerCase();
+        if (value == 'Page') {
+            input.checked = true;
+        }
+        label.appendChild(input);
+        container.appendChild(label);
+    }
+    let code = document.createElement('code');
+    container.appendChild(code);
+    return code
+}
+/**
+ * @param {HTMLElement} container 
+ */
+export async function bindViews(container, schema, valueCallback, tm, url) {
+    const codeElement = createRadioGroup(container.querySelector('.tabs'));
+
+    codeElement.parentElement.querySelectorAll("input[type='radio']").forEach(async (/** @type{HTMLInputElement} */ elem) => {
         elem.onchange = (ev) => {
             const state = elem.value;
-            if (state == 'page') { 
+            if (state == 'page') {
                 codeElement.style.display = 'none';
                 container.querySelector('div').style.display = 'block';
             } else {
@@ -190,15 +214,22 @@ export function bindViews(container, schema, valueCallback, tm) {
                 } else if (state == 'patch') {
                     codeElement.textContent = REPR.stringify(tm.patch, null, 2);
                 } else if (state == 'script') {
-                    let script = container.querySelector('script').textContent;
+                    let script = code; //container.querySelector('script').textContent;
                     script = script.split('// ====')[0].replace(new RegExp('\n            ', 'g'), '\n');
                     script = script.replace(/schema = ([^;]*)/, 'schema = {...}');
                     script = script.replace(/data = ([^;]*)/, 'data = {...}')
                     codeElement.textContent = script;
                 }
-                
+
             }
         }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+        }
+
+    const code = await response.text();
     })
 }
 

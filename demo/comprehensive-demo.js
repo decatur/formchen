@@ -1,5 +1,6 @@
 import { createFormChen } from "../formchen/formchen.js"
 import * as utils from "../formchen/utils.js";
+import { REPR, bindViews } from "../test/utils.js";
 
 const schema = {
     definitions: {
@@ -10,9 +11,9 @@ const schema = {
             items: {
                 type: 'array',
                 items: [  // tuple schema
-                    {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
-                    {title: 'Age [d]', width: 100, type: 'number'},
-                    {title: 'Weight [g]', width: 100, type: 'number'}
+                    { title: 'TimeStamp', width: 200, type: 'string', format: 'date-time' },
+                    { title: 'Age [d]', width: 100, type: 'number' },
+                    { title: 'Weight [g]', width: 100, type: 'number' }
                 ]
             }
         }
@@ -121,8 +122,8 @@ const data = {
     ],
     tuple: ['To be taken to Paris', 'Being in Hollywood', 'My friends were back'],
     arrayOfTimeSeries: [
-        { country: 'Germany', prices: [['2019-01-01', '2019-02-01', 33]]},
-        { country: 'France', prices: [['2019-02-01', '2019-03-01', 42]]}
+        { country: 'Germany', prices: [['2019-01-01', '2019-02-01', 33]] },
+        { country: 'France', prices: [['2019-02-01', '2019-03-01', 42]] }
     ]
 };
 
@@ -130,30 +131,7 @@ const container = document.getElementById(schema.title);
 const tm = new utils.TransactionManager();
 utils.registerUndo(document.body, tm);
 const formchen = createFormChen(container, schema, data, tm);
-
-const editsElement = /** @type{HTMLTextAreaElement} **/ (container.querySelector('.edits > code'));
-function refreshEdits() {
-    editsElement.textContent = JSON.stringify((state === 'patch' ? tm.patch : formchen.value), null, 2);
+function value() {
+    return formchen.value
 }
-
-let state = 'hide';
-container.querySelectorAll("input[type='radio']").forEach((/** @type{HTMLInputElement} */ elem) => {
-    elem.onchange = (ev) => {
-        state = elem.value;
-        if (state == 'hide') { editsElement.style.display = 'none' }
-        else {
-            editsElement.style.display = 'block';
-            refreshEdits();
-        }
-    }
-})
-
-tm.addEventListener('change', function () {
-    refreshEdits();
-    let transaction = tm.transactions.at(-1);
-    let target = transaction?.target;
-    if (target) {
-        target.nextSibling?.remove()
-        target.insertAdjacentText('afterend', JSON.stringify(transaction.patches, null, 2));
-    }
-});
+bindViews(container, schema, value, tm, './demo/comprehensive-demo.js');

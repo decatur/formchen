@@ -30,19 +30,19 @@ code {
     background-color: #888;*/
 }
 
-.views {
+.tabs {
     /*background-color: #888;*/
 }
 
-.views code {
+.tabs code {
     display: none;
 }
 
-.views input {
+.tabs input {
     display: inline !important;
 }
 
-.views label {
+.tabs label {
     display: inline !important;
     border: 1px solid;
 }
