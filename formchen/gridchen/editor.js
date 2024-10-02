@@ -248,6 +248,9 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
             targetElem.dispatchEvent(new KeyboardEvent(typeArg, eventInitDict));
         }
 
+        /**
+         * @param {string} keys 
+         */
         _sendKeys(keys) {
             if (input.style.display !== 'none') {
                 input.value += keys;

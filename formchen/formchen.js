@@ -10,7 +10,7 @@
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
 import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter } from "./converter.js";
-import { Patch, TransactionManager } from "./utils.js";
+import { Patch, TransactionManager, registerUndo } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
 
 console.log('Loading Formchen with locale ' + navigator.language);
@@ -380,6 +380,8 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         throw Error("Root schema must be an object")
     }
 
+    registerUndo(document.body, transactionManager);
+
     /** @type{NodeTree} */
     const rootTree = new NodeTree();
 
@@ -442,11 +444,10 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     function bindGrid(node, grid) {
         grid.id = node.path;
         node.schema.readOnly = node.readOnly;  // schema is mutated anyway by createView.
-        node.schema.pathPrefix = node.path;
         const gridSchema = Object.assign({}, node.schema);
 
         const view = createView(gridSchema, null);
-        grid.resetFromView(view, transactionManager);
+        grid.resetFromView(view, transactionManager.withContext(node.path));
 
         view.updateHolder = function () {
             return node.patchValue(view.getModel())
@@ -674,39 +675,39 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
 // For replace operations on non-array fields only keep the lattest operation.
 // TODO: Consider using https://github.com/alshakero/json-squash
-/**
- * @param {any} patch
- */
-function squash_formchen_patch(patch) {
-    let scalar_fields = {};
-    let array_fields = {};
-    let squashed = [];
-    for (let op of patch) {
-        let m = op.path.match(/^(.*)\/\d/);
-        if (!m) {
-            console.assert(op.op == 'replace');
-            scalar_fields[op.path] = op;
-        } else {
-            let prefix = m[1];
-            if (!array_fields[prefix]) {
-                array_fields[prefix] = [];
-            }
-            array_fields[prefix].push(op);
-        }
-    }
+// /**
+//  * @param {any} patch
+//  */
+// function squash_formchen_patch(patch) {
+//     let scalar_fields = {};
+//     let array_fields = {};
+//     let squashed = [];
+//     for (let op of patch) {
+//         let m = op.path.match(/^(.*)\/\d/);
+//         if (!m) {
+//             console.assert(op.op == 'replace');
+//             scalar_fields[op.path] = op;
+//         } else {
+//             let prefix = m[1];
+//             if (!array_fields[prefix]) {
+//                 array_fields[prefix] = [];
+//             }
+//             array_fields[prefix].push(op);
+//         }
+//     }
 
-    for (const op of Object.values(scalar_fields)) {
-        squashed.push(op);
-    }
+//     for (const op of Object.values(scalar_fields)) {
+//         squashed.push(op);
+//     }
 
-    for (const [key, item_patch] of Object.entries(array_fields)) {
-        for (const op of Object.values(item_patch)) {
-            squashed.push(op);
-        }
-    }
+//     for (const [key, item_patch] of Object.entries(array_fields)) {
+//         for (const op of Object.values(item_patch)) {
+//             squashed.push(op);
+//         }
+//     }
 
-    return squashed;
-}
+//     return squashed;
+// }
 
 class Control {
     /**

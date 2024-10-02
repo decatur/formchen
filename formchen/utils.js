@@ -68,6 +68,11 @@ export function wrap(element, func) {
     }
 }
 
+/**
+ * 
+ * @param {number} v 
+ * @returns {string}
+ */
 function pad(v) {
     return String(v).padStart(2, '0');
 }
@@ -96,12 +101,12 @@ const SECONDS = resolvePeriod('SECONDS');
  */
 
 /**
- * The complete Triforce, or one or more components of the Triforce.
  * @typedef {Object} Transaction
  * @property {Patch[]} patches
  * @property {F1Type} commit
  * @property {JSONPatchOperation[]} operations
  * @property {HTMLElement} target
+ * @property {string} pathPrefix
  */
 
 // /**
@@ -212,7 +217,7 @@ export function toLocaleISODateTimeString(d, period) {
     }
     let dh = d.getHours() - d.getUTCHours();
     if (dh < 0) dh += 24;
-    return s + '+' + pad(String(dh)) + ':00';
+    return s + '+' + pad(dh) + ':00';
 }
 
 let localeDateParserSingleton = undefined;
@@ -489,6 +494,25 @@ export class TransactionManager {
         this.resolves = [];
     }
 
+    /**
+     * 
+     * @param {string} pathPrefix 
+     */
+    withContext(pathPrefix) {
+        return new Proxy(this, {
+            get(target, prop) {
+                if (prop == 'openTransaction') {
+                  return function (...args) {
+                    const t = target[prop].apply(target, args);
+                    t.pathPrefix = pathPrefix;
+                    return t
+                  }
+                }
+                return target[prop];
+            }
+        });
+    }
+
     fireChange(transaction) {
         const type = 'change';
         for (let listener of this.listenersByType[type]) {
@@ -527,6 +551,7 @@ export class TransactionManager {
     openTransaction(target) {
         const tm = this;
         return /**@type{Transaction}*/ ({
+            pathPrefix: '',
             patches: [],
             commit() {
                 tm.transactions.push(this);
@@ -537,7 +562,7 @@ export class TransactionManager {
                 for (let patch of this.patches) {
                     for (let op of patch.operations) {
                         const clonedOp = Object.assign({}, op);
-                        clonedOp.path = patch.pathPrefix + op.path;
+                        clonedOp.path = this.pathPrefix + op.path;
                         flattend.push(clonedOp);
                     }
                 }

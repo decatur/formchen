@@ -5,14 +5,17 @@
  * Module implementing the visual grid and scrolling behaviour.
  */
 
-/** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, MatrixView } from "../types" */
-/** @import { TransactionManager, Transaction } from "../utils" */
+/** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, MatrixView, JSONSchema } from "../types" */
+/** @import { Transaction } from "../utils" */
 
 
-import { logger, Patch, wrap } from "../utils.js";
+import { logger, Patch, wrap, TransactionManager, registerUndo } from "../utils.js";
 import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import * as edit from "./editor.js"
 import { renderPlot } from "./plotly_wrapper.js"
+import { createView } from "../gridchen/matrixview.js"
+
+
 
 //////////////////////
 // Start Configuration
@@ -65,6 +68,10 @@ const scrollBarWidth = scrollBarThumbWidth + 2 * scrollBarBorderWidth;
 
 //const numeric = new Set(['number', 'integer']);
 
+/**
+ * @param {number} count 
+ * @returns 
+ */
 function rangeIterator(count) {
     return Array.from({ length: count }, (_, i) => i);
 }
@@ -115,9 +122,9 @@ export class GridChen extends HTMLElement {
     constructor() {
         super();
         /** @type {MatrixView} */
-        this._viewModel = void 0;
+        this._viewModel;
         /** @type {TransactionManager} */
-        this._transactionManager = void 0;
+        this._transactionManager;
 
         ro.observe(this);
 
@@ -134,6 +141,21 @@ export class GridChen extends HTMLElement {
         this._click = undefined;
     }
 
+    get value() {
+        return this._viewModel.getModel()
+    }
+
+    /**
+     * 
+     * @param {JSONSchema} schema 
+     * @param {any} data 
+     * @param {TransactionManager} tm 
+     */
+    bind(schema, data, tm) {
+        const view = createView(schema, data);
+        registerUndo(document.body, tm);
+        this.resetFromView(view, tm);
+    }
 
     /**
      * @param {MatrixView} view
@@ -252,7 +274,6 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     const schemas = schema.columnSchemas;
     schema.readOnly = !tm;
 
-    let pathPrefix = schema.pathPrefix;
     const rowHeight = lineHeight + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
 
@@ -378,10 +399,8 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     container.appendChild(info);
 
     /**
-     * @param {string} path
      */
-    function refresh(path) {
-        pathPrefix = path;
+    function refresh() {
         rowCount = viewModel.rowCount();
         // TODO: Can we do better, i.e. send event to selection.grid?
         gridAbstraction.rowCount = rowCount;
@@ -397,7 +416,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
      */
     function commitTransaction(trans) {
         // Note: First refresh, then commit!
-        refresh(pathPrefix);
+        refresh();
         trans.commit();
         // gridchenElement.dispatchEvent(new CustomEvent('change', {detail: {patch: trans.patches}}));
     }
@@ -442,7 +461,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             header.addEventListener('click', function () {
                 // header.textContent = schema.title + ' ' + (header.textContent.substr(-1)==='↑'?'↓':'↑');
                 viewModel.sort(index);
-                refresh(pathPrefix);
+                refresh();
             });
             headerRow.appendChild(header);
             left = columnEnds[index];
@@ -474,6 +493,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             spanStyle.display = 'none';
             editor.open(mode, value, spanStyle, schemas[selection.active.columnIndex], activeCell.isReadOnly());
         },
+        /**
+         * @param {any} value 
+         */
         enterInputMode: function (value) {
             activeCell.openEditor(edit.INPUT, value);
         },
@@ -526,6 +548,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         return cellMatrix[r.rowIndex][r.columnIndex];
     }
 
+    /**
+     * @param {IRange} range 
+     */
     function repaintActiveCell(range) {
         const span = getCell(range);
         if (span) {
@@ -589,7 +614,10 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         selection.show();
     }));
 
-    /** @returns {boolean} */
+    /** 
+     * @param{number} columnIndex
+     * @returns {boolean} 
+     */
     function isColumnReadOnly(columnIndex) {
         const readOnly = schemas[columnIndex].readOnly;
         return readOnly === undefined ? schema.readOnly : readOnly;
@@ -611,7 +639,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         }
 
         const trans = tm.openTransaction(gridchenElement);
-        const patch = createPatch();
+        const patch = createPatch([], trans.pathPrefix);
         trans.patches.push(patch);
         const operations = patch.operations;
 
@@ -654,7 +682,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         }
 
         const trans = tm.openTransaction(gridchenElement);
-        const patch = createPatch();
+        const patch = createPatch([], trans.pathPrefix);
         trans.patches.push(patch);
         const operations = patch.operations;
 
@@ -673,11 +701,14 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             return
         }
         const trans = tm.openTransaction(gridchenElement);
-        trans.patches.push(createPatch(viewModel.splice(selection.active.rowIndex)));
+        trans.patches.push(createPatch(viewModel.splice(selection.active.rowIndex), trans.pathPrefix));
 
         commitTransaction(trans);
     }
 
+    /**
+     * @param {boolean} doCut 
+     */
     function copySelection(doCut) {
         window.navigator.clipboard.writeText(rangeToTSV(selection.areas[0], '\t', selection.headerSelected))
             .then(() => {
@@ -692,6 +723,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             });
     }
 
+    /**
+     * @param {KeyboardEvent} evt 
+     */
     function keyDownListener(evt) {
         logger.log('container.onkeydown ' + evt.code);
 
@@ -767,6 +801,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     let lastFoundRowIndex = -1;
     let lastSearchPattern = '';
 
+    /**
+     * @param {string} s 
+     */
     function find(s) {
         lastSearchPattern = s;
         // TODO: Handle viewModel not searchable.
@@ -791,14 +828,15 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         const [rowIndex, columnIndex] = patch.operations[0].path.split('/').slice(1).map(item => Number(item));
         selection.setRange(rowIndex, columnIndex, 1, 1);
         // TODO: refresh on transaction level!
-        refresh(pathPrefix);
+        refresh();
     }
 
     /**
-     * @param {JSONPatchOperation[]=} operations
+     * @param {JSONPatchOperation[]} operations
+     * @param {string} pathPrefix
      * @returns {Patch}
      */
-    function createPatch(operations) {
+    function createPatch(operations, pathPrefix) {
         class MyPatch extends Patch {
             apply() {
                 tmListener(this)
@@ -806,7 +844,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         }
 
         const patch = new MyPatch();
-        patch.operations = operations || [];
+        patch.operations = operations;
         patch.pathPrefix = pathPrefix;
 
         return patch
@@ -953,17 +991,16 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
                 v = undefined;
             } else {
                 v = schemas[colIndex].converter.fromEditable(value);
-                //value = value.replace(/\\n/g, '\n');
             }
 
             const model = viewModel.getModel();
-            const operations = viewModel.setCell(rowIndex, colIndex, value);
+            const operations = viewModel.setCell(rowIndex, colIndex, v);
             const trans = tm.openTransaction(gridchenElement);
 
             if (model !== viewModel.getModel()) {
                 trans.patches.push(viewModel.updateHolder());
             } else {
-                trans.patches.push(createPatch(operations));
+                trans.patches.push(createPatch(operations, trans.pathPrefix));
             }
 
             commitTransaction(trans);
@@ -1129,7 +1166,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         }
 
         const trans = tm.openTransaction(gridchenElement);
-        const patch = createPatch();
+        const patch = createPatch([], trans.pathPrefix);
         trans.patches.push(patch);
         const operations = patch.operations;
 
@@ -1152,6 +1189,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         commitTransaction(trans);
     }
 
+    /**
+     * @param {any[][]} matrix 
+     */
     function updateViewportRows(matrix) {
         const now = Date.now() / 1000;
         for (let index = 0; index < cellMatrix.length; index++) {
@@ -1226,7 +1266,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     const editor = edit.createEditor(cellParent, commitCellEdit, selection, lineHeight);
 
     firstRow = 0;
-    refresh(pathPrefix);
+    refresh();
 
     Object.defineProperty(gridchenElement, 'selectedRange',
         {
@@ -1251,6 +1291,8 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     /**
      * Hidden API for unit testing.
      * Dispatches a mousedown&mouseup event in the middle of the specified cell.
+     * @param{number} rowIndex
+     * @param{number} columnIndex
      */
     gridchenElement._click = function (rowIndex, columnIndex) {
         const pixelCoords = indexMapper.cellIndexToPixelCoords(rowIndex, columnIndex);
@@ -1258,6 +1300,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         cellParent.dispatchEvent(new MouseEvent('mouseup', pixelCoords));
     };
 
+    /***
+     * @param{string} keys
+     */
     gridchenElement._sendKeys = function (keys) {
         if (editor.mode !== edit.HIDDEN) {
             editor._sendKeys(keys);
@@ -1269,6 +1314,8 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     /**
      * Hidden API for unit testing.
      * Dispatches the specified keyboard event.
+     * @param{string} typeArg
+     * @param{KeyboardEventInit} eventInitDict
      */
     gridchenElement._keyboard = function (typeArg, eventInitDict) {
         if (editor.mode !== edit.HIDDEN) {

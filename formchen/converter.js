@@ -426,6 +426,10 @@ export class DateTimeStringConverter {
         return this.fromEditable(s).replace('T', ' ')
     }
 
+    /**
+     * @param {string} s 
+     * @returns {string}
+     */
     toEditable(s) {
         return this.toTSV(s)
     }

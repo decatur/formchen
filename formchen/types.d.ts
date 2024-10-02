@@ -30,7 +30,6 @@ export interface JSONSchema {
     tooltip?: string;
     readOnly?: boolean;
     title?: string;
-    pathPrefix?: string,
     type: string;
     /**
      * If properties is set, this schema describes an object.
@@ -69,7 +68,6 @@ export interface ColumnSchema {
 }
 
 export interface GridSchema {
-    pathPrefix: string,
     title: string;
     columnSchemas: ColumnSchema[];
     ids?: string[];
@@ -174,8 +172,8 @@ export interface MatrixView {
     removeModel: () => JSONPatch; // TODO: Return void.
     deleteRow: (rowIndex: number) => JSONPatch;
     getCell: (rowIndex: number, colIndex: number) => any;
-    getRow: (rowIndex: number) => any;
-    getColumn: (colIndex: number) => any;
+    getRow: (rowIndex: number) => any[];
+    getColumn: (colIndex: number) => any[];
     setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatchOperation[];
     splice: (rowIndex: number) => JSONPatch; // TODO: Rename to insertEmptyRow
     sort: (colIndex: number) => void;

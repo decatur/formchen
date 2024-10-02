@@ -1,7 +1,6 @@
 import { createFormChen } from "../formchen/formchen.js"
-import * as utils from "../formchen/utils.js";
-import { bindViews } from "../test/utils.js";
-
+import {TransactionManager} from "../formchen/utils.js";
+import { bindTabs } from "../test/utils.js";
 
 const schema = {
     definitions: {
@@ -81,14 +80,19 @@ const data = {
     isCompleted: true
 };
 
-const container = document.getElementById(schema.title);
-const tm = new utils.TransactionManager();
-utils.registerUndo(document.body, tm);
-const formchen = createFormChen(container.querySelector('div'), schema, data, tm);
+const tm = new TransactionManager();
+const formElement = document.getElementById(schema.title);
+const formchen = createFormChen(formElement, schema, data, tm);
+
 function value() {
     return formchen.value
 }
 
-bindViews(container, schema, value, tm, './demo/basic-demo.js');
+function patch() {
+    return tm.patch
+}
+
+// ==== End of displayed code
+bindTabs(formElement.parentElement, schema, value, patch, './demo/basic-demo.js');
 
 

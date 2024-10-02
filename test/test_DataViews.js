@@ -324,7 +324,7 @@ scope('ColumnVectorView', () => {
 
 scope('Test Invalid Schema', () => {
     try {
-        const view = createView({title: 'FooBar'}, []);
+        createView({title: 'FooBar', 'type': 'foo'}, []);
     } catch (e) {
         assert.equal("Invalid schema: FooBar", e.message);
     }

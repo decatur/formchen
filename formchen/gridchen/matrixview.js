@@ -41,6 +41,11 @@ function compare(a, b) {
     return 0;
 }
 
+/**
+ * @param {ColumnSchema[]} schemas 
+ * @param {number} colIndex 
+ * @returns {number}
+ */
 function updateSortDirection(schemas, colIndex) {
     let sortSchema = schemas[colIndex];
     let sortDirection = sortSchema.sortDirection;
@@ -55,7 +60,7 @@ function updateSortDirection(schemas, colIndex) {
     }
 
     sortSchema.sortDirection = sortDirection;
-    return [sortSchema.type, sortDirection];
+    return sortDirection
 }
 
 /**
@@ -78,13 +83,13 @@ function updateSchemaInPlace(schemas) {
             schema.converter = new c.NumberConverter(fractionDigits);
         } else if (schema.type === 'string' && schema.format === 'full-date') {
             schema.converter = new c.FullDateConverter();
-        } 
+        }
         // else if (schema.type === 'string' && schema.format === 'date-partial-time') {
         //     schema.converter = new c.DatePartialTimeStringConverter(schema.period || 'MINUTES');
         // } 
         else if (schema.type === 'string' && schema.format === 'date-time') {
             schema.converter = new c.DateTimeStringConverter(schema.period || 'MINUTES');
-        } 
+        }
         // else if (schema.type === 'object' && schema.format === 'full-date') {
         //     schema.converter = new c.DatePartialTimeConverter('DAYS');
         // } else if (schema.type === 'object' && schema.format === 'date-partial-time') {
@@ -251,7 +256,7 @@ class MatrixViewClass {
 
     /**
      * @param {number} rowIndex
-     * @returns {*[]}
+     * @returns {any[]}
      */
     getRow(rowIndex) {
         return range(this.columnCount()).map(columnIndex => this.getCell(rowIndex, columnIndex));
@@ -314,6 +319,12 @@ function createArray(length, mapfn) {
     return Array.from({ length: length }, mapfn)
 }
 
+/**
+ * @param {any[]} a 
+ * @param {number} targetLength 
+ * @param {string} prefix 
+ * @returns 
+ */
 function padArray(a, targetLength, prefix) {
     const patch = [];
     for (let k = a.length; k < targetLength; k++) {
@@ -362,7 +373,6 @@ export function createRowMatrixView(jsonSchema, rows) {
 
     /**@type{GridSchema} */
     const schema = {
-        pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
         readOnly: readOnly(jsonSchema)
@@ -443,7 +453,7 @@ export function createRowMatrixView(jsonSchema, rows) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @param value
+         * @param {any} value
          * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
@@ -500,7 +510,7 @@ export function createRowMatrixView(jsonSchema, rows) {
          */
         sort(colIndex) {
             colIndex = columnIndices[colIndex];
-            let [, sortDirection] = updateSortDirection(schemas, colIndex);
+            let sortDirection = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
         }
 
@@ -546,7 +556,6 @@ export function createRowObjectsView(jsonSchema, rows) {
 
     /**@type{GridSchema} */
     const schema = {
-        pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
         ids,
@@ -617,7 +626,7 @@ export function createRowObjectsView(jsonSchema, rows) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @param value
+         * @param {any} value
          * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
@@ -668,7 +677,7 @@ export function createRowObjectsView(jsonSchema, rows) {
          * @param {number} colIndex
          */
         sort(colIndex) {
-            let [, sortDirection] = updateSortDirection(schemas, colIndex);
+            let sortDirection = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
         }
 
@@ -690,6 +699,9 @@ export function createRowObjectsView(jsonSchema, rows) {
             return [-1, -1]
         }
 
+        /**
+         * @param {JSONPatchOperation[]} patch 
+         */
         applyJSONPatch(patch) {
             rows = /**@type{object[]}*/ (applyJSONPatch(rows, patch));
         }
@@ -709,7 +721,6 @@ export function createColumnMatrixView(jsonSchema, columns) {
 
     /**@type{GridSchema} */
     const schema = {
-        pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
         readOnly: readOnly(jsonSchema)
@@ -784,7 +795,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @param value
+         * @param {any} value
          * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
@@ -831,7 +842,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
          * @param {number} colIndex
          */
         sort(colIndex) {
-            let [, sortDirection] = updateSortDirection(schemas, colIndex);
+            let sortDirection = updateSortDirection(schemas, colIndex);
             const indexes = columns[colIndex].map((value, rowIndex) => [value, rowIndex]);
 
             indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);
@@ -899,7 +910,6 @@ export function createColumnObjectView(jsonSchema, columns) {
 
     /**@type{GridSchema}*/
     const schema = {
-        pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
         ids,
@@ -1041,7 +1051,7 @@ export function createColumnObjectView(jsonSchema, columns) {
          */
         sort(colIndex) {
             const key = ids[colIndex];
-            let [, sortDirection] = updateSortDirection(schemas, colIndex);
+            let sortDirection = updateSortDirection(schemas, colIndex);
             const indexes = columns[key].map((value, rowIndex) => [value, rowIndex]);
 
             indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);
@@ -1101,7 +1111,6 @@ export function createColumnVectorView(jsonSchema, column) {
 
     /**@type{GridSchema} */
     const schema = {
-        pathPrefix: jsonSchema.pathPrefix,
         title: title,
         columnSchemas: schemas,
         readOnly: readOnly(jsonSchema)
@@ -1213,7 +1222,7 @@ export function createColumnVectorView(jsonSchema, column) {
          */
         sort(colIndex) {
             console.assert(colIndex === 0);
-            let [, sortDirection] = updateSortDirection([columnSchema], 0);
+            let sortDirection = updateSortDirection([columnSchema], 0);
             column.sort((a, b) => compare(a, b) * sortDirection);
         }
 

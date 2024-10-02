@@ -8,7 +8,7 @@ export function log(msg) {
 function error(a, b, msg) {
     const err = Error('assertEqual failed');
     // console.error(err);
-    console.log(msg, 'Expected ' + a, 'Actual ' + b);
+    console.error(msg, 'Expected ' + a, 'Actual ' + b);
     throw err;
 }
 
@@ -175,7 +175,7 @@ export const REPR = {
  */
 function createRadioGroup(container) {
 
-    for (let value of ['Page', 'Data', 'Patch', 'Schema', 'Script']) {
+    for (let value of ['Page', 'Html', 'Script', 'Data', 'Patch', 'Schema']) {
         let label = document.createElement('label');
         label.textContent = value;
         let input = document.createElement('input');
@@ -195,29 +195,33 @@ function createRadioGroup(container) {
 /**
  * @param {HTMLElement} container 
  */
-export async function bindViews(container, schema, valueCallback, tm, url) {
-    const codeElement = createRadioGroup(container.querySelector('.tabs'));
+export async function bindTabs(container, schema, valueCallback, patchCallback, url) {
+    const pageElement = /** @type{HTMLElement} */(container.firstElementChild);
+    //  <form class="tabs"></form>
+    const tabsElement = document.createElement('form');
+    tabsElement.className = 'tabs';
+    container.insertBefore(tabsElement, pageElement);// /** @type{HTMLElement} */(container.querySelector('.tabs'));
+    const codeElement = createRadioGroup(tabsElement);
+    const html = pageElement.outerHTML;
 
     codeElement.parentElement.querySelectorAll("input[type='radio']").forEach(async (/** @type{HTMLInputElement} */ elem) => {
         elem.onchange = (ev) => {
             const state = elem.value;
             if (state == 'page') {
                 codeElement.style.display = 'none';
-                container.querySelector('div').style.display = 'block';
+                pageElement.style.display = 'block';
             } else {
-                container.querySelector('div').style.display = 'none';
+                pageElement.style.display = 'none';
                 codeElement.style.display = 'block';
-                if (state == 'schema') {
+                if (state == 'html') {
+                    codeElement.textContent = html;
+                } else if (state == 'schema') {
                     codeElement.textContent = REPR.stringify(schema, null, 2);
                 } else if (state == 'data') {
                     codeElement.textContent = REPR.stringify(valueCallback(), null, 2);
                 } else if (state == 'patch') {
-                    codeElement.textContent = REPR.stringify(tm.patch, null, 2);
+                    codeElement.textContent = REPR.stringify(patchCallback(), null, 2);
                 } else if (state == 'script') {
-                    let script = code; //container.querySelector('script').textContent;
-                    script = script.split('// ====')[0].replace(new RegExp('\n            ', 'g'), '\n');
-                    script = script.replace(/schema = ([^;]*)/, 'schema = {...}');
-                    script = script.replace(/data = ([^;]*)/, 'data = {...}')
                     codeElement.textContent = script;
                 }
 
@@ -226,10 +230,14 @@ export async function bindViews(container, schema, valueCallback, tm, url) {
 
         const response = await fetch(url);
         if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
+            throw new Error(`Response status: ${response.status}`);
         }
 
-    const code = await response.text();
+        let script = await response.text();
+        script = script.replace(/.*test\/utils.*\n/, '');
+        script = script.split('// ====')[0].replace(new RegExp('\n            ', 'g'), '\n');
+        script = script.replace(/schema = ([^;]*)/, 'schema = {...}');
+        script = script.replace(/data = ([^;]*)/, 'data = {...}')
     })
 }
 
