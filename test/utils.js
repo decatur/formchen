@@ -105,19 +105,7 @@ export async function async_test(test_name, func) {
  */
 export const REPR = {
     /**
-     * Return a JavaScript object from its representation.
-     * @param {string} s
-     * @returns {*}
-     */
-    parse(s) {
-        s = s.trim();
-        if (s === '') {
-            throw new SyntaxError('Unexpected end of REPR input');
-        }
-        return eval('(' + s + ')')
-    },
-    /**
-     * Return a string containing a printable representation of an object.
+     * Return a string containing a printable representation of a value.
      * @param {*} v
      * @param {null} replacer
      * @param {number=} depth
@@ -249,7 +237,7 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
     })
 
     appendRadio('Schema').onchange = () => showCode(() => {
-        codeElement.textContent = REPR.stringify(schema, null, 2);
+        codeElement.textContent =schemaRepr;
     })
 
     appendRadio('Data').onchange = () => showCode(() => {
@@ -268,7 +256,10 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
     container.insertBefore(tabsElement, someElement);
     let codeElement = document.createElement('code');
     container.insertBefore(codeElement, someElement);
+    // HTML mutates once it is bound to formchen or gridchen. So we take a snapshot here.
     const html = someElement.outerHTML;
+    // Schema mutates once it is attached to gridchen. So we take a snapshot here.
+    const schemaRepr = REPR.stringify(schema, null, 2);
 
     const response = await fetch(scripts.shift().src);
     if (!response.ok) {

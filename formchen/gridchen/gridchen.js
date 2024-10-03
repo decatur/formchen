@@ -376,12 +376,6 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             border-width: ${cellBorderWidth}px;
         }
 
-        kbd {
-            border: 1px solid #ccc;
-            padding: 2px 4px;
-            border-radius: 3px;
-            background-color: #f7f7f7;
-        }
     `;
     container.appendChild(styleSheet);
 
