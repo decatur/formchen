@@ -24,6 +24,7 @@ const data = [
 
 const tm = new TransactionManager();
 const gridElement = /** @type{GridChen} */ (document.getElementById(schema.title));
+bindTabs(gridElement, schema, value, patch);
 gridElement.bind(schema, data, tm);
 
 function value() {
@@ -33,7 +34,4 @@ function value() {
 function patch() {
     return tm.patch
 }
-
-// ==== End of displayed code
-bindTabs(gridElement.parentElement, schema, value, patch, './demo/array_of_row_objects.js');
 

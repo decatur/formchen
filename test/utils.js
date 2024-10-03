@@ -1,3 +1,5 @@
+/** @import { F1Type } from "../formchen/utils.js" */
+
 /**
  * @param {string} msg 
  */
@@ -73,7 +75,7 @@ export const assert = {
 };
 
 /**
- * @callback F1Type
+ * @callback F2Type
  * @param {string} test_name 
  * @returns {void}
  */
@@ -81,7 +83,7 @@ export const assert = {
 /**
  * 
  * @param {string} test_name 
- * @param {F1Type} func 
+ * @param {F2Type} func 
  */
 export function test(test_name, func) {
     if (window.location.hash === '' || window.location.hash == '#' + test_name) {
@@ -168,76 +170,105 @@ export const REPR = {
 };
 
 
-/**
- * 
- * @param {HTMLElement} container 
- * @returns {HTMLElement}
- */
-function createRadioGroup(container) {
+let scripts = Array(...document.body.getElementsByTagName('script'));
 
-    for (let value of ['Page', 'Html', 'Script', 'Data', 'Patch', 'Schema']) {
+/**
+ * Augments HTML of the form
+ * 
+ * <div class=".demo">
+ *   <some id="SomeId"></some>
+ * </div>
+ * 
+ * with a radio group and a code element as such
+ * 
+ * <div class=".demo">
+ *   <form>
+ *     <label>Page<input type="radio" name="tabs" value="page"></label>
+ *     ...
+ *   </form>
+ *   <code></code>
+ *   <some id="SomeId">...</some>
+ * </div>
+ * 
+ * @param {HTMLElement} someElement 
+ * @param {object} schema
+ */
+export async function bindTabs(someElement, schema, valueCallback, patchCallback) {
+
+
+    const container = someElement.closest('.demo');
+    const tabsElement = document.createElement('form');
+    tabsElement.className = 'tabs';
+
+    /**
+     * @param {string} name 
+     * @returns {HTMLInputElement}
+     */
+    function appendRadio(name) {
         let label = document.createElement('label');
-        label.textContent = value;
+        label.textContent = name;
         let input = document.createElement('input');
         input.type = 'radio';
         input.name = 'tabs';
-        input.value = value.toLowerCase();
-        if (value == 'Page') {
+        input.value = name.toLowerCase();
+        if (name == 'Page') {
             input.checked = true;
         }
         label.appendChild(input);
-        container.appendChild(label);
+        tabsElement.appendChild(label);
+        return input
     }
-    let code = document.createElement('code');
-    container.appendChild(code);
-    return code
-}
-/**
- * @param {HTMLElement} container 
- */
-export async function bindTabs(container, schema, valueCallback, patchCallback, url) {
-    const pageElement = /** @type{HTMLElement} */(container.firstElementChild);
-    //  <form class="tabs"></form>
-    const tabsElement = document.createElement('form');
-    tabsElement.className = 'tabs';
-    container.insertBefore(tabsElement, pageElement);// /** @type{HTMLElement} */(container.querySelector('.tabs'));
-    const codeElement = createRadioGroup(tabsElement);
-    const html = pageElement.outerHTML;
 
-    codeElement.parentElement.querySelectorAll("input[type='radio']").forEach(async (/** @type{HTMLInputElement} */ elem) => {
-        elem.onchange = (ev) => {
-            const state = elem.value;
-            if (state == 'page') {
-                codeElement.style.display = 'none';
-                pageElement.style.display = 'block';
-            } else {
-                pageElement.style.display = 'none';
-                codeElement.style.display = 'block';
-                if (state == 'html') {
-                    codeElement.textContent = html;
-                } else if (state == 'schema') {
-                    codeElement.textContent = REPR.stringify(schema, null, 2);
-                } else if (state == 'data') {
-                    codeElement.textContent = REPR.stringify(valueCallback(), null, 2);
-                } else if (state == 'patch') {
-                    codeElement.textContent = REPR.stringify(patchCallback(), null, 2);
-                } else if (state == 'script') {
-                    codeElement.textContent = script;
-                }
+    /**
+     * @param {F1Type} func 
+     */
+    function showCode(func) {
+        someElement.style.display = 'none';
+        codeElement.style.display = 'block';
+        func()
+    }
 
-            }
-        }
 
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Response status: ${response.status}`);
-        }
+    appendRadio('Page').onchange = () => {
+        codeElement.style.display = 'none';
+        someElement.style.display = 'block';
+    }
 
-        let script = await response.text();
-        script = script.replace(/.*test\/utils.*\n/, '');
-        script = script.split('// ====')[0].replace(new RegExp('\n            ', 'g'), '\n');
-        script = script.replace(/schema = ([^;]*)/, 'schema = {...}');
-        script = script.replace(/data = ([^;]*)/, 'data = {...}')
+    appendRadio('Html').onchange = () => showCode(() => {
+        codeElement.textContent = html;
     })
+
+    appendRadio('Schema').onchange = () => showCode(() => {
+        codeElement.textContent = REPR.stringify(schema, null, 2);
+    })
+
+    appendRadio('Data').onchange = () => showCode(() => {
+        codeElement.textContent = REPR.stringify(valueCallback(), null, 2);
+    })
+
+    appendRadio('Patch').onchange = () => showCode(() => {
+        codeElement.textContent = REPR.stringify(patchCallback(), null, 2);
+    })
+
+    appendRadio('Script').onchange = () => showCode(() => {
+        codeElement.textContent = script;
+    })
+
+    container.insertBefore(tabsElement, someElement);
+    let codeElement = document.createElement('code');
+    container.insertBefore(codeElement, someElement);
+    const html = someElement.outerHTML;
+
+    const response = await fetch(scripts.shift().src);
+    if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+    }
+
+    let script = await response.text();
+    // Remove all lines containing bindTabs stuff
+    script = script.replaceAll(/.*bindTabs.*\n/g, '');
+    // Remove schema and data content
+    script = script.replaceAll(/(schema|data) = ([^;]*)/g, '$1 = {...}');
+
 }
 

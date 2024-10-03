@@ -109,7 +109,6 @@ const schema = {
         }
     }
 };
-
 const data = {
     someString: 'Rubus idaeus',
     someURI: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
@@ -134,6 +133,7 @@ const data = {
 
 const tm = new TransactionManager();
 const formElement = document.getElementById(schema.title);
+bindTabs(formElement, schema, value, patch);
 const formchen = createFormChen(formElement, schema, data, tm);
 
 function value() {
@@ -143,7 +143,4 @@ function value() {
 function patch() {
     return tm.patch
 }
-
-// ==== End of displayed code
-bindTabs(formElement.parentElement, schema, value, patch, './demo/basic-demo.js');
 
