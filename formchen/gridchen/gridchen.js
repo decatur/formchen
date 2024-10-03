@@ -141,6 +141,9 @@ export class GridChen extends HTMLElement {
         this._click = undefined;
     }
 
+    /**
+     * @returns {object}
+     */
     get value() {
         return this._viewModel.getModel()
     }

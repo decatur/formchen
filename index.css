@@ -23,15 +23,17 @@ input, select, textarea {
 }
 
 code {
-    display: block;
+    display: none;
     font-family: monospace;
     white-space: pre;
+    min-height: 5em;
     /*border: 1px solid #ddd;
     background-color: #888;*/
 }
 
 .tabs {
-    /*background-color: #888;*/
+    margin-left: 0;
+    margin-bottom: 1ex;
 }
 
 .tabs code {
@@ -43,8 +45,10 @@ code {
 }
 
 .tabs label {
-    display: inline !important;
-    border: 1px solid;
+    display: inline-block !important;
+    border: 2px solid;
+    padding: 5pt;
+    width: 10ex;
 }
 
 @media (prefers-color-scheme: dark) {}

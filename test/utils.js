@@ -1,4 +1,5 @@
 /** @import { F1Type } from "../formchen/utils.js" */
+/** @import { JSONPatch } from "../formchen/types" */
 
 /**
  * @param {string} msg 
@@ -173,6 +174,16 @@ export const REPR = {
 let scripts = Array(...document.body.getElementsByTagName('script'));
 
 /**
+ * @callback ValueCallBack
+ * @returns {object}
+ */
+
+/**
+ * @callback PatchCallBack
+ * @returns {JSONPatch}
+ */
+
+/**
  * Augments HTML of the form
  * 
  * <div class=".demo">
@@ -192,10 +203,10 @@ let scripts = Array(...document.body.getElementsByTagName('script'));
  * 
  * @param {HTMLElement} someElement 
  * @param {object} schema
+ * @param {PatchCallBack} valueCallback 
+ * @param {ValueCallBack} patchCallback 
  */
 export async function bindTabs(someElement, schema, valueCallback, patchCallback) {
-
-
     const container = someElement.closest('.demo');
     const tabsElement = document.createElement('form');
     tabsElement.className = 'tabs';
@@ -228,7 +239,6 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
         func()
     }
 
-
     appendRadio('Page').onchange = () => {
         codeElement.style.display = 'none';
         someElement.style.display = 'block';
@@ -247,7 +257,8 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
     })
 
     appendRadio('Patch').onchange = () => showCode(() => {
-        codeElement.textContent = REPR.stringify(patchCallback(), null, 2);
+        let patch = patchCallback();
+        codeElement.textContent = patch.length?REPR.stringify(patch, null, 2):'Patch is empty unless you make edits';
     })
 
     appendRadio('Script').onchange = () => showCode(() => {
