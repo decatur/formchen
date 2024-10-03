@@ -375,6 +375,13 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             padding: ${cellPadding}px;
             border-width: ${cellBorderWidth}px;
         }
+
+        kbd {
+            border: 1px solid #ccc;
+            padding: 2px 4px;
+            border-radius: 3px;
+            background-color: #f7f7f7;
+        }
     `;
     container.appendChild(styleSheet);
 
@@ -862,41 +869,52 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         const grid = document.createElement('div');
         container.appendChild(grid);
         const actions = [
-            ['Key', 'Action'],
-            ['Ctrl+Z', 'Undo last transaction'],
-            ['Ctrl+Y', 'Redo, reverse last undo'],
-            ['Arrows', 'Move active cell up/down/left/right (not in edit mode)'],
-            ['Tab', 'Move active cell right (non-rolling)'],
-            ['Enter', 'Move active cell down (non-rolling)'],
-            ['Shift + Enter', 'Move active cell up (non-rolling)'],
-            ['Shift + Tab', 'Move active cell left (non-rolling)'],
-            ['SHIFT + Arrows', 'Select a range of cells'],
-            ['Ctrl + Space', 'Select entire column'],
-            ['Shift + Space', 'Select entire row'],
-            ['Shift + MouseClick', 'Expand selection'],
-            ['Ctrl + MouseClick', 'Multi-select cells'],
-            ['Ctrl + "-"', 'Delete selected row'],
-            ['Ctrl + "+"', 'Insert row before selection'],
-            ['Alt + Enter', 'In edit mode, insert newline'],
-            ['Page Down', 'Move one page down'],
-            ['Page Up', 'Move one page up'],
-            ['Ctrl + A', 'Select all grid cells (same as Ctrl+A in a Excel List Object)'],
-            ['Ctrl + A Ctrl+A', 'Select the entire grid including header (same as Ctrl+A Ctrl+A in a Excel List Object)'],
-            ['ESC', 'Cancel edit or input mode'],
-            ['Delete', 'Remove selected cells contents'],
-            ['Ctrl + C', 'Copy selected cells to clipboard'],
-            ['Ctrl + V', 'Paste clipboard into selected cells'],
-            ['Ctrl + X', 'Cut'],
-            ['F2', 'Enter edit mode; In input or edit mode, toggle between input and edit.'],
-            ['Alt + F1', 'Open a modal chart of the selection.'],
-            ['Backspace', 'In input or edit mode, deletes one character to the left'],
-            ['Delete', 'In input or edit mode, deletes one character to the right'],
-            ['End', 'In input or edit mode, move to the end of the text'],
-            ['Home', 'In input or edit mode, move to the beginning of the text']];
+            [['Key'], 'Action'],
+            [['Ctrl', 'Z'], 'Undo last transaction'],
+            [['Ctrl','Y'], 'Redo, reverse last undo'],
+            [['Arrows'], 'Move active cell up/down/left/right (not in edit mode)'],
+            [['Tab'], 'Move active cell right (non-rolling)'],
+            [['Enter'], 'Move active cell down (non-rolling)'],
+            [['Shift','Enter'], 'Move active cell up (non-rolling)'],
+            [['Shift','Tab'], 'Move active cell left (non-rolling)'],
+            [['SHIFT','Arrows'], 'Select a range of cells'],
+            [['Ctrl','Space'], 'Select entire column'],
+            [['Shift','Space'], 'Select entire row'],
+            [['Shift','MouseClick'], 'Expand selection'],
+            [['Ctrl','MouseClick'], 'Multi-select cells'],
+            [['Ctrl','-'], 'Delete selected row'],
+            [['Ctrl','+'], 'Insert row before selection'],
+            [['Alt','Enter'], 'In edit mode, insert newline'],
+            [['Page Down'], 'Move one page down'],
+            [['Page Up'], 'Move one page up'],
+            [['Ctrl','A'], 'Select all grid cells (same as Ctrl+A in a Excel List Object)'],
+            [['Ctrl','A','Ctrl','A'], 'Select the entire grid including header (same as Ctrl+A Ctrl+A in a Excel List Object)'],
+            [['ESC'], 'Cancel edit or input mode'],
+            [['Delete'], 'Remove selected cells contents'],
+            [['Ctrl','C'], 'Copy selected cells to clipboard'],
+            [['Ctrl','V'], 'Paste clipboard into selected cells'],
+            [['Ctrl','X'], 'Cut'],
+            [['F2'], 'Enter edit mode; In input or edit mode, toggle between input and edit.'],
+            [['Alt','F1'], 'Open a modal chart of the selection.'],
+            [['Backspace'], 'In input or edit mode, deletes one character to the left'],
+            [['Delete'], 'In input or edit mode, deletes one character to the right'],
+            [['End'], 'In input or edit mode, move to the end of the text'],
+            [['Home'], 'In input or edit mode, move to the beginning of the text']];
         for (const action of actions) {
             const key = document.createElement('span');
             // key.style.textAlign = 'right';
-            key.textContent = action[0];
+            let keys = action[0];
+            while (keys.length) {
+                let k = keys.shift();
+                let kbd = document.createElement('kbd');
+                kbd.textContent = k;
+                key.appendChild(kbd);
+                if (keys.length) {
+                    key.appendChild(document.createTextNode(' + '));
+                }
+
+            }
+            // key.textContent = action[0];
             grid.appendChild(key);
             const desc = document.createElement('span');
             desc.textContent = action[1];
