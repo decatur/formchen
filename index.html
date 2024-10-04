@@ -19,8 +19,8 @@
     </p>
 
     <h2>Basic Example</h2>
-    <div class="demo">
-        <div id="BasicDemo">
+    <div class="demo" >
+        <div id="BasicDemo" class="formchen">
             <label><span class="data-title"></span><textarea name="/plant"></textarea></label>
             <label for="/reference"><span class="data-title"></span></label><input id="/reference">
             <label><span class="data-title"></span><select name="/observer"></select></label>
@@ -37,7 +37,7 @@
 
     <h2>Comprehensive Example</h2>
     <div class="demo">
-        <div id="ComprehensiveDemo">
+        <div id="ComprehensiveDemo" class="formchen">
             <label><span class="data-title"></span> <input name="/someString"></label>
             <label><span class="data-title"></span> <input name="/someURI"></label>
             <label><span class="data-title"></span> <select name="/someEnum"></select></label>
@@ -111,6 +111,17 @@
         <grid-chen id="Single Column Array" style="display:block; height: 10em"></grid-chen>
     </div>
     <script type="module" src="./demo/single_column_array.js"></script>
+
+    <h2>Unicode Table</h2>
+
+    <div class="demo">
+        All Unicode symbols with code points in <input class="min" value="0x1f300"> and <input class="max"
+            value="0x1F9FF">
+        <button class="refresh">↻</button>.
+
+        <grid-chen id="UnicodeTable" style="display:block; height: 10em"></grid-chen>
+    </div>
+    <script type="module" src="./demo/unicode-table.js"></script>
 
 </body>
 

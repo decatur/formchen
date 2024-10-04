@@ -174,19 +174,23 @@ let scripts = Array(...document.body.getElementsByTagName('script'));
 /**
  * Augments HTML of the form
  * 
- * <div class=".demo">
- *   <some id="SomeId"></some>
+ * <div class=".demo" id="DemoId">
+ *   <div>
+ *     ...
+ *   </div>
  * </div>
  * 
  * with a radio group and a code element as such
  * 
- * <div class=".demo">
+ * <div class=".demo" id="DemoId">
  *   <form>
  *     <label>Page<input type="radio" name="tabs" value="page"></label>
  *     ...
  *   </form>
  *   <code></code>
- *   <some id="SomeId">...</some>
+ *   <div>
+ *     ...
+ *   </div>
  * </div>
  * 
  * @param {HTMLElement} someElement 
@@ -196,6 +200,14 @@ let scripts = Array(...document.body.getElementsByTagName('script'));
  */
 export async function bindTabs(someElement, schema, valueCallback, patchCallback) {
     const container = someElement.closest('.demo');
+    // HTML mutates once it is bound to formchen or gridchen. So we take a snapshot here.
+    let html = container.innerHTML;
+    let m = html.match(/\s+/);
+    html = html.replaceAll(m[0], '\n');
+
+    // Schema mutates once it is attached to gridchen. So we take a snapshot here.
+    const schemaRepr = REPR.stringify(schema, null, 2);
+
     const tabsElement = document.createElement('form');
     tabsElement.className = 'tabs';
 
@@ -253,13 +265,10 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
         codeElement.textContent = script;
     })
 
-    container.insertBefore(tabsElement, someElement);
     let codeElement = document.createElement('code');
-    container.insertBefore(codeElement, someElement);
-    // HTML mutates once it is bound to formchen or gridchen. So we take a snapshot here.
-    const html = someElement.outerHTML;
-    // Schema mutates once it is attached to gridchen. So we take a snapshot here.
-    const schemaRepr = REPR.stringify(schema, null, 2);
+    container.insertAdjacentElement('afterbegin', codeElement);
+    container.insertAdjacentElement('afterbegin', tabsElement);
+
 
     const response = await fetch(scripts.shift().src);
     if (!response.ok) {

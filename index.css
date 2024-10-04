@@ -3,12 +3,12 @@ body {
     margin: 2em;
 }
 
-label {
+.formchen label {
     display: block;
     margin-top: 1ex;
 }
 
-input, select, textarea {
+.formchen input, select, textarea {
     display: block;
 }
 
@@ -43,12 +43,12 @@ code {
 }
 
 .tabs input {
-    display: inline !important;
+    display: inline;
 }
 
 .tabs label {
-    display: inline-block !important;
-    margin-top: 0px !important;
+    display: inline-block;
+    margin-top: 0px;
     border: 2px solid;
     padding: 5pt;
     width: 10ex;
