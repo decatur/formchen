@@ -184,7 +184,7 @@ let scripts = Array(...document.body.getElementsByTagName('script'));
  * 
  * <div class=".demo" id="DemoId">
  *   <form>
- *     <label>Page<input type="radio" name="tabs" value="page"></label>
+ *     <label>Live<input type="radio" name="tabs" value="live"></label>
  *     ...
  *   </form>
  *   <code></code>
@@ -222,7 +222,7 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
         input.type = 'radio';
         input.name = 'tabs';
         input.value = name.toLowerCase();
-        if (name == 'Page') {
+        if (name == 'Live') {
             input.checked = true;
         }
         label.appendChild(input);
@@ -239,7 +239,7 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
         func()
     }
 
-    appendRadio('Page').onchange = () => {
+    appendRadio('Live').onchange = () => {
         codeElement.style.display = 'none';
         someElement.style.display = 'block';
     }
