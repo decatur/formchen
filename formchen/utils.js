@@ -494,24 +494,24 @@ export class TransactionManager {
         this.resolves = [];
     }
 
-    /**
-     * 
-     * @param {string} pathPrefix 
-     */
-    withContext(pathPrefix) {
-        return new Proxy(this, {
-            get(target, prop) {
-                if (prop == 'openTransaction') {
-                  return function (...args) {
-                    const t = target[prop].apply(target, args);
-                    t.pathPrefix = pathPrefix;
-                    return t
-                  }
-                }
-                return target[prop];
-            }
-        });
-    }
+    // /**
+    //  * 
+    //  * @param {string} pathPrefix 
+    //  */
+    // withContext(pathPrefix) {
+    //     return new Proxy(this, {
+    //         get(target, prop) {
+    //             if (prop == 'openTransaction') {
+    //               return function (...args) {
+    //                 const t = target[prop].apply(target, args);
+    //                 t.pathPrefix = pathPrefix;
+    //                 return t
+    //               }
+    //             }
+    //             return target[prop];
+    //         }
+    //     });
+    // }
 
     fireChange(transaction) {
         const type = 'change';
@@ -551,7 +551,6 @@ export class TransactionManager {
     openTransaction(target) {
         const tm = this;
         return /**@type{Transaction}*/ ({
-            pathPrefix: '',
             patches: [],
             commit() {
                 tm.transactions.push(this);
@@ -562,7 +561,7 @@ export class TransactionManager {
                 for (let patch of this.patches) {
                     for (let op of patch.operations) {
                         const clonedOp = Object.assign({}, op);
-                        clonedOp.path = this.pathPrefix + op.path;
+                        clonedOp.path = patch.pathPrefix + op.path;
                         flattend.push(clonedOp);
                     }
                 }

@@ -152,20 +152,22 @@ export class GridChen extends HTMLElement {
      * 
      * @param {JSONSchema} schema 
      * @param {any} data 
-     * @param {TransactionManager} tm 
+     * @param {TransactionManager} tm
+     * @param {string} pathPrefix 
      */
-    bind(schema, data, tm) {
+    bind(schema, data, tm, pathPrefix) {
         const view = createView(schema, data);
         registerUndo(document.body, tm);
-        this.resetFromView(view, tm);
+        this.resetFromView(view, tm, pathPrefix);
     }
 
     /**
      * @param {MatrixView} view
      * @param {TransactionManager=} transactionManager
+     * @param {string=} pathPrefix 
      * @returns {IGridChen}
      */
-    resetFromView(view, transactionManager) {
+    resetFromView(view, transactionManager, pathPrefix) {
         this._viewModel = view;
         this._transactionManager = transactionManager;
         if (this.shadowRoot) {
@@ -182,7 +184,7 @@ export class GridChen extends HTMLElement {
         container.style.position = 'absolute';  // Needed so that container does not take up any space.
         //container.style.height = this._totalHeight + 'px';  // Only needed to pass target height to createGrid.
         this.shadowRoot.appendChild(container);
-        createGrid(container, view, this, transactionManager, this._totalHeight);
+        createGrid(container, view, this, transactionManager, pathPrefix || '', this._totalHeight);
         this.style.width = container.style.width;
         return /**@type{IGridChen}*/(this)
     }
@@ -269,9 +271,10 @@ class ScrollBar {
  * @param {MatrixView} viewModel
  * @param {GridChen} gridchenElement
  * @param {TransactionManager} tm
+ * @param {string} pathPrefix
  * @param {number} totalHeight
  */
-function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
+function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, totalHeight) {
     const schema = viewModel.schema
 
     const schemas = schema.columnSchemas;
@@ -643,7 +646,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         }
 
         const trans = tm.openTransaction(gridchenElement);
-        const patch = createPatch([], trans.pathPrefix);
+        const patch = createPatch([], pathPrefix);
         trans.patches.push(patch);
         const operations = patch.operations;
 
@@ -686,7 +689,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         }
 
         const trans = tm.openTransaction(gridchenElement);
-        const patch = createPatch([], trans.pathPrefix);
+        const patch = createPatch([], pathPrefix);
         trans.patches.push(patch);
         const operations = patch.operations;
 
@@ -705,7 +708,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             return
         }
         const trans = tm.openTransaction(gridchenElement);
-        trans.patches.push(createPatch(viewModel.splice(selection.active.rowIndex), trans.pathPrefix));
+        trans.patches.push(createPatch(viewModel.splice(selection.active.rowIndex), pathPrefix));
 
         commitTransaction(trans);
     }
@@ -1015,7 +1018,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             if (model !== viewModel.getModel()) {
                 trans.patches.push(viewModel.updateHolder());
             } else {
-                trans.patches.push(createPatch(operations, trans.pathPrefix));
+                trans.patches.push(createPatch(operations, pathPrefix));
             }
 
             commitTransaction(trans);
@@ -1181,7 +1184,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         }
 
         const trans = tm.openTransaction(gridchenElement);
-        const patch = createPatch([], trans.pathPrefix);
+        const patch = createPatch([], pathPrefix);
         trans.patches.push(patch);
         const operations = patch.operations;
 

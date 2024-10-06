@@ -447,7 +447,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         const gridSchema = Object.assign({}, node.schema);
 
         const view = createView(gridSchema, null);
-        grid.resetFromView(view, transactionManager.withContext(node.path));
+        grid.resetFromView(view, transactionManager, node.path);
 
         view.updateHolder = function () {
             return node.patchValue(view.getModel())

@@ -87,7 +87,7 @@ export const assert = {
  * @param {F2Type} func 
  */
 export function test(test_name, func) {
-    if (window.location.hash === '' || window.location.hash == '#' + test_name) {
+    if (window.location.hash === '' || decodeURIComponent(window.location.hash) == '#' + test_name) {
         log('Running ' + test_name);
         func(test_name);
     }

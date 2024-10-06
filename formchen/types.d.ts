@@ -117,7 +117,7 @@ export interface GridChen extends HTMLElement {
      * Resets this element based on the specified view.
      * @param view
      */
-    resetFromView: (view: MatrixView, transactionManager?: TransactionManager) => GridChen;
+    resetFromView: (view: MatrixView, transactionManager?: TransactionManager, pathPrefix: string) => GridChen;
 
     /**
      * Resets this element with respect to its implicit dependencies, DOM dimensions and data view content.
