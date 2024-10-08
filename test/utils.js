@@ -205,9 +205,6 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
     let m = html.match(/\s+/);
     html = html.replaceAll(m[0], '\n');
 
-    // Schema mutates once it is attached to gridchen. So we take a snapshot here.
-    const schemaRepr = REPR.stringify(schema, null, 2);
-
     const tabsElement = document.createElement('form');
     tabsElement.className = 'tabs';
 
@@ -249,7 +246,7 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
     })
 
     appendRadio('Schema').onchange = () => showCode(() => {
-        codeElement.textContent =schemaRepr;
+        codeElement.textContent = REPR.stringify(schema, null, 2);
     })
 
     appendRadio('Data').onchange = () => showCode(() => {

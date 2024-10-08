@@ -1,4 +1,4 @@
-/** @import { JSONPatchOperation } from "../formchen/types" */
+/** @import { JSONSchema, JSONPatchOperation } from "../formchen/types" */
 /** @import { FormChenExt } from "../formchen/private-types" */
 
 import { test, assert } from './utils.js'
@@ -154,8 +154,9 @@ test('Delete subtree', (test_name) => {
 });
 
 test('Empty object with grid', (test_name) => {
+    /** @type{JSONSchema} */
     const schema = {
-        definitions: {
+        $defs: {
             "measurements": {
                 title: 'Measurements',
                 type: 'array',
@@ -174,7 +175,7 @@ test('Empty object with grid', (test_name) => {
         properties: {
             foo: {
                 type: 'array',
-                $ref: '#/definitions/measurements'
+                $ref: '#/$defs/measurements'
             }
         }
     };

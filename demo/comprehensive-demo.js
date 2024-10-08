@@ -5,7 +5,7 @@ import { bindTabs } from "../test/utils.js";
 
 /** @type{JSONSchema} */
 const schema = {
-    definitions: {
+    "$defs": {
         "measurements": {
             title: 'Measurements',
             type: 'array',
@@ -70,7 +70,7 @@ const schema = {
         someMatrix: {
             title: 'Some Matrix',
             type: 'array',
-            $ref: '#/definitions/measurements'
+            $ref: '#/$defs/measurements'
         },
         anObject: {
             title: 'An Object',
@@ -82,14 +82,14 @@ const schema = {
                 anEmptyMatrix: {
                     title: 'An Undefined Matrix',
                     type: 'array',
-                    $ref: '#/definitions/measurements'
+                    $ref: '#/$defs/measurements'
                 }
             }
         },
         anEmptyMatrix: {
             title: 'An Undefined Matrix',
             type: 'array',
-            $ref: '#/definitions/measurements'
+            $ref: '#/$defs/measurements'
         },
         tuple: {
             type: 'array',

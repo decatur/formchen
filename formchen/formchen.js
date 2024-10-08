@@ -5,7 +5,7 @@
  * Module implementing two-way hierachical data binding.
  */
 
-/** @import { JSONPatchOperation, JSONSchema } from "./types" */
+/** @import { JSONPatchOperation, JSONSchema, _JSONSchema } from "./types" */
 /** @import { FormChen, GridChenElement } from "./types" */
 
 import "./gridchen/gridchen.js"
@@ -18,13 +18,14 @@ console.log('Loading Formchen with locale ' + navigator.language);
 
 /**
  * Example:
- *      getValueByPointer({definitions:{foobar: 1}}, '#/definitions/foobar')
+ *      getValueByPointer({$defs:{foobar: 1}}, '#/$defs/foobar')
  *      -> 1
  * @param {object} obj
  * @param {string} pointer
  * @returns {object}
  */
 function getValueByPointer(obj, pointer) {
+    if (!pointer.startsWith('#/')) throw Error('Expect document relative pointer starts with #/');
     return pointer.substring(2).split('/').reduce(((res, prop) => res[prop]), obj);
 }
 
@@ -86,7 +87,7 @@ class BaseNode {
     /**
      * @param {NodeTree} tree
      * @param {string | number} key
-     * @param {JSONSchema} schema
+     * @param {_JSONSchema} schema
      * @param {HolderNode} parent
      */
     constructor(tree, key, schema, parent) {
@@ -261,7 +262,7 @@ class LeafNode extends BaseNode {
     /**
      * @param {NodeTree} tree
      * @param {string | number} key
-     * @param {JSONSchema} schema
+     * @param {_JSONSchema} schema
      * @param {HolderNode} parent
      */
     constructor(tree, key, schema, parent) {
@@ -313,7 +314,7 @@ class HolderNode extends BaseNode {
     /**
      * @param {NodeTree} tree
      * @param {string | number} key
-     * @param {JSONSchema} schema
+     * @param {_JSONSchema} schema
      * @param {HolderNode} parent
      */
     constructor(tree, key, schema, parent) {
@@ -370,7 +371,7 @@ class HolderNode extends BaseNode {
 
 /**
  * @param {HTMLElement} rootElement
- * @param {JSONSchema} topSchema
+ * @param {_JSONSchema} topSchema
  * @param {object} topObj
  * @returns {FormChen}
  */
@@ -391,7 +392,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
     /**
       * @param {JSONSchema} schema
       * @param {string} path
-      * @returns {JSONSchema}
+      * @returns {_JSONSchema}
       */
     function resolveSchema(schema, path) {
         if ('$ref' in schema) {
@@ -400,7 +401,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
             if (!refSchema) {
                 throw Error('Undefined $ref at ' + path);
             }
-            return /**@type{JSONSchema}*/ (refSchema)
+            return /**@type{_JSONSchema}*/ (refSchema)
         }
         return schema
     }

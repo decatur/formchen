@@ -1,7 +1,8 @@
-/** @import { GridChenElement } from "../formchen/types" */
+/** @import { JSONSchema, GridChenElement } from "../formchen/types" */
 
 import { bindTabs } from "../test/utils.js";
 
+/** @type{JSONSchema} */
 const schema = {
     title: 'Single Column Array',
     type: 'array',

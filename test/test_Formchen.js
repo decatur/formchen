@@ -1,3 +1,5 @@
+/** @import { JSONSchema } from "../formchen/types" */
+
 import { test, assert } from './utils.js'
 import { createFormChen } from '../formchen/formchen.js'
 import * as utils from '../formchen/utils.js';
@@ -14,8 +16,9 @@ test('Atomic', (test_name) => {
 })
 
 test('FormChen', (test_name) => {
+    /** @type{JSONSchema} */
     let schema = {
-        definitions: {
+        $defs: {
             "refSchema": {
                 title: 'Measurements',
                 type: 'array',
@@ -74,7 +77,7 @@ test('FormChen', (test_name) => {
             someMatrix: {
                 title: 'Some Matrix',
                 type: 'array',
-                $ref: '#/definitions/refSchema'
+                $ref: '#/$defs/refSchema'
             },
             anObject: {
                 title: 'An Object',
@@ -88,7 +91,7 @@ test('FormChen', (test_name) => {
             anEmptyMatrix: {
                 title: 'An Undefined Matrix',
                 type: 'array',
-                $ref: '#/definitions/refSchema'
+                $ref: '#/$defs/refSchema'
             }
         }
     };

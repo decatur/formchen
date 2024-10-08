@@ -55,14 +55,22 @@ export interface JSONPatchOperation {
     oldValue?: any;
 }
 
-export interface JSONSchema {
+export type JSONSchema = _JSONSchema | ref;
+
+interface ref  {
+    $ref: string;
+    title?: string;
+}
+
+export interface _JSONSchema {
+    $defs?: { [key: string]: JSONSchema };
     width?: number;
-    period?: string;
+    period?: "HOURS" | "MINUTES" | "SECONDS";
     multipleOf?: number;
     // converter?: Converter;
     minimum?: number;
     maximum?: number;
-    format?: string;
+    format?: "grid" | "date-time" | "full-date" | "uri" | "color";
     tooltip?: string;
     readOnly?: boolean;
     title?: string;

@@ -1,7 +1,8 @@
-/** @import { GridChenElement } from "../formchen/types" */
+/** @import { _JSONSchema } from "../formchen/types" */
 
 import { createFormChen } from "../formchen/formchen.js";
 import { bindTabs } from "../test/utils.js";
+
 
 const schema = {
     title: 'UnicodeTable',
@@ -46,7 +47,7 @@ function refreshSymbols() {
     for (let cp = Number(obj.min); cp <= Number(obj.max); cp += 0x10) {
         obj.symbols.push(['0x' + cp.toString(0x10), ...rowRange.map(k => String.fromCodePoint(cp + k))]);
     }
-    return createFormChen(formElement, schema, obj);
+    return createFormChen(formElement, /** @type{_JSONSchema} */(schema), obj);
 }
 
 let formchen = refreshSymbols();

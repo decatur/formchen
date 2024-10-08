@@ -1,4 +1,4 @@
-/** @import { JSONSchema } from "../formchen/types" */
+/** @import { _JSONSchema } from "../formchen/types" */
 
 import {test, assert} from './utils.js'
 import {createView} from '../formchen/gridchen/matrixview.js'
@@ -15,7 +15,7 @@ if (window['jsonpatch']) {
 
 /**
  * Runs tests on all five supported matrix types.
- * @param {JSONSchema} schema
+ * @param {_JSONSchema} schema
  * @param {function():object} createModel
  * @param {object} emptyModel
  */

@@ -6,7 +6,7 @@
  */
 
 /** @import { Interval, MatrixView, GridSchema, ColumnSchema, JSONPatch } from "../private-types" */
-/** @import { JSONSchema, JSONPatchOperation } from "../types" */
+/** @import { _JSONSchema, JSONPatchOperation } from "../types" */
 
 import * as c from "../converter.js";
 import { applyJSONPatch, Patch } from '../utils.js'
@@ -22,14 +22,14 @@ function range(count) {
 }
 
 /**
- * Compare function for all supported data types, i.e. string, numeric, date types, boolean.
+ * Compare numeric values.
  * undefined, null and NaN always compare as bigger in compliance to Excel.
  * TODO: This is not true; Excel compares #VALUE! as smaller! (What about #VALUE! vs undefined?)
- * @param {string | number | Date | boolean} a
- * @param {string | number | Date | boolean} b
+ * @param {number} a
+ * @param {number} b
  * @returns {number}
  */
-function compare(a, b) {
+function compareNumber(a, b) {
     // Note that we have to handle undefined/null here because this is NOT the compareFct of Array.sort().
     if (a < b) return -1;
     if (a > b) return 1;
@@ -39,6 +39,42 @@ function compare(a, b) {
     if (isNaN(a) && isNaN(b)) return 0;
     if (isNaN(a)) return 1;  // isNaN also works for invalid dates.
     if (isNaN(b)) return -1;
+    return 0;
+}
+
+/**
+ * Compare strings, also dates as strings.
+ * undefined, null and NaN always compare as bigger in compliance to Excel.
+ * TODO: This is not true; Excel compares #VALUE! as smaller! (What about #VALUE! vs undefined?)
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+function compareString(a, b) {
+    // Note that we have to handle undefined/null here because this is NOT the compareFct of Array.sort().
+    if (a < b) return -1;
+    if (a > b) return 1;
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+    return 0;
+}
+
+/**
+ * Compare booleans.
+ * undefined, null and NaN always compare as bigger in compliance to Excel.
+ * TODO: This is not true; Excel compares #VALUE! as smaller! (What about #VALUE! vs undefined?)
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+function compareBoolean(a, b) {
+    // Note that we have to handle undefined/null here because this is NOT the compareFct of Array.sort().
+    if (a < b) return -1;
+    if (a > b) return 1;
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
     return 0;
 }
 
@@ -65,14 +101,16 @@ function updateSortDirection(schemas, colIndex) {
 }
 
 /**
- * @param {JSONSchema[]} schemas
+ * @param {_JSONSchema[]} schemas
  * @returns {ColumnSchema[]}
  */
-function updateSchemaInPlace(schemas) {
-    for (const schema of schemas) {
+function createColumSchemas(schemas) {
+    const columSchemas = []
+    for (let _schema of schemas) {
+        const schema = /** @type{ColumnSchema} */(JSON.parse(JSON.stringify(_schema)));
         console.assert(schema.width !== undefined || schema.title !== undefined, `You must specify either width or title in schema ${JSON.stringify(schema, null, 2)}`);
         schema.width = Number(schema.width || (schema.title.length * 12) || 100);
-        schema.type = schema.type || 'string';
+        // schema.type = schema.type || 'string';
 
         if (numeric.has(schema.type)) {
             let fractionDigits = 2;
@@ -82,33 +120,44 @@ function updateSchemaInPlace(schemas) {
                 fractionDigits = 0;
             }
             schema.converter = new c.NumberConverter(fractionDigits);
+            schema.compare = compareNumber;
         } else if (schema.type === 'string' && schema.format === 'full-date') {
             schema.converter = new c.FullDateConverter();
+            schema.compare = compareString;
         }
         // else if (schema.type === 'string' && schema.format === 'date-partial-time') {
         //     schema.converter = new c.DatePartialTimeStringConverter(schema.period || 'MINUTES');
         // } 
         else if (schema.type === 'string' && schema.format === 'date-time') {
             schema.converter = new c.DateTimeStringConverter(schema.period || 'MINUTES');
+            schema.compare = compareString;
         }
         // else if (schema.type === 'object' && schema.format === 'full-date') {
         //     schema.converter = new c.DatePartialTimeConverter('DAYS');
         // } else if (schema.type === 'object' && schema.format === 'date-partial-time') {
         //     schema.converter = new c.DatePartialTimeConverter(schema.period || 'MINUTES');
         // } 
-        else if (schema.type === 'object' && schema.format === 'date-time') {
-            schema.converter = new c.DateTimeConverter(schema.period || 'MINUTES');
-        } else if (schema.type === 'boolean') {
+        //else if (schema.type === 'object' && schema.format === 'date-time') {
+        //    schema.converter = new c.DateTimeConverter(schema.period || 'MINUTES');
+        //}
+        else if (schema.type === 'boolean') {
             schema.converter = new c.BooleanStringConverter();
+            schema.compare = compareBoolean;
         } else if (schema.type === 'string' && schema.format === 'uri') {
             schema.converter = new c.URIConverter();
-        } else {
+            schema.compare = compareString;
+        } else if (schema.type === 'string') {
             // string and others
             schema.converter = new c.StringConverter();
+            schema.compare = compareString;
+        } else {
+            throw Error(`Invalid schema type ${schema.type}`)
         }
+
+        columSchemas.push(schema);
     }
 
-    return /**@type{ColumnSchema[]}*/(schemas)
+    return columSchemas
 }
 
 /**
@@ -133,7 +182,7 @@ function sortedColumns(properties) {
 // }
 
 /**
- * @param {JSONSchema} schema
+ * @param {_JSONSchema} schema
  * @param {*=} matrix
  * @returns {MatrixView}
  */
@@ -345,20 +394,20 @@ function search(pattern, value) {
 }
 
 /**
- * @param {JSONSchema} schema
+ * @param {_JSONSchema} schema
  */
 function readOnly(schema) {
     return (typeof schema.readOnly === 'boolean') ? schema.readOnly : false;
 }
 
 /**
- * @param {JSONSchema} jsonSchema
+ * @param {_JSONSchema} jsonSchema
  * @param {(number | string | boolean | null)[][]} rows
  * @returns {MatrixView}
  */
 export function createRowMatrixView(jsonSchema, rows) {
     // Array of tuples.
-    /** @type{JSONSchema[]} */
+    /** @type{_JSONSchema[]} */
     const itemSchemas = jsonSchema.items['items'];
     const columnSchemas = [];
     /** @type{number[]} */
@@ -370,9 +419,9 @@ export function createRowMatrixView(jsonSchema, rows) {
         columnIndices.push(columnIndex);
     }
 
-    const schemas = updateSchemaInPlace(columnSchemas);
+    const schemas = createColumSchemas(columnSchemas);
 
-    /**@type{GridSchema} */
+    /** @type{GridSchema} */
     const schema = {
         title: jsonSchema.title,
         columnSchemas: schemas,
@@ -512,7 +561,7 @@ export function createRowMatrixView(jsonSchema, rows) {
         sort(colIndex) {
             colIndex = columnIndices[colIndex];
             let sortDirection = updateSortDirection(schemas, colIndex);
-            rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
+            rows.sort((row1, row2) => schemas[colIndex].compare(row1[colIndex], row2[colIndex]) * sortDirection);
         }
 
         /**
@@ -540,7 +589,7 @@ export function createRowMatrixView(jsonSchema, rows) {
 }
 
 /**
- * @param {JSONSchema} jsonSchema
+ * @param {_JSONSchema} jsonSchema
  * @param {Array<object>} rows
  * @returns {MatrixView}
  */
@@ -553,7 +602,7 @@ export function createRowObjectsView(jsonSchema, rows) {
     });
     const ids = entries.map(e => e[0]);
     const rowStyles = new Array(rows ? rows.length : 0);
-    const schemas = updateSchemaInPlace(columnSchemas);
+    const schemas = createColumSchemas(columnSchemas);
 
     /**@type{GridSchema} */
     const schema = {
@@ -679,7 +728,7 @@ export function createRowObjectsView(jsonSchema, rows) {
          */
         sort(colIndex) {
             let sortDirection = updateSortDirection(schemas, colIndex);
-            rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
+            rows.sort((row1, row2) => schemas[colIndex].compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
         }
 
         /**
@@ -712,13 +761,13 @@ export function createRowObjectsView(jsonSchema, rows) {
 }
 
 /**
- * @param {JSONSchema} jsonSchema
+ * @param {_JSONSchema} jsonSchema
  * @param {object[]} columns
  * @returns {MatrixView}
  */
 export function createColumnMatrixView(jsonSchema, columns) {
-    const columnSchemas = /**@type{JSONSchema[]}*/(jsonSchema.items).map(item => /**@type{JSONSchema}*/(item.items));
-    const schemas = updateSchemaInPlace(columnSchemas);
+    const columnSchemas = /**@type{_JSONSchema[]}*/(jsonSchema.items).map(item => /**@type{_JSONSchema}*/(item.items));
+    const schemas = createColumSchemas(columnSchemas);
 
     /**@type{GridSchema} */
     const schema = {
@@ -846,7 +895,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
             let sortDirection = updateSortDirection(schemas, colIndex);
             const indexes = columns[colIndex].map((value, rowIndex) => [value, rowIndex]);
 
-            indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);
+            indexes.sort((a, b) => schemas[colIndex].compare(a[0], b[0]) * sortDirection);
 
             columns.forEach(function (column, j) {
                 const sortedColumn = Array();
@@ -884,7 +933,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
 }
 
 /**
- * @param {JSONSchema} jsonSchema
+ * @param {_JSONSchema} jsonSchema
  * @param {object} columns
  */
 export function createColumnObjectView(jsonSchema, columns) {
@@ -907,7 +956,7 @@ export function createColumnObjectView(jsonSchema, columns) {
 
     const ids = entries.map(e => e[0]);
     const rowStyles = new Array(getRowCount());
-    let schemas = updateSchemaInPlace(columnSchemas);
+    let schemas = createColumSchemas(columnSchemas);
 
     /**@type{GridSchema}*/
     const schema = {
@@ -1055,7 +1104,7 @@ export function createColumnObjectView(jsonSchema, columns) {
             let sortDirection = updateSortDirection(schemas, colIndex);
             const indexes = columns[key].map((value, rowIndex) => [value, rowIndex]);
 
-            indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);
+            indexes.sort((a, b) => schemas[colIndex].compare(a[0], b[0]) * sortDirection);
 
             ids.forEach(function (key) {
                 const sortedColumn = Array();
@@ -1098,16 +1147,16 @@ export function createColumnObjectView(jsonSchema, columns) {
 }
 
 /**
- * @param {JSONSchema} jsonSchema
+ * @param {_JSONSchema} jsonSchema
  * @param {(number|string|boolean|null)[]} column
  */
 export function createColumnVectorView(jsonSchema, column) {
 
-    const items = /**@type{JSONSchema} */(jsonSchema.items);
+    const items = /**@type{_JSONSchema} */(jsonSchema.items);
     const title = items.title;
     items.title = title;
 
-    const schemas = updateSchemaInPlace([items]);
+    const schemas = createColumSchemas([items]);
     const columnSchema = schemas[0];
 
     /**@type{GridSchema} */
@@ -1224,7 +1273,7 @@ export function createColumnVectorView(jsonSchema, column) {
         sort(colIndex) {
             console.assert(colIndex === 0);
             let sortDirection = updateSortDirection([columnSchema], 0);
-            column.sort((a, b) => compare(a, b) * sortDirection);
+            column.sort((a, b) => columnSchema.compare(a, b) * sortDirection);
         }
 
         /**

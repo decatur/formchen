@@ -5,7 +5,7 @@ import { bindTabs } from "../test/utils.js";
 
 /** @type{JSONSchema} */
 const schema = {
-    definitions: {
+    "$defs": {
         "measurements": {
             title: 'Measurements',
             type: 'array',
@@ -25,7 +25,7 @@ const schema = {
     properties: {
         plant: {
             title: 'Plant',
-            description: 'The name of the plant',
+            tooltip: 'The name of the plant',
             type: 'string'
         },
         reference: {
@@ -58,7 +58,7 @@ const schema = {
         measurements: {
             title: 'Daylight Measurements',
             type: 'array',
-            $ref: '#/definitions/measurements'
+            $ref: '#/$defs/measurements'
         },
         isCompleted: {
             title: 'Is Completed',

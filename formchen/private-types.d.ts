@@ -18,17 +18,20 @@ export enum CellEditMode {
 }
 
 export interface ColumnSchema {
+    
     readonly type: string;
     format?: string;
     title: string;
     width?: number;
     fractionDigits?: number;
     sortDirection?: number;
-    converter?: Converter;
     // TODO: Rename according ISO
     period?: string;
     enum?: (string | number)[];
     readOnly?: boolean; 
+    
+    converter?: Converter;
+    compare: (a: any, b: any) => number;
 }
 
 export interface GridSchema {

@@ -6,7 +6,7 @@
  */
 
 /** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, CellEditMode, ColumnSchema, MatrixView } from "../private-types" */
-/** @import { JSONSchema, JSONPatchOperation, GridChenElement } from "../types" */
+/** @import { _JSONSchema, JSONPatchOperation, GridChenElement } from "../types" */
 /** @import { Transaction } from "../utils" */
 
 
@@ -159,7 +159,7 @@ export class GridChen extends HTMLElement {
 
     /**
      * 
-     * @param {JSONSchema} schema 
+     * @param {_JSONSchema} schema 
      * @param {any} data 
      * @param {TransactionManager=} tm
      * @param {string=} pathPrefix 
