@@ -174,7 +174,6 @@ test('Empty object with grid', (test_name) => {
         type: 'object',
         properties: {
             foo: {
-                type: 'array',
                 $ref: '#/$defs/measurements'
             }
         }

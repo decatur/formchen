@@ -57,7 +57,6 @@ const schema = {
         },
         measurements: {
             title: 'Daylight Measurements',
-            type: 'array',
             $ref: '#/$defs/measurements'
         },
         isCompleted: {

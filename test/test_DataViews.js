@@ -184,7 +184,7 @@ scope('RowMatrixView', () => {
         "items": {
             "type": "array",
             "items": [
-                {title: 'c1', type: 'string'},
+                {title: 'c1', type: 'number'},
                 {title: 'c2', type: 'string'},
                 {title: 'c3', type: 'string'}
             ]
@@ -216,7 +216,7 @@ scope('RowObjectsView', () => {
         "items": {
             "type": "object",
             "properties": {
-                "c1": {title: 'string', type: 'string'},
+                "c1": {title: 'string', type: 'number'},
                 "c2": {title: 'string', type: 'string'},
                 "c3": {title: 'string', type: 'string'}
             }
@@ -246,7 +246,7 @@ scope('ColumnMatrixView', () => {
         "title": "ColumnMatrixView",
         "type": "array",
         "items": [
-            {"type": "array", "items": {title: 'c1', type: 'string'}},
+            {"type": "array", "items": {title: 'c1', type: 'number'}},
             {"type": "array", "items": {title: 'c2', type: 'string'}},
             {"type": "array", "items": {title: 'c3', type: 'string'}},
         ]
@@ -277,7 +277,7 @@ scope('ColumnObjectView', () => {
         title: 'ColumnObjectView',
         type: 'object',
         properties: {
-            col1: {"type": "array", items: {title: 'number', type: 'string'}},
+            col1: {"type": "array", items: {title: 'number', type: 'number'}},
             col2: {"type": "array", items: {title: 'string', type: 'string'}},
             col3: {"type": "array", items: {title: 'string', type: 'string'}}
         }
@@ -306,7 +306,7 @@ scope('ColumnVectorView', () => {
         "title": "ColumnVectorView",
         "type": "array",
         "items": {
-            "width": 200,
+            "title": "foo",
             "type": "number"
         }
     };

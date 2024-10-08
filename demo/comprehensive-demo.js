@@ -69,7 +69,6 @@ const schema = {
         },
         someMatrix: {
             title: 'Some Matrix',
-            type: 'array',
             $ref: '#/$defs/measurements'
         },
         anObject: {
@@ -81,14 +80,12 @@ const schema = {
                 },
                 anEmptyMatrix: {
                     title: 'An Undefined Matrix',
-                    type: 'array',
                     $ref: '#/$defs/measurements'
                 }
             }
         },
         anEmptyMatrix: {
             title: 'An Undefined Matrix',
-            type: 'array',
             $ref: '#/$defs/measurements'
         },
         tuple: {
