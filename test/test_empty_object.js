@@ -1,4 +1,5 @@
 /** @import { JSONPatchOperation } from "../formchen/types" */
+/** @import { FormChenExt } from "../formchen/private-types" */
 
 import { test, assert } from './utils.js'
 import { createFormChen } from '../formchen/formchen.js'
@@ -17,8 +18,7 @@ test('Empty Object one Level', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const tm = new TransactionManager();
-    const fc = createFormChen(container, schema, null, tm);
+    const fc = createFormChen(container, schema, null);
 
     let input = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/foo"]`));
 
@@ -30,13 +30,13 @@ test('Empty Object one Level', (test_name) => {
         { op: 'add', path: "/foo", value: "foo" }
     ];
 
-    assert.equal(expected, tm.patch);
+    assert.equal(expected, fc.patch);
     assert.equal({ foo: 'foo' }, fc.value);
 
     input.value = 'foobar';
     input.onchange(null);
     expected.push({ op: 'replace', path: "/foo", value: "foobar", oldValue: 'foo' });
-    assert.equal(expected, tm.patch);
+    assert.equal(expected, fc.patch);
     assert.equal({ foo: 'foobar' }, fc.value);
 });
 
@@ -59,8 +59,7 @@ test('Empty Object two Levels', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const tm = new TransactionManager();
-    const fc = createFormChen(container, schema, null, tm);
+    const fc = createFormChen(container, schema, null);
 
     let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));
     let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/bar/foobar"]`).querySelector('.data-value'));
@@ -73,19 +72,19 @@ test('Empty Object two Levels', (test_name) => {
         { op: 'add', path: "/bar", value: {} },
         { op: 'add', path: "/bar/foobar", value: "bar" }
     ];
-    assert.equal(expected, tm.patch);
+    assert.equal(expected, fc.patch);
     assert.equal({ bar: { foobar: 'bar' } }, fc.value);
 
     foobarInput.value = 'foobar';
     foobarInput.onchange(null);
     expected.push({ op: 'replace', path: "/bar/foobar", value: "foobar", "oldValue": "bar" });
-    assert.equal(expected, tm.patch);
+    assert.equal(expected, fc.patch);
     assert.equal({ bar: { foobar: 'foobar' } }, fc.value);
 
     fooInput.value = 'foo';
     fooInput.onchange(null);
     expected.push({ op: 'add', path: "/foo", value: "foo" });
-    assert.equal(expected, tm.patch);
+    assert.equal(expected, fc.patch);
     assert.equal({ bar: { foobar: 'foobar' }, foo: 'foo' }, fc.value);
 });
 
@@ -108,8 +107,7 @@ test('Delete', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const tm = new TransactionManager();
-    const fc = createFormChen(container, schema, { bar: { foobar: 'foobar' } }, tm);
+    const fc = createFormChen(container, schema, { bar: { foobar: 'foobar' } });
 
     let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/bar/foobar"]`).querySelector('.data-value'));
     foobarInput.value = '';
@@ -119,7 +117,7 @@ test('Delete', (test_name) => {
         { op: 'remove', path: "/bar", oldValue: {} },
         { op: 'remove', path: "", oldValue: {} },
     ];
-    assert.equal(expected, tm.patch);
+    assert.equal(expected, fc.patch);
     assert.equal(undefined, fc.value);
 });
 
@@ -142,8 +140,7 @@ test('Delete subtree', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const tm = new TransactionManager();
-    const fc = createFormChen(container, schema, { bar: { foobar: 'foobar' } }, tm);
+    const fc = /** @type{FormChenExt} */ (createFormChen(container, schema, { bar: { foobar: 'foobar' } }));
 
     let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));
     let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/bar/foobar"]`).querySelector('.data-value'));
@@ -183,8 +180,7 @@ test('Empty object with grid', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const tm = new TransactionManager();
-    const fc = createFormChen(container, schema, null, tm);
+    const fc = createFormChen(container, schema, null);
     const gc = /** @type{GridChen} */ (container.querySelector(`[name="/foo"]`));
 
     gc._click(0, 0);  // NoOp because cell 0,0 is selected by default.
@@ -196,7 +192,7 @@ test('Empty object with grid', (test_name) => {
     let value = fc.value;
     assert.equal({ foo: [['2020-01-01T01:00+01:00'], ['2020-01-02T01:00+01:00']] }, value);
 
-    let patch = tm.patch;
+    let patch = fc.patch;
     // We do not have a contract of how the patch is laid out, unfortunately.
     let expected = [
         {
@@ -240,7 +236,7 @@ test('Empty object with grid', (test_name) => {
 
     gc._click(1, 0);
     gc._keyboard('keydown', { code: 'Delete' });
-    patch = tm.patch;
+    patch = fc.patch;
 
     assert.equal(patch[5], {
         "op": "replace",
@@ -260,6 +256,7 @@ test('Empty object with grid', (test_name) => {
     value = fc.value;
     assert.equal(value, { "foo": [["2020-01-01T01:00+01:00"]] });
 
+    const tm = fc["_transactionManager"];
     tm.undo();
     value = fc.value;
     assert.equal(value, { "foo": [["2020-01-01T01:00+01:00"], ["2020-01-02T01:00+01:00"]] });

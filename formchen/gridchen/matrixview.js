@@ -5,7 +5,8 @@
  * Module implementing data (model) abstraction for some common matrix representations.
  */
 
-/** @import { Interval, JSONSchema, MatrixView, GridSchema, ColumnSchema, JSONPatch, JSONPatchOperation } from "../types" */
+/** @import { Interval, MatrixView, GridSchema, ColumnSchema, JSONPatch } from "../private-types" */
+/** @import { JSONSchema, JSONPatchOperation } from "../types" */
 
 import * as c from "../converter.js";
 import { applyJSONPatch, Patch } from '../utils.js'

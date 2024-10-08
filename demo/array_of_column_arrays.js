@@ -17,17 +17,16 @@ const data = [
     [0, 2, 4]
 ];
 
-const tm = new TransactionManager();
 const gridElement = /** @type{GridChen} */ (document.getElementById(schema.title));
 bindTabs(gridElement, schema, value, patch);
-gridElement.bind(schema, data, tm);
+gridElement.bind(schema, data);
 
 function value() {
     return gridElement.value
 }
 
 function patch() {
-    return tm.patch
+    return gridElement.patch
 }
 
 

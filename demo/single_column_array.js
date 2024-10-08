@@ -1,5 +1,5 @@
-import { GridChen } from "../formchen/gridchen/gridchen.js"
-import { TransactionManager } from "../formchen/utils.js";
+/** @import { GridChenElement } from "../formchen/types" */
+
 import { bindTabs } from "../test/utils.js";
 
 const schema = {
@@ -10,15 +10,14 @@ const schema = {
 
 const data = ["2019-01-01", "2019-01-02", "2019-01-03"];
 
-const tm = new TransactionManager();
-const gridElement = /** @type{GridChen} */ (document.getElementById(schema.title));
+const gridElement = /** @type{GridChenElement} */ (document.getElementById(schema.title));
 bindTabs(gridElement, schema, value, patch);
-gridElement.bind(schema, data, tm);
+gridElement.bind(schema, data);
 
 function value() {
     return gridElement.value
 }
 
 function patch() {
-    return tm.patch
+    return gridElement.patch
 }

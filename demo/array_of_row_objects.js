@@ -1,7 +1,8 @@
-import { GridChen } from "../formchen/gridchen/gridchen.js"
-import { TransactionManager } from "../formchen/utils.js";
+/** @import { JSONSchema, GridChenElement } from "../formchen/types" */
+
 import { bindTabs } from "../test/utils.js";
 
+/** @type {JSONSchema} */
 const schema = {
     title: 'Array of Row Objects',
     type: 'array',
@@ -20,17 +21,16 @@ const data = [
     { timestamp: "2019-01-03", age: 2, weight: 4 }
 ];
 
-const tm = new TransactionManager();
-const gridElement = /** @type{GridChen} */ (document.getElementById(schema.title));
+const gridElement = /** @type{GridChenElement} */ (document.getElementById(schema.title));
 bindTabs(gridElement, schema, value, patch);
-gridElement.bind(schema, data, tm);
+gridElement.bind(schema, data);
 
 function value() {
     return gridElement.value
 }
 
 function patch() {
-    return tm.patch
+    return gridElement.patch
 }
 
 

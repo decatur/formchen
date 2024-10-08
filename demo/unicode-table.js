@@ -1,5 +1,6 @@
+/** @import { GridChenElement } from "../formchen/types" */
+
 import { createFormChen } from "../formchen/formchen.js";
-import { TransactionManager } from "../formchen/utils.js";
 import { bindTabs } from "../test/utils.js";
 
 const schema = {
@@ -28,7 +29,6 @@ const schema = {
     }
 };
 
-const tm = new TransactionManager();
 const formElement = document.getElementById(schema.title);
 bindTabs(formElement, schema, value, patch);
 
@@ -46,7 +46,7 @@ function refreshSymbols() {
     for (let cp = Number(obj.min); cp <= Number(obj.max); cp += 0x10) {
         obj.symbols.push(['0x' + cp.toString(0x10), ...rowRange.map(k => String.fromCodePoint(cp + k))]);
     }
-    return createFormChen(formElement, schema, obj, tm);
+    return createFormChen(formElement, schema, obj);
 }
 
 let formchen = refreshSymbols();
@@ -57,7 +57,7 @@ function value() {
 }
 
 function patch() {
-    return tm.patch
+    return formchen.patch
 }
 
 

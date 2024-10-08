@@ -5,7 +5,7 @@
  * Module implementing data mapping for some common data types.
  */
 
-/** @import { Converter } from "./types" */
+/** @import { Converter } from "./private-types" */
 
 
 import * as utils from './utils.js'

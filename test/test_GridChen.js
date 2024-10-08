@@ -24,8 +24,8 @@ test('Activate Cell', async function () {
         [NaN, 'b']
     ];
     const view = createRowMatrixView(rowMatrixSchema, rows);
-    //const tm = createTransactionManager();
-    gc.resetFromView(view);
+    const tm = new TransactionManager();
+    gc.resetFromView(view, tm);
     gc._click(0, 0);
     const r = gc.selectedRange;
     assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
@@ -64,7 +64,8 @@ test('expand selection with keys', async function () {
         [NaN, 'b']
     ];
     const view = createRowMatrixView(rowMatrixSchema, rows);
-    gc.resetFromView(view);
+    const tm = new TransactionManager();
+    gc.resetFromView(view, tm);
 
     gc.select(new Range(0, 0, 1, 1));
     let r = gc.selectedRange;
@@ -87,9 +88,10 @@ test('ColumnMatrix', () => {
             ]
     };
     const gc = new GridChen();
-    gc.resetFromView(createColumnMatrixView(schema, [[0], ['a']]));
+    const tm = new TransactionManager();
+    gc.resetFromView(createColumnMatrixView(schema, [[0], ['a']]), tm);
     log('ViewportText');
-    assert.equal('0a', gc._textContent)
+    assert.equal('0a', gc["_textContent"])
 
     gc._click(0, 0);
     gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});
@@ -104,9 +106,10 @@ test('ColumnMatrix', () => {
 
 test('RowMatrix', () => {
     const gc = new GridChen();
-    gc.resetFromView(createRowMatrixView(rowMatrixSchema, [[0, 'a']]));
+    const tm = new TransactionManager();
+    gc.resetFromView(createRowMatrixView(rowMatrixSchema, [[0, 'a']]), tm);
     log('ViewportText');
-    assert.equal('0a', gc._textContent)
+    assert.equal('0a', gc["_textContent"])
 
     gc._click(0, 0);
     gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});

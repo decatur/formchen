@@ -23,14 +23,13 @@ const schema = {
     }
 };
 
-const tm = new TransactionManager();
-
 test('copy', async function () {
     const rows = [
         [0, 'a'],
         [NaN, 'b']
     ];
     const gc = /** @type{GridChen} **/ (new (customElements.get('grid-chen'))());
+    const tm = new TransactionManager();
     gc.resetFromView(createView(schema, rows), tm);
 
     gc.select(new Range(0, 0, 2, 2));
@@ -45,6 +44,7 @@ await async_test('should paste cells to (2,1)', async function () {
         [NaN, 'b']
     ];
     const gc = /** @type{GridChen} **/  (new (customElements.get('grid-chen'))());
+    const tm = new TransactionManager();
     gc.resetFromView(createView(schema, rows), tm);
     // Write to clipboard 2x2 matrix
     //  0    a
@@ -66,6 +66,7 @@ await async_test('tiling', async function () {
     ];
     
     const gc = /** @type{GridChen} **/ (new (customElements.get('grid-chen'))());
+    const tm = new TransactionManager();
     gc.resetFromView(createView(schema, rows), tm);
 
     await navigator.clipboard.writeText(`3\tc`);
@@ -83,6 +84,7 @@ await async_test('paste outside of column range', async function () {
     ];
 
     const gc = /** @type{GridChen} **/ (new (customElements.get('grid-chen'))());
+    const tm = new TransactionManager();
     gc.resetFromView(createView(schema, rows), tm);
 
     await navigator.clipboard.writeText(`3\tc`);

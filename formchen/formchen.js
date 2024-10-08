@@ -5,7 +5,8 @@
  * Module implementing two-way hierachical data binding.
  */
 
-/** @import { IFormChen, JSONPatchOperation, GridChen as IGridChen, JSONSchema } from "./types" */
+/** @import { JSONPatchOperation, JSONSchema } from "./types" */
+/** @import { FormChen, GridChenElement } from "./types" */
 
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
@@ -371,10 +372,10 @@ class HolderNode extends BaseNode {
  * @param {HTMLElement} rootElement
  * @param {JSONSchema} topSchema
  * @param {object} topObj
- * @param {TransactionManager=} transactionManager
  * @returns {FormChen}
  */
-export function createFormChen(rootElement, topSchema, topObj, transactionManager) {
+export function createFormChen(rootElement, topSchema, topObj) {
+    const transactionManager = new TransactionManager();
 
     if (topSchema.type != 'object') {
         throw Error("Root schema must be an object")
@@ -439,7 +440,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
     /**
      * @param {HolderNode} node
-     * @param {IGridChen} grid
+     * @param {GridChenElement} grid
      */
     function bindGrid(node, grid) {
         grid.id = node.path;
@@ -447,6 +448,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         const gridSchema = Object.assign({}, node.schema);
 
         const view = createView(gridSchema, null);
+        // @ts-ignore
         grid.resetFromView(view, transactionManager, node.path);
 
         view.updateHolder = function () {
@@ -455,6 +457,7 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
 
         node.refreshUI = function () {
             view.applyJSONPatch([{ op: 'replace', path: '', value: node.obj }]);
+            // @ts-ignore
             grid.refresh(node.path);
         }
     }
@@ -649,15 +652,23 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
     }
 
     /**
-     * @implements {IFormChen}
+     * @implements {FormChen}
      */
-    class FormChen {
+    class FormChenClass {
         /**
          * Returns the current value of the bound object.
          * @returns {*}
          */
         get value() {
             return rootNode.getValue()
+        }
+
+        get patch() {
+            return transactionManager.patch
+        }
+
+        clearPatch() {
+            transactionManager.clear()
         }
 
         /**
@@ -667,9 +678,13 @@ export function createFormChen(rootElement, topSchema, topObj, transactionManage
         getNodeById(id) {
             return rootTree.getNode(id);
         }
+
+        get _transactionManager() {
+            return transactionManager
+        }
     }
 
-    return new FormChen();
+    return new FormChenClass();
 }
 
 

@@ -5,7 +5,8 @@
  * Module implementing the visual grid and scrolling behaviour.
  */
 
-/** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, JSONPatchOperation, CellEditMode, GridChen as IGridChen, ColumnSchema, MatrixView, JSONSchema } from "../types" */
+/** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, CellEditMode, ColumnSchema, MatrixView } from "../private-types" */
+/** @import { JSONSchema, JSONPatchOperation, GridChenElement } from "../types" */
 /** @import { Transaction } from "../utils" */
 
 
@@ -115,7 +116,7 @@ const ro = new window.ResizeObserver(entry => debounceResize(entry));
 
 /**
  * We export for testability.
- * @implements {GridChen}
+ * @implements {GridChenElement}
  */
 export class GridChen extends HTMLElement {
 
@@ -148,24 +149,34 @@ export class GridChen extends HTMLElement {
         return this._viewModel.getModel()
     }
 
+    get patch() {
+        return this._transactionManager.patch
+    }
+
+    clearPatch() {
+        this._transactionManager.clear()
+    }
+
     /**
      * 
      * @param {JSONSchema} schema 
      * @param {any} data 
-     * @param {TransactionManager} tm
-     * @param {string} pathPrefix 
+     * @param {TransactionManager=} tm
+     * @param {string=} pathPrefix 
      */
     bind(schema, data, tm, pathPrefix) {
+        tm = tm || new TransactionManager();
         const view = createView(schema, data);
         registerUndo(document.body, tm);
         this.resetFromView(view, tm, pathPrefix);
     }
 
     /**
+     * Resets this element based on the specified view.
      * @param {MatrixView} view
-     * @param {TransactionManager=} transactionManager
+     * @param {TransactionManager} transactionManager
      * @param {string=} pathPrefix 
-     * @returns {IGridChen}
+     * @returns {GridChenElement}
      */
     resetFromView(view, transactionManager, pathPrefix) {
         this._viewModel = view;
@@ -186,9 +197,13 @@ export class GridChen extends HTMLElement {
         this.shadowRoot.appendChild(container);
         createGrid(container, view, this, transactionManager, pathPrefix || '', this._totalHeight);
         this.style.width = container.style.width;
-        return /**@type{IGridChen}*/(this)
+        return /**@type{GridChenElement}*/(this)
     }
 
+    /**
+     * Resets this element with respect to its implicit dependencies, DOM dimensions and data view content.
+     * Currently, this is implemented by calling resetFromView().
+     */
     reset() {
         // console.log('reset clientHeight:' + this.clientHeight);
         if (this._viewModel && this._totalHeight !== this.clientHeight) {
@@ -406,6 +421,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     container.appendChild(info);
 
     /**
+     * Rereads the data view content.
      */
     function refresh() {
         rowCount = viewModel.rowCount();
@@ -865,6 +881,8 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         container.appendChild(header);
         const grid = document.createElement('div');
         container.appendChild(grid);
+
+        /** @type{[string[], string][]} */
         const actions = [
             [['Key'], 'Action'],
             [['Ctrl', 'Z'], 'Undo last transaction'],
@@ -1286,6 +1304,9 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     firstRow = 0;
     refresh();
 
+    /**
+     * Returns the selection as a rectangle.
+     */
     Object.defineProperty(gridchenElement, 'selectedRange',
         {
             get: () => ({

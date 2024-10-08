@@ -1,5 +1,5 @@
 /** @import { F1Type } from "../formchen/utils.js" */
-/** @import { JSONPatch } from "../formchen/types" */
+/** @import { JSONPatch } from "../formchen/private-types" */
 
 /**
  * @param {string} msg 
@@ -195,8 +195,8 @@ let scripts = Array(...document.body.getElementsByTagName('script'));
  * 
  * @param {HTMLElement} someElement 
  * @param {object} schema
- * @param {PatchCallBack} valueCallback 
- * @param {ValueCallBack} patchCallback 
+ * @param {ValueCallBack} valueCallback 
+ * @param {PatchCallBack} patchCallback 
  */
 export async function bindTabs(someElement, schema, valueCallback, patchCallback) {
     const container = someElement.closest('.demo');

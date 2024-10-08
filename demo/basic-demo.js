@@ -1,7 +1,9 @@
+/** @import { JSONSchema } from "../formchen/types" */
+
 import { createFormChen } from "../formchen/formchen.js"
-import {TransactionManager} from "../formchen/utils.js";
 import { bindTabs } from "../test/utils.js";
 
+/** @type{JSONSchema} */
 const schema = {
     definitions: {
         "measurements": {
@@ -80,17 +82,16 @@ const data = {
     isCompleted: true
 };
 
-const tm = new TransactionManager();
 const formElement = document.getElementById(schema.title);
 bindTabs(formElement, schema, value, patch);
-const formchen = createFormChen(formElement, schema, data, tm);
+const formchen = createFormChen(formElement, schema, data);
 
 function value() {
     return formchen.value
 }
 
 function patch() {
-    return tm.patch
+    return formchen.patch
 }
 
 
