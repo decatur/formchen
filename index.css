@@ -14,7 +14,7 @@ body {
 
 .data-title {
     display: inline-block;
-    width: 10em;
+    /*width: 10em;*/
 }
 
 .demo {

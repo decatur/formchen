@@ -397,10 +397,14 @@ export function createFormChen(rootElement, topSchema, topObj) {
     function resolveSchema(schema, path) {
         if ('$ref' in schema) {
             const ref = /**@type{string}*/ (schema['$ref']);
-            const refSchema = getValueByPointer(topSchema, ref);
+            let refSchema = getValueByPointer(topSchema, ref);
             if (!refSchema) {
                 throw Error('Undefined $ref at ' + path);
             }
+            refSchema = {
+                title: schema.title,
+                ...refSchema
+            };
             return /**@type{JSONSchema}*/ (refSchema)
         }
         return schema

@@ -21,17 +21,11 @@ const schema = {
     },
     title: 'BasicDemo',
     type: 'object',
-    // readOnly: true,
     properties: {
         plant: {
             title: 'Plant',
             tooltip: 'The name of the plant',
             type: 'string'
-        },
-        reference: {
-            title: 'Reference',
-            type: 'string',
-            format: 'url'
         },
         observer: {
             title: 'Observer',

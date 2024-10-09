@@ -22,7 +22,7 @@
     <div class="demo">
         <div id="BasicDemo" class="formchen">
             <label><span class="data-title"></span><textarea name="/plant"></textarea></label>
-            <label for="/reference"><span class="data-title"></span></label><input id="/reference" size="40">
+            <!--<label for="/reference"><span class="data-title"></span></label><input id="/reference" size="40">-->
             <label><span class="data-title"></span><select name="/observer"></select></label>
             <label><span class="data-title"></span><input name="/start"></label>
             <label data-path="/latitude"><span class="data-title"></span> <input class="data-value"></label>
@@ -34,6 +34,22 @@
         </div>
     </div>
     <script type="module" src="./demo/basic-demo.js"></script>
+
+    <h2>Basic Example (readOnly)</h2>
+    <div class="demo">
+        <div id="BasicDemoReadOnly" class="formchen">
+            <label><span class="data-title"></span><textarea name="/plant"></textarea></label>
+            <label><span class="data-title"></span><select name="/observer"></select></label>
+            <label><span class="data-title"></span><input name="/start"></label>
+            <label data-path="/latitude"><span class="data-title"></span> <input class="data-value"></label>
+            <label><span class="data-title"></span> <input name="/longitude"></label>
+            <label><span class="data-title"></span><grid-chen name="/measurements"
+                    style="display:block; height:10em"></grid-chen>
+            </label>
+            <label><span class="data-title"></span> <input name="/isCompleted"></label>
+        </div>
+    </div>
+    <script type="module" src="./demo/basic-demo-readonly.js"></script>
 
     <h2>Comprehensive Example</h2>
     <div class="demo">
@@ -49,17 +65,20 @@
             <label><span class="data-title"></span> <input name="/someColor"></label>
             <label><span class="data-title"></span> <input name="/anObject/someOtherString"></label>
             <div>
-                <label class="data-title"></span></label>
-                <grid-chen name="/anObject/anEmptyMatrix" style="display:block; height:10em"></grid-chen>
+                <label class="data-title"></span>
+                    <grid-chen name="/anObject/anEmptyMatrix" style="display:block; height:10em"></grid-chen>
+                </label>
             </div>
 
             <div>
-                <label class="data-title"></label>
-                <grid-chen name="/someMatrix" style="display:block; height:10em"></grid-chen>
+                <label class="data-title">
+                    <grid-chen name="/someMatrix" style="display:block; height:10em"></grid-chen>
+                </label>
             </div>
             <div>
-                <label class="data-title"></span></label>
-                <grid-chen name="/anEmptyMatrix" style="display:block; height:10em"></grid-chen>
+                <label class="data-title"></span>
+                    <grid-chen name="/anEmptyMatrix" style="display:block; height:10em"></grid-chen>
+                </label>
             </div>
             <label><span class="data-title"></span> <input name="/tuple/0"></label>
             <label><span class="data-title"></span> <input name="/tuple/1"></label>

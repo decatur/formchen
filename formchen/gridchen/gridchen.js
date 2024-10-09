@@ -119,6 +119,8 @@ const ro = new window.ResizeObserver(entry => debounceResize(entry));
  * @implements {GridChenElement}
  */
 export class GridChen extends HTMLElement {
+    // Identify the element as a form-associated custom element
+    static formAssociated = true;
 
     constructor() {
         super();
