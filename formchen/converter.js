@@ -365,7 +365,7 @@ export class NumberConverter {
 //     }
 
 //     /**
-//      * Parses any valid date-time format, but iso format is preferred.
+//      * Parses any valid datetime format, but iso format is preferred.
 //      * @param {string} s
 //      * @returns {string}
 //      */
@@ -520,7 +520,7 @@ export class DateTimeStringConverter {
 //     }
 
 //     /**
-//      * Parses any valid date-time format, but iso format is preferred.
+//      * Parses any valid datetime format, but iso format is preferred.
 //      * @param {string} s
 //      * @returns {Date|string}
 //      */
@@ -621,70 +621,70 @@ export class FullDateConverter {
     }
 }
 
-/**
- * Converter for timezone aware dates.
- */
-export class DateTimeConverter {
-    /**
-     * @param {string} period
-     */
-    constructor(period) {
-        this.period = utils.resolvePeriod(period);
-        this.parser = utils.localeDateParser();
-    }
+// /**
+//  * Converter for timezone aware dates.
+//  */
+// export class DateTimeConverter {
+//     /**
+//      * @param {string} period
+//      */
+//     constructor(period) {
+//         this.period = utils.resolvePeriod(period);
+//         this.parser = utils.localeDateParser();
+//     }
 
-    /**
-     * Returns a iso formatted string in local time with time zone offset, for example 2017-01-01T02:00+01.
-     * @param {Date|*} d
-     * @returns {string}
-     */
-    toTSV(d) {
-        if (d.constructor !== Date) {
-            return String(d)
-        }
-        return utils.toLocaleISODateTimeString(d, this.period)
-    }
+//     /**
+//      * Returns a iso formatted string in local time with time zone offset, for example 2017-01-01T02:00+01.
+//      * @param {Date|*} d
+//      * @returns {string}
+//      */
+//     toTSV(d) {
+//         if (d.constructor !== Date) {
+//             return String(d)
+//         }
+//         return utils.toLocaleISODateTimeString(d, this.period)
+//     }
 
-    toEditable(d) {
-        return this.toTSV(d);
-    }
+//     toEditable(d) {
+//         return this.toTSV(d);
+//     }
 
-    /**
-     * Parses any valid date-time format, but iso format is preferred.
-     * @param {string} s
-     * @returns {Date | string}
-     */
-    fromEditable(s) {
-        let r = this.parser.dateTime(s);
-        if (r instanceof SyntaxError) {
-            return s
-        }
-        const parts = r;
-        parts[3] -= parts[7]; // Get rid of hour offset
-        parts[4] -= parts[8]; // Get rid of minute offset
-        let tuple = /**@type{[number, number]}*/(parts.slice(0, 1 + this.period));
-        return new Date(Date.UTC(...tuple));
-    }
+//     /**
+//      * Parses any valid datetime format, but iso format is preferred.
+//      * @param {string} s
+//      * @returns {Date | string}
+//      */
+//     fromEditable(s) {
+//         let r = this.parser.dateTime(s);
+//         if (r instanceof SyntaxError) {
+//             return s
+//         }
+//         const parts = r;
+//         parts[3] -= parts[7]; // Get rid of hour offset
+//         parts[4] -= parts[8]; // Get rid of minute offset
+//         let tuple = /**@type{[number, number]}*/(parts.slice(0, 1 + this.period));
+//         return new Date(Date.UTC(...tuple));
+//     }
 
-    /**
-     * @returns {HTMLSpanElement}
-     */
-    createElement() {
-        return createSpan()
-    }
+//     /**
+//      * @returns {HTMLSpanElement}
+//      */
+//     createElement() {
+//         return createSpan()
+//     }
 
-    /**
-     * @param {HTMLElement} element
-     * @param {Date|*} value
-     */
-    render(element, value) {
-        if (value.constructor !== Date) {
-            element.textContent = String(value);
-            element.className = 'error';
-        } else {
-            element.textContent = utils.toLocaleISODateTimeString(value, this.period);
-            element.className = 'non-string';
-        }
-    }
-}
+//     /**
+//      * @param {HTMLElement} element
+//      * @param {Date|*} value
+//      */
+//     render(element, value) {
+//         if (value.constructor !== Date) {
+//             element.textContent = String(value);
+//             element.className = 'error';
+//         } else {
+//             element.textContent = utils.toLocaleISODateTimeString(value, this.period);
+//             element.className = 'non-string';
+//         }
+//     }
+// }
 

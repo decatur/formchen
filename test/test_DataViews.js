@@ -1,8 +1,8 @@
-/** @import { _JSONSchema } from "../formchen/types" */
+/** @import { JSONSchema } from "../formchen/types" */
 
-import {test, assert} from './utils.js'
-import {createView} from '../formchen/gridchen/matrixview.js'
-import {applyJSONPatch, reversePatch} from '../formchen/utils.js'
+import { test, assert } from './utils.js'
+import { createView } from '../formchen/gridchen/matrixview.js'
+import { applyJSONPatch, reversePatch } from '../formchen/utils.js'
 
 let apply;
 if (window['jsonpatch']) {
@@ -15,7 +15,7 @@ if (window['jsonpatch']) {
 
 /**
  * Runs tests on all five supported matrix types.
- * @param {_JSONSchema} schema
+ * @param {JSONSchema} schema
  * @param {function():object} createModel
  * @param {object} emptyModel
  */
@@ -52,6 +52,10 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
     });
 
     test('deleteAllCells', () => {
+        /**
+         * @param {number} rowIndex 
+         * @param {number} columnIndex 
+         */
         function deleteCell(rowIndex, columnIndex) {
             const model = createModel();
             const view = createView(schema, model);
@@ -74,6 +78,10 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
     });
 
     test('setAllCells', () => {
+        /**
+         * @param {number} rowIndex 
+         * @param {number} columnIndex 
+         */
         function setCell(rowIndex, columnIndex) {
             const model = createModel();
             const view = createView(schema, model);
@@ -143,10 +151,10 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         patches.push(view.deleteRow(0)); // NoOp
         assert.equal(emptyModel, view.getModel());
 
-        for (let i=patches.length-1; i>=0; i--) {
+        for (let i = patches.length - 1; i >= 0; i--) {
             view.applyJSONPatch(reversePatch(patches[i]));
         }
-        for (let i=0; i<patches.length; i++) {
+        for (let i = 0; i < patches.length; i++) {
             view.applyJSONPatch(patches[i]);
         }
         assert.equal(emptyModel, model);
@@ -184,9 +192,9 @@ scope('RowMatrixView', () => {
         "items": {
             "type": "array",
             "items": [
-                {title: 'c1', type: 'number'},
-                {title: 'c2', type: 'string'},
-                {title: 'c3', type: 'string'}
+                { title: 'c1', type: 'number' },
+                { title: 'c2', type: 'string' },
+                { title: 'c3', type: 'string' }
             ]
         }
     };
@@ -208,7 +216,7 @@ scope('RowMatrixView', () => {
 });
 
 scope('RowObjectsView', () => {
-    const createModel = () => [{c1: 'a', c3: 'b'}, null, {c1: 'c', c3: 'd'}];
+    const createModel = () => [{ c1: 'a', c3: 'b' }, null, { c1: 'c', c3: 'd' }];
     const emptyModel = [];
     const schema = {
         "title": "RowObjectsView",
@@ -216,9 +224,9 @@ scope('RowObjectsView', () => {
         "items": {
             "type": "object",
             "properties": {
-                "c1": {title: 'string', type: 'number'},
-                "c2": {title: 'string', type: 'string'},
-                "c3": {title: 'string', type: 'string'}
+                "c1": { title: 'string', type: 'number' },
+                "c2": { title: 'string', type: 'string' },
+                "c3": { title: 'string', type: 'string' }
             }
         }
     };
@@ -226,15 +234,15 @@ scope('RowObjectsView', () => {
     testsOnFirstColumn(schema, createModel, emptyModel);
 
     test('sort', () => {
-        const rowMatrix = [{c1: 1, c2: 'b'}, {c1: NaN}, {c1: 3, c2: 'c'}, {c1: 2, c2: 'a'}];
+        const rowMatrix = [{ c1: 1, c2: 'b' }, { c1: NaN }, { c1: 3, c2: 'c' }, { c1: 2, c2: 'a' }];
         const rowView = createView(schema, rowMatrix);
         assert.equal(1, rowView.getCell(0, 0));
         assert.equal('b', rowView.getCell(0, 1));
 
         rowView.sort(0);
-        assert.equal([{"c1": 1, "c2": "b"}, {"c1": 2, "c2": "a"}, {"c1": 3, "c2": "c"}, {"c1": NaN}], rowMatrix);
+        assert.equal([{ "c1": 1, "c2": "b" }, { "c1": 2, "c2": "a" }, { "c1": 3, "c2": "c" }, { "c1": NaN }], rowMatrix);
         rowView.sort(1);
-        assert.equal([{"c1": 2, "c2": "a"}, {"c1": 1, "c2": "b"}, {"c1": 3, "c2": "c"}, {"c1": NaN}], rowMatrix);
+        assert.equal([{ "c1": 2, "c2": "a" }, { "c1": 1, "c2": "b" }, { "c1": 3, "c2": "c" }, { "c1": NaN }], rowMatrix);
     });
 
 });
@@ -246,9 +254,9 @@ scope('ColumnMatrixView', () => {
         "title": "ColumnMatrixView",
         "type": "array",
         "items": [
-            {"type": "array", "items": {title: 'c1', type: 'number'}},
-            {"type": "array", "items": {title: 'c2', type: 'string'}},
-            {"type": "array", "items": {title: 'c3', type: 'string'}},
+            { "type": "array", "items": { title: 'c1', type: 'number' } },
+            { "type": "array", "items": { title: 'c2', type: 'string' } },
+            { "type": "array", "items": { title: 'c3', type: 'string' } },
         ]
     };
 
@@ -272,14 +280,14 @@ scope('ColumnObjectView', () => {
             col3: ['b', null, 'd']
         };
     };
-    const emptyModel = {col1: [], col3: []};
+    const emptyModel = { col1: [], col3: [] };
     const schema = {
         title: 'ColumnObjectView',
         type: 'object',
         properties: {
-            col1: {"type": "array", items: {title: 'number', type: 'number'}},
-            col2: {"type": "array", items: {title: 'string', type: 'string'}},
-            col3: {"type": "array", items: {title: 'string', type: 'string'}}
+            col1: { "type": "array", items: { title: 'number', type: 'number' } },
+            col2: { "type": "array", items: { title: 'string', type: 'string' } },
+            col3: { "type": "array", items: { title: 'string', type: 'string' } }
         }
     };
 
@@ -292,9 +300,9 @@ scope('ColumnObjectView', () => {
         };
         const colView = createView(schema, model);
         colView.sort(0);
-        assert.equal({col1: [1, 2, 3, NaN], col2: ['b', 'a', 'c', null]}, model);
+        assert.equal({ col1: [1, 2, 3, NaN], col2: ['b', 'a', 'c', null] }, model);
         colView.sort(1);
-        assert.equal({col1: [2, 1, 3, NaN], col2: ['a', 'b', 'c', null]}, model);
+        assert.equal({ col1: [2, 1, 3, NaN], col2: ['a', 'b', 'c', null] }, model);
     });
 
 });
@@ -324,7 +332,7 @@ scope('ColumnVectorView', () => {
 
 scope('Test Invalid Schema', () => {
     try {
-        createView({title: 'FooBar', 'type': 'foo'}, []);
+        createView({ title: 'FooBar', 'type': 'foo' }, []);
     } catch (e) {
         assert.equal("Invalid schema: FooBar", e.message);
     }

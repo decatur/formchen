@@ -3,11 +3,12 @@
 
 import { test, assert } from './utils.js'
 import { createFormChen } from '../formchen/formchen.js'
-import { TransactionManager } from "../formchen/utils.js";
+
 import { GridChen } from "../formchen/gridchen/gridchen.js";
 
 
 test('Empty Object one Level', (test_name) => {
+    /** @type{JSONSchema} */
     const schema = {
         type: 'object',
         properties: {
@@ -164,7 +165,7 @@ test('Empty object with grid', (test_name) => {
                 items: {
                     type: 'array',
                     items: [  // tuple schema
-                        { title: 'TimeStamp', width: 200, type: 'string', format: 'date-time' },
+                        { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime' },
                         { title: 'Age [d]', width: 100, type: 'number' },
                         { title: 'Weight [g]', width: 100, type: 'number' }
                     ]

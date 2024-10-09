@@ -6,7 +6,7 @@
  */
 
 /** @import { Interval, MatrixView, GridSchema, ColumnSchema, JSONPatch } from "../private-types" */
-/** @import { _JSONSchema, JSONPatchOperation } from "../types" */
+/** @import { JSONSchema, JSONPatchOperation } from "../types" */
 
 import * as c from "../converter.js";
 import { applyJSONPatch, Patch } from '../utils.js'
@@ -101,7 +101,7 @@ function updateSortDirection(schemas, colIndex) {
 }
 
 /**
- * @param {_JSONSchema[]} schemas
+ * @param {JSONSchema[]} schemas
  * @returns {ColumnSchema[]}
  */
 function createColumSchemas(schemas) {
@@ -121,29 +121,29 @@ function createColumSchemas(schemas) {
             }
             schema.converter = new c.NumberConverter(fractionDigits);
             schema.compare = compareNumber;
-        } else if (schema.type === 'string' && schema.format === 'full-date') {
+        } else if (schema.type === 'string' && schema.format === 'date') {
             schema.converter = new c.FullDateConverter();
             schema.compare = compareString;
         }
         // else if (schema.type === 'string' && schema.format === 'date-partial-time') {
         //     schema.converter = new c.DatePartialTimeStringConverter(schema.period || 'MINUTES');
         // } 
-        else if (schema.type === 'string' && schema.format === 'date-time') {
+        else if (schema.type === 'string' && schema.format === 'datetime') {
             schema.converter = new c.DateTimeStringConverter(schema.period || 'MINUTES');
             schema.compare = compareString;
         }
-        // else if (schema.type === 'object' && schema.format === 'full-date') {
+        // else if (schema.type === 'object' && schema.format === 'date') {
         //     schema.converter = new c.DatePartialTimeConverter('DAYS');
         // } else if (schema.type === 'object' && schema.format === 'date-partial-time') {
         //     schema.converter = new c.DatePartialTimeConverter(schema.period || 'MINUTES');
         // } 
-        //else if (schema.type === 'object' && schema.format === 'date-time') {
+        //else if (schema.type === 'object' && schema.format === 'datetime') {
         //    schema.converter = new c.DateTimeConverter(schema.period || 'MINUTES');
         //}
         else if (schema.type === 'boolean') {
             schema.converter = new c.BooleanStringConverter();
             schema.compare = compareBoolean;
-        } else if (schema.type === 'string' && schema.format === 'uri') {
+        } else if (schema.type === 'string' && schema.format === 'url') {
             schema.converter = new c.URIConverter();
             schema.compare = compareString;
         } else if (schema.type === 'string') {
@@ -182,7 +182,7 @@ function sortedColumns(properties) {
 // }
 
 /**
- * @param {_JSONSchema} schema
+ * @param {JSONSchema} schema
  * @param {*=} matrix
  * @returns {MatrixView}
  */
@@ -394,20 +394,20 @@ function search(pattern, value) {
 }
 
 /**
- * @param {_JSONSchema} schema
+ * @param {JSONSchema} schema
  */
 function readOnly(schema) {
     return (typeof schema.readOnly === 'boolean') ? schema.readOnly : false;
 }
 
 /**
- * @param {_JSONSchema} jsonSchema
+ * @param {JSONSchema} jsonSchema
  * @param {(number | string | boolean | null)[][]} rows
  * @returns {MatrixView}
  */
 export function createRowMatrixView(jsonSchema, rows) {
     // Array of tuples.
-    /** @type{_JSONSchema[]} */
+    /** @type{JSONSchema[]} */
     const itemSchemas = jsonSchema.items['items'];
     const columnSchemas = [];
     /** @type{number[]} */
@@ -589,7 +589,7 @@ export function createRowMatrixView(jsonSchema, rows) {
 }
 
 /**
- * @param {_JSONSchema} jsonSchema
+ * @param {JSONSchema} jsonSchema
  * @param {Array<object>} rows
  * @returns {MatrixView}
  */
@@ -761,12 +761,12 @@ export function createRowObjectsView(jsonSchema, rows) {
 }
 
 /**
- * @param {_JSONSchema} jsonSchema
+ * @param {JSONSchema} jsonSchema
  * @param {object[]} columns
  * @returns {MatrixView}
  */
 export function createColumnMatrixView(jsonSchema, columns) {
-    const columnSchemas = /**@type{_JSONSchema[]}*/(jsonSchema.items).map(item => /**@type{_JSONSchema}*/(item.items));
+    const columnSchemas = /**@type{JSONSchema[]}*/(jsonSchema.items).map(item => /**@type{JSONSchema}*/(item.items));
     const schemas = createColumSchemas(columnSchemas);
 
     /**@type{GridSchema} */
@@ -933,7 +933,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
 }
 
 /**
- * @param {_JSONSchema} jsonSchema
+ * @param {JSONSchema} jsonSchema
  * @param {object} columns
  */
 export function createColumnObjectView(jsonSchema, columns) {
@@ -1147,12 +1147,12 @@ export function createColumnObjectView(jsonSchema, columns) {
 }
 
 /**
- * @param {_JSONSchema} jsonSchema
+ * @param {JSONSchema} jsonSchema
  * @param {(number|string|boolean|null)[]} column
  */
 export function createColumnVectorView(jsonSchema, column) {
 
-    const items = /**@type{_JSONSchema} */(jsonSchema.items);
+    const items = /**@type{JSONSchema} */(jsonSchema.items);
     const title = items.title;
     items.title = title;
 

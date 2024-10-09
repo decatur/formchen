@@ -1,6 +1,5 @@
 /** @import { JSONSchema, GridChenElement } from "../formchen/types" */
 
-import { GridChen } from "../formchen/gridchen/gridchen.js"
 import { bindTabs } from "../test/utils.js";
 
 /** @type{JSONSchema} */
@@ -8,7 +7,7 @@ const schema = {
     title: 'Array of Column Arrays',
     type: 'array',
     items: [ // tuple schema
-        { type: 'array', items: { title: 'TimeStamp', width: 200, type: 'string', format: 'full-date' } },
+        { type: 'array', items: { title: 'TimeStamp', width: 200, type: 'string', format: 'date' } },
         { type: 'array', items: { title: 'Age', width: 100, type: 'number' } },
         { type: 'array', items: { title: 'Weight', width: 100, type: 'number' } }
     ]

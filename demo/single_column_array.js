@@ -6,7 +6,7 @@ import { bindTabs } from "../test/utils.js";
 const schema = {
     title: 'Single Column Array',
     type: 'array',
-    items: { width: 200, type: 'string', format: 'full-date' }
+    items: { width: 200, type: 'string', format: 'date' }
 };
 
 const data = ["2019-01-01", "2019-01-02", "2019-01-03"];

@@ -22,7 +22,7 @@
     <div class="demo">
         <div id="BasicDemo" class="formchen">
             <label><span class="data-title"></span><textarea name="/plant"></textarea></label>
-            <label for="/reference"><span class="data-title"></span></label><input id="/reference">
+            <label for="/reference"><span class="data-title"></span></label><input id="/reference" size="40">
             <label><span class="data-title"></span><select name="/observer"></select></label>
             <label><span class="data-title"></span><input name="/start"></label>
             <label data-path="/latitude"><span class="data-title"></span> <input class="data-value"></label>
@@ -116,8 +116,10 @@
     All Unicode symbols with code points inside the specified Code Point (CP) range.
     <div class="demo">
         <div class="formchen" id="UnicodeTable">
-            <label style="display: inline"><span class="data-title"></span><input name="/min" size=6 style="display: inline"></label>
-            <label style="display: inline"><span class="data-title"></span><input name="/max" size=6 style="display: inline"></label>
+            <label style="display: inline"><span class="data-title"></span><input name="/min" size=6
+                    style="display: inline"></label>
+            <label style="display: inline"><span class="data-title"></span><input name="/max" size=6
+                    style="display: inline"></label>
             <button id="UnicodeTableRefresh" style="display: inline">Refresh ↻</button>
             <grid-chen name="/symbols" style="display:block; height: 10em"></grid-chen>
         </div>

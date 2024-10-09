@@ -9,7 +9,7 @@ const schema = {
     items: {
         type: 'array',
         items: [  // tuple schema
-            { title: 'TimeStamp', width: 200, type: 'string', format: 'full-date' },
+            { title: 'TimeStamp', width: 200, type: 'string', format: 'date' },
             { title: 'Age', width: 100, type: 'number' },
             { title: 'Weight', width: 100, type: 'number' }
         ]

@@ -1,6 +1,14 @@
+/** @import { JSONPatchOperation } from "../formchen/types" */
+
 import { test, assert, log } from './utils.js'
 import {applyJSONPatch} from "../formchen/utils.js";
 
+/**
+ * 
+ * @param {object|undefined} o 
+ * @param {JSONPatchOperation} op 
+ * @returns 
+ */
 function apply(o, op) {
     return applyJSONPatch(o, [op])
 }
@@ -51,8 +59,7 @@ test('replace', () => {
 });
 
 test('add', () => {
-    const o = undefined;
-    const patched = apply(o, {"op": "add", "path": "", "value": 3});
+    const patched = apply(undefined, {"op": "add", "path": "", "value": 3});
     assert.equal(3, patched);
 });
 

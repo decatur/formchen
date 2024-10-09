@@ -5,7 +5,7 @@
  * Module implementing two-way hierachical data binding.
  */
 
-/** @import { JSONPatchOperation, JSONSchema, _JSONSchema } from "./types" */
+/** @import { JSONPatchOperation, JSONSchemaOrRef, JSONSchema } from "./types" */
 /** @import { FormChen, GridChenElement } from "./types" */
 
 import "./gridchen/gridchen.js"
@@ -87,7 +87,7 @@ class BaseNode {
     /**
      * @param {NodeTree} tree
      * @param {string | number} key
-     * @param {_JSONSchema} schema
+     * @param {JSONSchema} schema
      * @param {HolderNode} parent
      */
     constructor(tree, key, schema, parent) {
@@ -262,7 +262,7 @@ class LeafNode extends BaseNode {
     /**
      * @param {NodeTree} tree
      * @param {string | number} key
-     * @param {_JSONSchema} schema
+     * @param {JSONSchema} schema
      * @param {HolderNode} parent
      */
     constructor(tree, key, schema, parent) {
@@ -314,7 +314,7 @@ class HolderNode extends BaseNode {
     /**
      * @param {NodeTree} tree
      * @param {string | number} key
-     * @param {_JSONSchema} schema
+     * @param {JSONSchema} schema
      * @param {HolderNode} parent
      */
     constructor(tree, key, schema, parent) {
@@ -371,7 +371,7 @@ class HolderNode extends BaseNode {
 
 /**
  * @param {HTMLElement} rootElement
- * @param {_JSONSchema} topSchema
+ * @param {JSONSchema} topSchema
  * @param {object} topObj
  * @returns {FormChen}
  */
@@ -390,9 +390,9 @@ export function createFormChen(rootElement, topSchema, topObj) {
     let holder = null;
 
     /**
-      * @param {JSONSchema} schema
+      * @param {JSONSchemaOrRef} schema
       * @param {string} path
-      * @returns {_JSONSchema}
+      * @returns {JSONSchema}
       */
     function resolveSchema(schema, path) {
         if ('$ref' in schema) {
@@ -401,14 +401,14 @@ export function createFormChen(rootElement, topSchema, topObj) {
             if (!refSchema) {
                 throw Error('Undefined $ref at ' + path);
             }
-            return /**@type{_JSONSchema}*/ (refSchema)
+            return /**@type{JSONSchema}*/ (refSchema)
         }
         return schema
     }
 
     /**
     * @param {string | number} key 
-    * @param {JSONSchema} schema 
+    * @param {JSONSchemaOrRef} schema 
     * @param {HolderNode} parent 
     * @returns {BaseNode}
     */
@@ -472,7 +472,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
         }
 
         // Fixed length tuple.
-        const tupleSchemas = /**@type{JSONSchema[]}*/ (node.schema.prefixItems);
+        const tupleSchemas = /**@type{JSONSchemaOrRef[]}*/ (node.schema.prefixItems);
         tupleSchemas.forEach((itemSchema, i) => {
             createNode(String(i), itemSchema, node);
         });
@@ -546,6 +546,8 @@ export function createFormChen(rootElement, topSchema, topObj) {
             if (input instanceof HTMLInputElement) {
                 if (schema.format === 'color') {
                     input.type = 'color';
+                } else if (schema.format === 'url') {
+                    input.type = 'url';
                 } else {
                     input.type = 'string';
                 }
@@ -589,11 +591,11 @@ export function createFormChen(rootElement, topSchema, topObj) {
                     converter = new NumberConverter(schema.fractionDigits || 2);
                 }
 
-            } else if (schema.format === 'date-time') {
+            } else if (schema.format === 'datetime') {
                 converter = new DateTimeStringConverter(schema.period || 'HOURS');
                 // } else if (schema.format === 'date-partial-time') {
                 //     converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
-            } else if (schema.format === 'full-date') {
+            } else if (schema.format === 'date') {
                 converter = new FullDateConverter();
             } else {
                 throw Error('Invalid schema at ' + node.path);

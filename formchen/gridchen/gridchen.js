@@ -6,7 +6,7 @@
  */
 
 /** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, CellEditMode, ColumnSchema, MatrixView } from "../private-types" */
-/** @import { _JSONSchema, JSONPatchOperation, GridChenElement } from "../types" */
+/** @import { JSONSchema, JSONPatchOperation, GridChenElement } from "../types" */
 /** @import { Transaction } from "../utils" */
 
 
@@ -159,7 +159,7 @@ export class GridChen extends HTMLElement {
 
     /**
      * 
-     * @param {_JSONSchema} schema 
+     * @param {JSONSchema} schema 
      * @param {any} value 
      * @param {TransactionManager=} tm
      * @param {string=} pathPrefix 
@@ -293,7 +293,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     const schema = viewModel.schema
 
     const schemas = schema.columnSchemas;
-    schema.readOnly = !tm;
+    //schema.readOnly = !tm;
 
     const rowHeight = lineHeight + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
@@ -464,27 +464,29 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     function refreshHeaders() {
         headerRow.textContent = '';
         let left = 0;
-        for (const [index, schema] of schemas.entries()) {
+        for (const [index, columnSchema] of schemas.entries()) {
             const header = document.createElement('span');
             const style = header.style;
             style.position = 'absolute';
             style.left = left + 'px';
-            style.width = schema.width + 'px';
+            style.width = columnSchema.width + 'px';
             style.height = innerHeight;
             style.padding = cellPadding + 'px';
             style.border = cellBorderStyle;
             style.overflow = 'hidden';
-            header.textContent = schema.title;
-            header.title = schema.title;
-            if (schema.sortDirection === 1) {
+            header.textContent = columnSchema.title;
+            header.title = columnSchema.title;
+            if (columnSchema.sortDirection === 1) {
                 header.textContent += ' ↑';
-            } else if (schema.sortDirection === -1) {
+            } else if (columnSchema.sortDirection === -1) {
                 header.textContent += ' ↓'
             }
             header.addEventListener('click', function () {
                 // header.textContent = schema.title + ' ' + (header.textContent.substr(-1)==='↑'?'↓':'↑');
-                viewModel.sort(index);
-                refresh();
+                if (schema.readOnly) {
+                    viewModel.sort(index);
+                    refresh();
+                }
             });
             headerRow.appendChild(header);
             left = columnEnds[index];

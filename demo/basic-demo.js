@@ -7,13 +7,12 @@ import { bindTabs } from "../test/utils.js";
 const schema = {
     "$defs": {
         "measurements": {
-            title: 'Measurements',
             type: 'array',
             format: 'grid',
             items: {
                 type: 'array',  // tuple schema
                 items: [
-                    { title: 'TimeStamp', width: 200, type: 'string', format: 'date-time', period: 'HOURS' },
+                    { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime', period: 'HOURS' },
                     { title: 'Age [d]', width: 100, type: 'number' },
                     { title: 'Weight [g]', width: 100, type: 'number' }
                 ]
@@ -22,6 +21,7 @@ const schema = {
     },
     title: 'BasicDemo',
     type: 'object',
+    // readOnly: true,
     properties: {
         plant: {
             title: 'Plant',
@@ -31,7 +31,7 @@ const schema = {
         reference: {
             title: 'Reference',
             type: 'string',
-            format: 'uri'
+            format: 'url'
         },
         observer: {
             title: 'Observer',
@@ -41,7 +41,7 @@ const schema = {
         start: {
             title: 'Started',
             type: 'string',
-            format: 'date-time'
+            format: 'datetime'
         },
         latitude: {
             title: 'Latitude',

@@ -24,7 +24,7 @@ export interface FormChen {
  */
 export interface GridChenElement extends HTMLElement {
 
-    bind: (schema: JSONSchema, value: any) => void;
+    bind: (schema: JSONSchemaOrRef, value: any) => void;
 
     readonly value: any;
 
@@ -43,14 +43,14 @@ export interface JSONPatchOperation {
     oldValue?: any;
 }
 
-export type JSONSchema = _JSONSchema | ref;
+export type JSONSchemaOrRef = JSONSchema | JSONSchemaRef;
 
-interface ref  {
+interface JSONSchemaRef  {
     $ref: string;
     title?: string;
 }
 
-export interface _JSONSchema {
+export interface JSONSchema {
     $defs?: { [key: string]: JSONSchema };
     width?: number;
     period?: "HOURS" | "MINUTES" | "SECONDS";
@@ -58,7 +58,7 @@ export interface _JSONSchema {
     // converter?: Converter;
     minimum?: number;
     maximum?: number;
-    format?: "grid" | "date-time" | "full-date" | "uri" | "color";
+    format?: "grid" | "datetime" | "date" | "url" | "color";
     tooltip?: string;
     readOnly?: boolean;
     title?: string;
@@ -66,15 +66,15 @@ export interface _JSONSchema {
     /**
      * If properties is set, this schema describes an object.
      */
-    properties?: { [key: string]: JSONSchema };
+    properties?: { [key: string]: JSONSchemaOrRef };
     /**
      * If items is an array object, this schema describes a fixed length tuple
      * with item at index having schema items[index].
      * If items is an object, this schema describes a variable length array
      * with each item having the object as its schema.
      */
-    items?: JSONSchema | JSONSchema[];
-    prefixItems?: JSONSchema[];
+    items?: JSONSchemaOrRef | JSONSchemaOrRef[];
+    prefixItems?: JSONSchemaOrRef[];
     enum?: (string | number)[];
     readOnly?: boolean;
     height?: number;

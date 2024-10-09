@@ -9,7 +9,7 @@ const schema = {
     items: {
         type: 'object',
         properties: {
-            timestamp: { title: 'TimeStamp', width: 200, type: 'string', format: 'full-date' },
+            timestamp: { title: 'TimeStamp', width: 200, type: 'string', format: 'date' },
             age: { title: 'Age', width: 100, type: 'number' },
             weight: { title: 'Weight', width: 100, type: 'number' }
         }

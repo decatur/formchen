@@ -7,7 +7,7 @@
 
 /** @import { Interval, Selection as ISelection, GridSelectionAbstraction, Range as IRange } from "../private-types" */
 
-import {logger, wrap} from "../utils.js";
+import {logger, LocalDateParserClass, wrap} from "../utils.js";
 
 /**
  * A rectangular area.
@@ -493,7 +493,7 @@ function _startSelection(evt, selection, cellParent, indexMapper) {
         logger.log(`onmousemove ${rowIndex} ${columnIndex}`);
         pilot.setBounds(rowIndex, columnIndex, 1, 1);
         convexHull(current, [initial, pilot]);
-        logger.log(current);
+        logger.log(String(current));
         selection.uiRefresher(current, true);
     }
 

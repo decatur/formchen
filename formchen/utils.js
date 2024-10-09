@@ -459,6 +459,8 @@ export function applyJSONPatch(data, patch) {
 
 /**
  * Add keydown listeners for KeyY and KeyZ to handle Undo/Redo.
+ * @param {HTMLElement} container 
+ * @param {TransactionManager} tm 
  */
 export function registerUndo(container, tm) {
 
@@ -487,9 +489,22 @@ export function registerUndo(container, tm) {
     container.addEventListener('keydown', listener);
 }
 
+/**
+ * @callback F5Type
+ * @param{string} context
+ * @returns {void}
+ */
+
+/**
+ * @callback Listener
+ * @param{{type: string, transaction:Transaction}} p
+ * @returns {void}
+ */
+
 export class TransactionManager {
     constructor() {
         this.clear();
+        /** @type{Object.<string, Listener[]>} */
         this.listenersByType = { change: [] };
         this.resolves = [];
     }
@@ -513,6 +528,9 @@ export class TransactionManager {
     //     });
     // }
 
+    /**
+     * @param {Transaction} transaction 
+     */
     fireChange(transaction) {
         const type = 'change';
         for (let listener of this.listenersByType[type]) {
@@ -524,18 +542,33 @@ export class TransactionManager {
         }
     }
 
+    /**
+     * @param {string} type 
+     * @param {Listener} listener 
+     */
     addEventListener(type, listener) {
         this.listenersByType[type].push(listener);
     }
 
+    /**
+     * @param {string} type
+     * @param {Listener} listener 
+     */
     removeEventListener(type, listener) {
-        for (let l of this.listenersByType[type]) {
+        this.listenersByType[type].every(function (l, index) {
             if (l === listener) {
-                delete this.listenersByType[type][l];
+                delete this.listenersByType[type][index];
+                return false
             }
-        }
+            return true
+        });
     }
 
+    /**
+     * 
+     * @param {F1Type} func 
+     * @returns {Promise}
+     */
     async requestTransaction(func) {
         const self = this;
         return new Promise(function (resolve) {
@@ -618,8 +651,26 @@ export class TransactionManager {
 }
 
 let logCounter = 0;
+
+/**
+ * @callback F4Type
+ * @param{string} a
+ * @param{string=} b
+ * @returns {void}
+ */
+
+/** @type{F4Type} */
+let log;
+
+if (DEBUG) {
+    log = (a, b) => window.console.log(logCounter++ + ': ' + a, b);
+} else {
+    log = () => undefined;
+}
+
 export const logger = {
-    log: (DEBUG ? (a, b) => window.console.log(logCounter++ + ': ' + a, b) : () => undefined),
+    log,
+    /** @type{F4Type} */
     error: function (a, b) {
         window.console.error(logCounter++ + ': ' + a, b);
     }

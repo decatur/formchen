@@ -13,7 +13,7 @@ const schema = {
             items: {
                 type: 'array',
                 items: [  // tuple schema
-                    { title: 'TimeStamp', width: 200, type: 'string', format: 'date-time' },
+                    { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime' },
                     { title: 'Age [d]', width: 100, type: 'number' },
                     { title: 'Weight [g]', width: 100, type: 'number' }
                 ]
@@ -30,7 +30,7 @@ const schema = {
         someURI: {
             title: 'Some URI',
             type: 'string',
-            format: 'uri'
+            format: 'url'
         },
         someEnum: {
             title: 'Some Enum',
@@ -40,12 +40,12 @@ const schema = {
         someDate: {
             title: 'Some Date',
             type: 'string',
-            format: 'full-date'
+            format: 'date'
         },
         someDateTime: {
             title: 'Some DateTime',
             type: 'string',
-            format: 'date-time'
+            format: 'datetime'
         },
         someBoolean: {
             title: 'Some Boolean',

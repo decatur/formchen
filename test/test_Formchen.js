@@ -2,13 +2,13 @@
 
 import { test, assert } from './utils.js'
 import { createFormChen } from '../formchen/formchen.js'
-import * as utils from '../formchen/utils.js';
+
 import { GridChen } from "../formchen/gridchen/gridchen.js";
 
 test('Atomic', (test_name) => {
     const container = document.getElementById(test_name);
     try {
-        const fc = createFormChen(container, { type: 'string' }, 'foobar');
+        createFormChen(container, { type: 'string' }, 'foobar');
     } catch (e) {
         assert.equal(e.message, "Root schema must be an object");
     }
@@ -26,7 +26,7 @@ test('FormChen', (test_name) => {
                 items: {
                     type: 'array',
                     items: [  // tuple schema
-                        {title: 'TimeStamp', width: 200, type: 'string', format: 'date-time'},
+                        {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
                         {title: 'Age [d]', width: 100, type: 'number'},
                         {title: 'Weight [g]', width: 100, type: 'number'}
                     ]
@@ -53,12 +53,12 @@ test('FormChen', (test_name) => {
             someDate: {
                 title: 'Some Date',
                 type: 'string',
-                format: 'full-date'
+                format: 'date'
             },
             someDateTime: {
                 title: 'Some DateTime',
                 type: 'string',
-                format: 'date-time'
+                format: 'datetime'
             },
             someBoolean: {
                 title: 'Some Boolean',

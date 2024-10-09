@@ -61,4 +61,8 @@ kbd {
     background-color: #f7f7f7;
 }
 
+:invalid {
+    background-color: red;
+}
+
 @media (prefers-color-scheme: dark) {}
