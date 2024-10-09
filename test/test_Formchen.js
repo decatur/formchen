@@ -43,7 +43,7 @@ test('FormChen', (test_name) => {
             someURI: {
                 title: 'Some URI',
                 type: 'string',
-                format: 'uri'
+                format: 'url'
             },
             someEnum: {
                 title: 'Some Enum',

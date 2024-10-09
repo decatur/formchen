@@ -4,14 +4,7 @@ import { test, assert } from './utils.js'
 import { createView } from '../formchen/gridchen/matrixview.js'
 import { applyJSONPatch, reversePatch } from '../formchen/utils.js'
 
-let apply;
-if (window['jsonpatch']) {
-    console.log('Using Dharmafly JSONPatch.js');
-    apply = window['jsonpatch']['apply_patch'];
-} else {
-    console.log('Using our own.');
-    apply = applyJSONPatch;
-}
+const apply = applyJSONPatch;
 
 /**
  * Runs tests on all five supported matrix types.

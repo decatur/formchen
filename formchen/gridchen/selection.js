@@ -7,7 +7,7 @@
 
 /** @import { Interval, Selection as ISelection, GridSelectionAbstraction, Range as IRange } from "../private-types" */
 
-import {logger, LocalDateParserClass, wrap} from "../utils.js";
+import {logger, wrap} from "../utils.js";
 
 /**
  * A rectangular area.

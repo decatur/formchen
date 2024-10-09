@@ -240,6 +240,47 @@ function someNaN(a) {
     return a.some((v) => isNaN(v))
 }
 
+/**
+ * @param {string} s 
+ * @returns 
+ */
+function isAmbiguous(s) {
+    let parts = /** @type{[number, number, number, number, number, number]} */(s.split(/\D/).map((x) => Number(x)));
+    parts[1]--;
+    let month = parts[1];
+    let hours = parts[3];
+    let d = new Date(...parts);
+    
+    //let ts_before = ts - 3600*1000;
+    // console.log(hours, d.getHours());
+    // console.log(new Date(ts_before));
+    // console.log(d);
+    // console.log(new Date(ts_after));
+    if (month < 6) {
+        // 2024-03-31T02:30 -> 2024-03-31T03:30+02:00 (later valid datetime) 
+        if (hours != d.getHours()) {
+            return true
+        }
+        return false 
+    } else {
+        // 2024-10-27T02:30 -> 2024-10-27T02:30+02:00 (earlier hour)
+        let ts = d.getTime();
+        let ts_after = ts + 3600*1000;
+        if (hours == (new Date(ts_after)).getHours()) {
+            return true
+        }
+        return false
+    }
+}
+
+console.assert(!isAmbiguous('2024-10-09T13:30'));
+console.assert(!isAmbiguous('2024-10-27T01:30'));
+console.assert(isAmbiguous('2024-10-27T02:30'));
+console.assert(!isAmbiguous('2024-10-27T03:30'));
+console.assert(!isAmbiguous('2024-03-31T01:30'));
+console.assert(isAmbiguous('2024-03-31T02:30'));
+console.assert(!isAmbiguous('2024-03-31T03:30'));
+
 export class FullDate {
 
     /**
@@ -362,7 +403,6 @@ export class LocalDateParserClass {
             return r
         }
     }
-
 }
 
 /**
