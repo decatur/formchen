@@ -24,7 +24,7 @@ export interface FormChen {
  */
 export interface GridChenElement extends HTMLElement {
 
-    bind: (schema: JSONSchema, data: any) => void;
+    bind: (schema: JSONSchema, value: any) => void;
 
     readonly value: any;
 
@@ -34,18 +34,6 @@ export interface GridChenElement extends HTMLElement {
      */
     readonly patch: JSONPatchOperation[];
     clearPatch: () => void;
-
-
-
-
-    // /**
-    //  * Returns the selection as a rectangle.
-    //  */
-    // readonly selectedRange: Range;
-
-    // select: (r: Range) => void;
-
-    // insertEmptyRow: (rowIndex: number, options: { fadeOutDuration: number }) => void;
 }
 
 export interface JSONPatchOperation {

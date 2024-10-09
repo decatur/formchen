@@ -160,13 +160,13 @@ export class GridChen extends HTMLElement {
     /**
      * 
      * @param {_JSONSchema} schema 
-     * @param {any} data 
+     * @param {any} value 
      * @param {TransactionManager=} tm
      * @param {string=} pathPrefix 
      */
-    bind(schema, data, tm, pathPrefix) {
+    bind(schema, value, tm, pathPrefix) {
         tm = tm || new TransactionManager();
-        const view = createView(schema, data);
+        const view = createView(schema, value);
         registerUndo(document.body, tm);
         this.resetFromView(view, tm, pathPrefix);
     }

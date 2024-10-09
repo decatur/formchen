@@ -11,7 +11,7 @@ const schema = {
         properties: {
             timestamp: { title: 'TimeStamp', width: 200, type: 'string', format: 'full-date' },
             age: { title: 'Age', width: 100, type: 'number' },
-            weight: { title: 'Weight', _width: 100, type: 'number' }
+            weight: { title: 'Weight', width: 100, type: 'number' }
         }
     }
 };
