@@ -11,10 +11,10 @@
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
 import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter } from "./converter.js";
-import { Patch, TransactionManager, registerUndo } from "./utils.js";
+import { Patch, TransactionManager, logger, registerUndo } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
 
-console.log('Loading Formchen with locale ' + navigator.language);
+logger.info('Loading Formchen with locale ' + navigator.language);
 
 /**
  * Example:

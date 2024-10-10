@@ -1,7 +1,7 @@
 /** @import { JSONSchema } from "../formchen/types.js" */
 
 import { createFormChen } from "../formchen/formchen.js"
-import { bindTabs } from "../test/utils.js";
+import { bindTabs } from "./utils.js";
 
 /** @type{JSONSchema} */
 const schema = {

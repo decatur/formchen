@@ -145,7 +145,7 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
      * @param {KeyboardEvent} evt
      */
     function keydownHandler(evt) {
-        logger.log('editor.onkeydown: ' + evt.code);
+        logger.info('editor.onkeydown: ' + evt.code);
         // Clicking editor should invoke default: move caret. It should not delegate to containers action.
         evt.stopPropagation();
 
@@ -197,7 +197,7 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
     }
 
     function blurHandler(evt) {
-        logger.log('editor.onblur');
+        logger.info('editor.onblur');
         if (currentMode !== HIDDEN) {
             commit();
         }

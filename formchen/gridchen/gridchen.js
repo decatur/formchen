@@ -261,7 +261,7 @@ class ScrollBar {
         domParent.appendChild(this.element);
 
         this.element.addEventListener('input', wrap(domParent, () => {
-            logger.log('slider oninput');
+            logger.info('slider oninput');
             handler(Math.round(Number(this.element.value)));
         }));
     }
@@ -295,8 +295,6 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     const schema = viewModel.schema
 
     const schemas = schema.columnSchemas;
-    //schema.readOnly = !tm;
-
     const rowHeight = lineHeight + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
 
@@ -586,10 +584,28 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         }
     }
 
-    cellParent.addEventListener('dblclick', () => activeCell.enterEditMode());
+    cellParent.addEventListener('dblclick', () => {
+        logger.info('dblclick');
+        activeCell.enterEditMode()
+    }
+    );
 
-    cellParent.addEventListener('mousedown', wrap(gridchenElement, function (evt) {
-        logger.log('onmousedown');
+    // Event order on touch devices is
+    //   touchstart -> touchend -> mousedown -> mouseup
+    // Because we do not have a dblclick event, our strategy is to enter input mode on mousedown if we have touched.
+    let isTouching = false;
+
+    cellParent.addEventListener('touchstart', evt => {
+        logger.info('touchstart');
+        isTouching = true;
+    });
+
+    cellParent.addEventListener('touchend', () => {
+        logger.info('touchend');
+    });
+
+    cellParent.addEventListener('mousedown', function (evt) {
+        logger.info('mousedown');
         // But we do not want it to propagate as we want to avoid side effects.
         evt.stopPropagation();
         // The evt default is (A) to focus container element, and (B) start selecting text.
@@ -600,11 +616,15 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         container.focus({ preventScroll: true });
 
         selection.startSelection(/**@type{MouseEvent}*/(evt), cellParent, indexMapper);
-    }));
+
+        if (isTouching) {
+            activeCell.enterEditMode();
+        }
+    });
 
     /** @param {WheelEvent} evt */
     cellParent.addEventListener('wheel', function (evt) {
-        logger.log('onmousewheel');
+        logger.info('onmousewheel');
         if ((/** @type {DocumentOrShadowRoot} */(/** @type{Document} */(container.parentNode))).activeElement !== container) return;
 
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
@@ -626,7 +646,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
      */
     container.addEventListener('blur', wrap(gridchenElement, function (evt) {
         // This is also called by UA if an alert box is shown.
-        logger.log('container.onblur: ' + evt);
+        logger.info('container.blur: ' + evt);
         if (!container.contains(/** @type{HTMLElement} */(/** @type{FocusEvent} */(evt).relatedTarget))) {
             // We are leaving the component.
             selection.hide();
@@ -635,7 +655,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
 
     container.addEventListener('focus', wrap(gridchenElement, function (evt) {
         // This is also called by UA after user confirms alert box. This may induce bouncing!
-        logger.log('container.onfocus: ' + evt);
+        logger.info('container.focus');
         evt.stopPropagation();
         evt.preventDefault();
         selection.show();
@@ -739,7 +759,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     function copySelection(doCut) {
         window.navigator.clipboard.writeText(rangeToTSV(selection.areas[0], '\t', selection.headerSelected))
             .then(() => {
-                logger.log('Text copied to clipboard');
+                logger.info('Text copied to clipboard');
                 if (doCut) {
                     deleteSelection();
                 }
@@ -754,7 +774,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
      * @param {KeyboardEvent} evt 
      */
     function keyDownListener(evt) {
-        logger.log('container.onkeydown ' + evt.code);
+        logger.info('container.onkeydown ' + evt.code);
 
         // Note 1: All handlers call both preventDefault() and stopPropagation().
         //         The reason is documented in the handler code.
@@ -890,31 +910,31 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         const actions = [
             [['Key'], 'Action'],
             [['Ctrl', 'Z'], 'Undo last transaction'],
-            [['Ctrl','Y'], 'Redo, reverse last undo'],
+            [['Ctrl', 'Y'], 'Redo, reverse last undo'],
             [['Arrows'], 'Move active cell up/down/left/right (not in edit mode)'],
             [['Tab'], 'Move active cell right (non-rolling)'],
             [['Enter'], 'Move active cell down (non-rolling)'],
-            [['Shift','Enter'], 'Move active cell up (non-rolling)'],
-            [['Shift','Tab'], 'Move active cell left (non-rolling)'],
-            [['SHIFT','Arrows'], 'Select a range of cells'],
-            [['Ctrl','Space'], 'Select entire column'],
-            [['Shift','Space'], 'Select entire row'],
-            [['Shift','MouseClick'], 'Expand selection'],
-            [['Ctrl','MouseClick'], 'Multi-select cells'],
-            [['Ctrl','-'], 'Delete selected row'],
-            [['Ctrl','+'], 'Insert row before selection'],
-            [['Alt','Enter'], 'In edit mode, insert newline'],
+            [['Shift', 'Enter'], 'Move active cell up (non-rolling)'],
+            [['Shift', 'Tab'], 'Move active cell left (non-rolling)'],
+            [['SHIFT', 'Arrows'], 'Select a range of cells'],
+            [['Ctrl', 'Space'], 'Select entire column'],
+            [['Shift', 'Space'], 'Select entire row'],
+            [['Shift', 'MouseClick'], 'Expand selection'],
+            [['Ctrl', 'MouseClick'], 'Multi-select cells'],
+            [['Ctrl', '-'], 'Delete selected row'],
+            [['Ctrl', '+'], 'Insert row before selection'],
+            [['Alt', 'Enter'], 'In edit mode, insert newline'],
             [['Page Down'], 'Move one page down'],
             [['Page Up'], 'Move one page up'],
-            [['Ctrl','A'], 'Select all grid cells (same as Ctrl+A in a Excel List Object)'],
-            [['Ctrl','A','Ctrl','A'], 'Select the entire grid including header (same as Ctrl+A Ctrl+A in a Excel List Object)'],
+            [['Ctrl', 'A'], 'Select all grid cells (same as Ctrl+A in a Excel List Object)'],
+            [['Ctrl', 'A', 'Ctrl', 'A'], 'Select the entire grid including header (same as Ctrl+A Ctrl+A in a Excel List Object)'],
             [['ESC'], 'Cancel edit or input mode'],
             [['Delete'], 'Remove selected cells contents'],
-            [['Ctrl','C'], 'Copy selected cells to clipboard'],
-            [['Ctrl','V'], 'Paste clipboard into selected cells'],
-            [['Ctrl','X'], 'Cut'],
+            [['Ctrl', 'C'], 'Copy selected cells to clipboard'],
+            [['Ctrl', 'V'], 'Paste clipboard into selected cells'],
+            [['Ctrl', 'X'], 'Cut'],
             [['F2'], 'Enter edit mode; In input or edit mode, toggle between input and edit.'],
-            [['Alt','F1'], 'Open a modal chart of the selection.'],
+            [['Alt', 'F1'], 'Open a modal chart of the selection.'],
             [['Backspace'], 'In input or edit mode, deletes one character to the left'],
             [['Delete'], 'In input or edit mode, deletes one character to the right'],
             [['End'], 'In input or edit mode, move to the end of the text'],
@@ -1020,7 +1040,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
      * @param {string} value
      */
     function commitCellEdit(value) {
-        logger.log('commitCellEdit');
+        logger.info('commitCellEdit');
         getCell(selection.active).style.display = 'inline-block';
 
         if (!activeCell.isReadOnly()) {
@@ -1295,7 +1315,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     selection.setRange(0, 0, 1, 1);
 
     container.addEventListener('selectionChanged', function () {
-        logger.log('selectionChanged');
+        logger.info('selectionChanged');
         headerRow.style.backgroundColor = selection.headerSelected ? headerRowSelectedBackgroundColor : headerRowBackgroundColor;
     });
 

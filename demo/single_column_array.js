@@ -1,6 +1,6 @@
 /** @import { JSONSchema, GridChenElement } from "../formchen/types" */
 
-import { bindTabs } from "../test/utils.js";
+import { bindTabs } from "./utils.js";
 
 /** @type{JSONSchema} */
 const schema = {

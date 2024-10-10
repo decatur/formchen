@@ -307,7 +307,7 @@ export function createSelection(uiRefresher, grid) {
          * @param {KeyboardEvent} evt
          */
         keyDownHandler(evt) {
-            logger.log('selection.onkeydown ' + evt.code);
+            logger.info('selection.onkeydown ' + evt.code);
             const selection = this;
             const pilot = selection.pilot;
 
@@ -490,22 +490,22 @@ function _startSelection(evt, selection, cellParent, indexMapper) {
     function onmousemove(evt) {
         selection.uiRefresher(current, false);
         let {rowIndex, columnIndex} = indexMapper.pixelCoordsToCellIndex(evt.clientX, evt.clientY);
-        logger.log(`onmousemove ${rowIndex} ${columnIndex}`);
+        logger.info(`onmousemove ${rowIndex} ${columnIndex}`);
         pilot.setBounds(rowIndex, columnIndex, 1, 1);
         convexHull(current, [initial, pilot]);
-        logger.log(String(current));
+        logger.info(String(current));
         selection.uiRefresher(current, true);
     }
 
     cellParent.onmousemove = wrap(cellParent, onmousemove);
 
     cellParent.onmouseleave = wrap(cellParent, function () {
-        logger.log('onmouseleave');
+        logger.info('onmouseleave');
         resetHandlers();
     });
 
     cellParent.onmouseup = wrap(cellParent, function () {
-        logger.log('onmouseup');
+        logger.info('onmouseup');
         resetHandlers();
         cellParent.focus(); // So that we receive keyboard events.
     });

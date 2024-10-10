@@ -1,6 +1,6 @@
 /** @import { GridChenElement } from "../formchen/types" */
 
-import { bindTabs } from "../test/utils.js";
+import { bindTabs } from "./utils.js";
 
 const schema = {
     title: 'Column Order',

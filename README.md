@@ -25,6 +25,10 @@ Check https://decatur.github.io/formchen/index.html with both light and dark mod
 
 # Development
 
+```
+http://127.0.0.1:3000/index.html?loglevel=info&console=true
+```
+
 * Use TypeScript 5.5 `@import`, see 
 https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#the-jsdoc-import-tag
 

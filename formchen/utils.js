@@ -7,9 +7,70 @@
 
 /** @import { JSONPatchOperation, } from "./types" */
 
+const logLevels = {
+    null: 0,
+    error: 1,
+    info: 2
+};
 
-// const DEBUG = (location.hostname === 'localhost');
-const DEBUG = false;
+const href = new URL(window.location.href);
+// if loglevel is not set then we get logLevels.null, which is 0
+const logLevel = logLevels[(href.searchParams.get('loglevel'))];
+
+const showConsole = Boolean(href.searchParams.get('console'));
+
+/**
+ * @callback F6Type
+ * @param{string} a
+ * @param{string=} b
+ * @returns {void}
+ */
+
+/**
+ * @callback F4Type
+ * @param{number} level
+ * @param{string} a
+ * @param{string=} b
+ * @returns {void}
+ */
+
+/** @type{F4Type} */
+let log;
+
+if (logLevel) {
+    log = (level, a, b) => {
+        if (level > logLevel) return
+        if (showConsole) {
+            let div = document.createElement('div');
+            div.textContent = a + (b?' : ' + b: '');
+            document.body.appendChild(div);
+        } else {
+            console.log(a, b)
+        }
+    };
+} else {
+    log = () => undefined;
+}
+
+if (showConsole) {
+    window.onerror = (e) => {
+        let div = document.createElement('div');
+        div.textContent = String(e) + ' ' + String(e.stack);
+        document.body.appendChild(div);
+    }
+}
+
+export const logger = {
+    log,
+    /** @type{F6Type} */
+    info: function (a, b) {
+        this.log(logLevels.info, a, b)
+    },
+    /** @type{F6Type} */
+    error: function (a, b) {
+        this.log(logLevels.error, a, b)
+    }
+};
 
 export class Patch {
     constructor() {
@@ -689,32 +750,6 @@ export class TransactionManager {
         return allPatches
     }
 }
-
-let logCounter = 0;
-
-/**
- * @callback F4Type
- * @param{string} a
- * @param{string=} b
- * @returns {void}
- */
-
-/** @type{F4Type} */
-let log;
-
-if (DEBUG) {
-    log = (a, b) => window.console.log(logCounter++ + ': ' + a, b);
-} else {
-    log = () => undefined;
-}
-
-export const logger = {
-    log,
-    /** @type{F4Type} */
-    error: function (a, b) {
-        window.console.error(logCounter++ + ': ' + a, b);
-    }
-};
 
 // For replace operations on non-array fields only keep the lattest operation.
 // TODO: Consider using https://github.com/alshakero/json-squash
