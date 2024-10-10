@@ -55,7 +55,7 @@ if (logLevel) {
 if (showConsole) {
     window.onerror = (e) => {
         let div = document.createElement('div');
-        div.textContent = String(e) + ' ' + String(e.stack);
+        div.textContent = String(e); // + ' ' + String(e.stack);
         document.body.appendChild(div);
     }
 }
