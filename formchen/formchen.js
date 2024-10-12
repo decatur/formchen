@@ -401,11 +401,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
             if (!refSchema) {
                 throw Error('Undefined $ref at ' + path);
             }
-            refSchema = {
-                title: schema.title,
-                ...refSchema
-            };
-            return /**@type{JSONSchema}*/ (refSchema)
+            return /**@type{JSONSchema}*/ ({ ...refSchema, title: schema.title })
         }
         return schema
     }
@@ -743,7 +739,9 @@ class Control {
         /** @type{?HTMLElement} */
         this.element = container.querySelector(`[name="${path}"]`);
 
-        if (this.element) {
+        if (this.element instanceof HTMLDivElement) {
+            this.control = this.element;
+        } else if (this.element) {
             // Case <label><span class="data-title"></span><input name="/plant"></label>
             this.control = this.element.closest('label')
         } else {

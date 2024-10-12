@@ -26,8 +26,8 @@
             <label><span class="data-title"></span><input name="/start"></label>
             <label data-path="/latitude"><span class="data-title"></span> <input class="data-value"></label>
             <label><span class="data-title"></span> <input name="/longitude"></label>
-            <label><span class="data-title"></span><grid-chen name="/measurements"
-                    style="display:block; height:10em"></grid-chen>
+            <label><span class="data-title"></span>
+                <grid-chen name="/measurements" style="display:block; height:10em"></grid-chen>
             </label>
             <label><span class="data-title"></span> <input name="/isCompleted"></label>
         </div>
@@ -35,7 +35,8 @@
     <script type="module" src="./demo/basic-demo.js"></script>
 
     <h2>Basic Example (readOnly)</h2>
-    Same as previous example, but form is now read-only. Note that in read-only mode you can sort grid columns by clicking the header.
+    Same as previous example, but form is now read-only. Note that in read-only mode you can sort grid columns by
+    clicking the header.
     <div class="demo">
         <div id="BasicDemoReadOnly" class="formchen">
             <label><span class="data-title"></span><textarea name="/plant"></textarea></label>
@@ -43,8 +44,8 @@
             <label><span class="data-title"></span><input name="/start"></label>
             <label data-path="/latitude"><span class="data-title"></span> <input class="data-value"></label>
             <label><span class="data-title"></span> <input name="/longitude"></label>
-            <label><span class="data-title"></span><grid-chen name="/measurements"
-                    style="display:block; height:10em"></grid-chen>
+            <label><span class="data-title"></span>
+                <grid-chen name="/measurements" style="display:block; height:10em"></grid-chen>
             </label>
             <label><span class="data-title"></span> <input name="/isCompleted"></label>
         </div>
@@ -64,25 +65,25 @@
             <label><span class="data-title"></span> <input name="/someFloat"></label>
             <label><span class="data-title"></span> <input name="/someColor"></label>
             <label><span class="data-title"></span> <input name="/anObject/someOtherString"></label>
-            <div>
-                <label class="data-title"></span>
-                    <grid-chen name="/anObject/anEmptyMatrix" style="display:block; height:10em"></grid-chen>
-                </label>
-            </div>
+
+            <label><span class="data-title"></span>
+                <grid-chen name="/anObject/anEmptyMatrix" style="display:block; height:10em"></grid-chen>
+            </label>
+
+            <label><span class="data-title"></span>
+                <grid-chen name="/someMatrix" style="display:block; height:10em"></grid-chen>
+            </label>
+
+            <label><span class="data-title"></span>
+                <grid-chen name="/anEmptyMatrix" style="display:block; height:10em"></grid-chen>
+            </label>
 
             <div>
-                <label class="data-title">
-                    <grid-chen name="/someMatrix" style="display:block; height:10em"></grid-chen>
-                </label>
+                <h3 class="data-title"></h3>
+                <label><span class="data-title"></span> <input name="/tuple/0"></label>
+                <label><span class="data-title"></span> <input name="/tuple/1"></label>
+                <label><span class="data-title"></span> <input name="/tuple/2"></label>
             </div>
-            <div>
-                <label class="data-title"></span>
-                    <grid-chen name="/anEmptyMatrix" style="display:block; height:10em"></grid-chen>
-                </label>
-            </div>
-            <label><span class="data-title"></span> <input name="/tuple/0"></label>
-            <label><span class="data-title"></span> <input name="/tuple/1"></label>
-            <label><span class="data-title"></span> <input name="/tuple/2"></label>
         </div>
     </div>
     <script type="module" src="./demo/comprehensive-demo.js"></script>
