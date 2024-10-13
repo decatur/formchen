@@ -64,7 +64,7 @@ function foo(container) {
 
         while (true) {
             parent = parent.parentElement;
-            let cc = parent.querySelectorAll('[name]');
+            let cc = parent.querySelectorAll('[name], [id]');
             if (cc.length > 0) {
                 let paths = [];
                 for (let c of cc) {
@@ -72,7 +72,7 @@ function foo(container) {
                     // if (c.getAttribute('name') == '/tuple/0') {
                     //     console.log('dfdf')
                     // }
-                    let path = c.getAttribute('name').split('/');
+                    let path = (c.getAttribute('name') || c.getAttribute('id')).split('/');
                     paths.push(path);
                 }
                 const p = prefix(paths);
@@ -489,9 +489,9 @@ export function createFormChen(rootElement, topSchema, topObj) {
         // }
 
         const titleElement = titleElementsByPath[node.path];
-        if (titleElement instanceof HTMLElement) {
+        if (titleElement instanceof HTMLElement && !titleElement.textContent) {
             titleElement.textContent = node.title;
-            if (node.tooltip) {
+            if (node.tooltip && !titleElement.title) {
                 titleElement.title = node.tooltip;
             }
         }
@@ -813,9 +813,7 @@ class Control {
         /** @type{?HTMLElement} */
         this.element = container.querySelector(`[name="${path}"]`);
 
-        if (this.element instanceof HTMLDivElement) {
-            this.control = this.element;
-        } else if (this.element) {
+        if (this.element) {
             // Case <label><span class="data-title"></span><input name="/plant"></label>
             this.control = this.element.closest('label')
         } else {
@@ -825,21 +823,6 @@ class Control {
                 this.control = container.querySelector(`[for="${path}"]`);
             }
         }
-
-
-
-        // if (this.control) {
-        //     let title = this.control.querySelector('.data-title');
-
-        //     if (title) {
-        //         if (!(title instanceof HTMLElement)) throw Error(title.tagName);
-        //         title.textContent = node.title;
-        //         if (node.tooltip) {
-        //             title.title = node.tooltip;
-        //         }
-
-        //     }
-        // }
     }
 
 }
