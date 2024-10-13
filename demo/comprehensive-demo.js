@@ -76,6 +76,7 @@ const schema = {
             type: 'object',
             properties: {
                 someOtherString: {
+                    title: 'someOtherString',
                     type: 'string'
                 },
                 anEmptyMatrix: {

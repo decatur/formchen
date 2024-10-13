@@ -29,6 +29,63 @@ function getValueByPointer(obj, pointer) {
     return pointer.substring(2).split('/').reduce(((res, prop) => res[prop]), obj);
 }
 
+/** prefix([["abc", "de", "fgh"],["abc", "de"], ["abc", "de", "f"]])
+  * -> ['abc', 'de']
+  * @param {string[][]} arrays
+  * @returns {string[]}
+  */
+function prefix(arrays) {
+    if (arrays.length == 1) return arrays[0];
+    
+    let i = 0;
+    // while all arrays have the same string at position i, increment i
+    while (i < arrays[0].length && arrays.every(arr => arr[i] === arrays[0][i]))
+        i++;
+
+    // prefix is the substring from the beginning to the last successfully checked i
+    return arrays[0].slice(0, i);
+}
+
+/**
+ * 
+ * @param {HTMLElement} container
+ * @returns {Object.<string, HTMLElement>}
+ */
+function foo(container) {
+    const titles = container.querySelectorAll('.data-title');
+    const titleElementsByPath = {};
+    for (let titleElement of titles) {
+        let parent = titleElement;
+        if (titleElement instanceof HTMLHeadingElement) {
+            console.log('dfdf')
+        }
+        
+        while (true) {
+            parent = parent.parentElement;
+            let cc = parent.querySelectorAll('[name]');
+            if (cc.length > 0) {
+                let paths = [];
+                for (let c of cc) {
+                    console.log(c.outerHTML)
+                    if (c.getAttribute('name') == '/tuple/0') {
+                        console.log('dfdf')
+                    }
+                    let path = c.getAttribute('name').split('/');
+                    paths.push(path);
+                }
+                const p = prefix(paths);
+                titleElementsByPath[p.join('/')] = titleElement;
+                console.log(titleElement, p);
+                break;
+            }
+            if (parent === container) break;
+        };
+
+    }
+
+    return titleElementsByPath
+}
+
 class NodeTree {
     /**
      */
@@ -376,6 +433,8 @@ class HolderNode extends BaseNode {
  * @returns {FormChen}
  */
 export function createFormChen(rootElement, topSchema, topObj) {
+    const titleElementsByPath = foo(rootElement);
+
     const transactionManager = new TransactionManager();
 
     if (topSchema.type != 'object') {
@@ -422,6 +481,15 @@ export function createFormChen(rootElement, topSchema, topObj) {
             node = new LeafNode(rootTree, key, schema, parent);
             bindLeafNode(node);
         }
+
+        if (node.path == '/tuple/0') {
+            console.log('dfdfdfdf')
+        }
+
+        if (node.path in titleElementsByPath) {
+            titleElementsByPath[node.path].textContent = schema.title || node.path;
+        }
+
         return node;
     }
 
@@ -758,18 +826,20 @@ class Control {
             }
         }
 
-        if (this.control) {
-            let title = this.control.querySelector('.data-title');
+        
 
-            if (title) {
-                if (!(title instanceof HTMLElement)) throw Error(title.tagName);
-                title.textContent = node.title;
-                if (node.tooltip) {
-                    title.title = node.tooltip;
-                }
+        // if (this.control) {
+        //     let title = this.control.querySelector('.data-title');
 
-            }
-        }
+        //     if (title) {
+        //         if (!(title instanceof HTMLElement)) throw Error(title.tagName);
+        //         title.textContent = node.title;
+        //         if (node.tooltip) {
+        //             title.title = node.tooltip;
+        //         }
+
+        //     }
+        // }
     }
 
 }
