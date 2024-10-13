@@ -29,12 +29,13 @@ function getValueByPointer(obj, pointer) {
     return pointer.substring(2).split('/').reduce(((res, prop) => res[prop]), obj);
 }
 
-/** prefix([["abc", "de", "fgh"],["abc", "de"], ["abc", "de", "f"]])
+/** 
+  * longest_prefix([["abc", "de", "fgh"],["abc", "de"], ["abc", "de", "f"]])
   * -> ['abc', 'de']
   * @param {string[][]} arrays
   * @returns {string[]}
   */
-function prefix(arrays) {
+function longest_prefix(arrays) {
     if (arrays.length == 1) return arrays[0];
 
     let i = 0;
@@ -49,13 +50,13 @@ function prefix(arrays) {
 /**
  * 
  * @param {HTMLElement} container
- * @returns {Object.<string, Element>}
+ * @returns {Map<string, Element>}
  */
-function foo(container) {
+function queryTitleElementsByPath(container) {
 
     const titles = container.querySelectorAll('.data-title');
-    /** @type{Object.<string, Element>} */
-    const titleElementsByPath = {};
+    const titleElementsByPath = new Map();
+
     for (let titleElement of titles) {
         let parent = titleElement;
         // if (titleElement instanceof HTMLHeadingElement) {
@@ -64,19 +65,19 @@ function foo(container) {
 
         while (true) {
             parent = parent.parentElement;
-            let cc = parent.querySelectorAll('[name], [id]');
-            if (cc.length > 0) {
+            let namedElements = parent.querySelectorAll('[name], [id]');
+            if (namedElements.length > 0) {
                 let paths = [];
-                for (let c of cc) {
+                for (let namedElement of namedElements) {
                     // console.log(c.outerHTML)
                     // if (c.getAttribute('name') == '/tuple/0') {
                     //     console.log('dfdf')
                     // }
-                    let path = (c.getAttribute('name') || c.getAttribute('id')).split('/');
+                    let path = (namedElement.getAttribute('name') || namedElement.getAttribute('id')).split('/');
                     paths.push(path);
                 }
-                const p = prefix(paths);
-                titleElementsByPath[p.join('/')] = titleElement;
+                const prefix = longest_prefix(paths);
+                titleElementsByPath.set(prefix.join('/'), titleElement);
                 // console.log(titleElement, p);
                 break;
             }
@@ -186,6 +187,10 @@ class BaseNode {
         throw Error()
     }
 
+    /**
+     * @param {any} obj 
+     * @returns {Patch}
+     */
     patchValue(obj) {
         let oldValue = this.getValue();
         const node = this;
@@ -435,7 +440,7 @@ class HolderNode extends BaseNode {
  * @returns {FormChen}
  */
 export function createFormChen(rootElement, topSchema, topObj) {
-    const titleElementsByPath = foo(rootElement);
+    const titleElementsByPath = queryTitleElementsByPath(rootElement);
 
     const transactionManager = new TransactionManager();
 
@@ -488,7 +493,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
         //     console.log('dfdfdfdf')
         // }
 
-        const titleElement = titleElementsByPath[node.path];
+        const titleElement = titleElementsByPath.get(node.path);
         if (titleElement instanceof HTMLElement && !titleElement.textContent) {
             titleElement.textContent = node.title;
             if (node.tooltip && !titleElement.title) {
