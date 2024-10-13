@@ -36,7 +36,7 @@ function getValueByPointer(obj, pointer) {
   */
 function prefix(arrays) {
     if (arrays.length == 1) return arrays[0];
-    
+
     let i = 0;
     // while all arrays have the same string at position i, increment i
     while (i < arrays[0].length && arrays.every(arr => arr[i] === arrays[0][i]))
@@ -49,33 +49,35 @@ function prefix(arrays) {
 /**
  * 
  * @param {HTMLElement} container
- * @returns {Object.<string, HTMLElement>}
+ * @returns {Object.<string, Element>}
  */
 function foo(container) {
+
     const titles = container.querySelectorAll('.data-title');
+    /** @type{Object.<string, Element>} */
     const titleElementsByPath = {};
     for (let titleElement of titles) {
         let parent = titleElement;
-        if (titleElement instanceof HTMLHeadingElement) {
-            console.log('dfdf')
-        }
-        
+        // if (titleElement instanceof HTMLHeadingElement) {
+        //     console.log('dfdf')
+        // }
+
         while (true) {
             parent = parent.parentElement;
             let cc = parent.querySelectorAll('[name]');
             if (cc.length > 0) {
                 let paths = [];
                 for (let c of cc) {
-                    console.log(c.outerHTML)
-                    if (c.getAttribute('name') == '/tuple/0') {
-                        console.log('dfdf')
-                    }
+                    // console.log(c.outerHTML)
+                    // if (c.getAttribute('name') == '/tuple/0') {
+                    //     console.log('dfdf')
+                    // }
                     let path = c.getAttribute('name').split('/');
                     paths.push(path);
                 }
                 const p = prefix(paths);
                 titleElementsByPath[p.join('/')] = titleElement;
-                console.log(titleElement, p);
+                // console.log(titleElement, p);
                 break;
             }
             if (parent === container) break;
@@ -482,12 +484,16 @@ export function createFormChen(rootElement, topSchema, topObj) {
             bindLeafNode(node);
         }
 
-        if (node.path == '/tuple/0') {
-            console.log('dfdfdfdf')
-        }
+        // if (node.path == '/tuple/0') {
+        //     console.log('dfdfdfdf')
+        // }
 
-        if (node.path in titleElementsByPath) {
-            titleElementsByPath[node.path].textContent = schema.title || node.path;
+        const titleElement = titleElementsByPath[node.path];
+        if (titleElement instanceof HTMLElement) {
+            titleElement.textContent = node.title;
+            if (node.tooltip) {
+                titleElement.title = node.tooltip;
+            }
         }
 
         return node;
@@ -817,16 +823,10 @@ class Control {
             if (this.element) {
                 // Case <label for="/reference"><span class="data-title"></span></label><input id="/reference">
                 this.control = container.querySelector(`[for="${path}"]`);
-            } else {
-                this.control = container.querySelector(`[data-path="${path}"]`);
-                if (this.control) {
-                    // Case <label data-path="/latitude" class="label"><span class="data-title"></span><input class="data-value"></label>
-                    this.element = this.control.querySelector('.data-value');
-                }
             }
         }
 
-        
+
 
         // if (this.control) {
         //     let title = this.control.querySelector('.data-title');

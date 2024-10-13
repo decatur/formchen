@@ -62,8 +62,8 @@ test('Empty Object two Levels', (test_name) => {
     const container = document.getElementById(test_name);
     const fc = createFormChen(container, schema, null);
 
-    let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));
-    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/bar/foobar"]`).querySelector('.data-value'));
+    let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/foo"]`));
+    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/bar/foobar"]`));
 
     foobarInput.value = 'bar';
     foobarInput.onchange(null);
@@ -110,7 +110,7 @@ test('Delete', (test_name) => {
     const container = document.getElementById(test_name);
     const fc = createFormChen(container, schema, { bar: { foobar: 'foobar' } });
 
-    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/bar/foobar"]`).querySelector('.data-value'));
+    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/bar/foobar"]`));
     foobarInput.value = '';
     foobarInput.onchange(null);
     let expected = [
@@ -143,8 +143,8 @@ test('Delete subtree', (test_name) => {
     const container = document.getElementById(test_name);
     const fc = /** @type{FormChenExt} */ (createFormChen(container, schema, { bar: { foobar: 'foobar' } }));
 
-    let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/foo"]`).querySelector('.data-value'));
-    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[data-path="/bar/foobar"]`).querySelector('.data-value'));
+    let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/foo"]`));
+    let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/bar/foobar"]`));
 
     fc.getNodeById('/bar').patchValue(undefined);
     assert.equal('', foobarInput.value);
@@ -182,7 +182,7 @@ test('Empty object with grid', (test_name) => {
 
     const container = document.getElementById(test_name);
     const fc = createFormChen(container, schema, null);
-    const gc = /** @type{GridChen} */ (container.querySelector(`[name="/foo"]`));
+    const gc = /** @type{GridChen} */ (container.querySelector('[name="/foo"]'));
 
     gc._click(0, 0);  // NoOp because cell 0,0 is selected by default.
     gc._sendKeys('2020-01-01 00:00Z');

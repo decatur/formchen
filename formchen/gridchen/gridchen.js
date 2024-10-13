@@ -13,7 +13,6 @@
 import { logger, Patch, wrap, TransactionManager, registerUndo } from "../utils.js";
 import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import * as edit from "./editor.js"
-import { renderPlot } from "./plotly_wrapper.js"
 import { createView } from "../gridchen/matrixview.js"
 
 
@@ -1005,7 +1004,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         });
         // gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
         // const evt = new CustomEvent('plot', {detail: detail});
-        renderPlot(detail.graphElement, detail.title, detail.schemas, detail.columns);
+        //renderPlot(detail.graphElement, detail.title, detail.schemas, detail.columns);
     }
 
     /**
