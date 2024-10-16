@@ -71,7 +71,7 @@ test('FormChen', (test_name) => {
             someFloat: {
                 title: 'Some Float',
                 type: 'number',
-                unit: '[DD]',
+                unit: 'D.D°',
                 fractionDigits: 2
             },
             someMatrix: {

@@ -59,7 +59,7 @@ export interface JSONSchema {
     minimum?: number;
     maximum?: number;
     format?: "grid" | "datetime" | "date" | "url" | "color";
-    tooltip?: string;
+    description?: string;
     readOnly?: boolean;
     title?: string;
     type: string;

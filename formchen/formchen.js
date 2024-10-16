@@ -54,14 +54,11 @@ function longest_prefix(arrays) {
  */
 function queryTitleElementsByPath(container) {
 
-    const titles = container.querySelectorAll('.data-title');
+    const titles = container.querySelectorAll('.data-info');
     const titleElementsByPath = new Map();
 
     for (let titleElement of titles) {
         let parent = titleElement;
-        // if (titleElement instanceof HTMLHeadingElement) {
-        //     console.log('dfdf')
-        // }
 
         while (true) {
             parent = parent.parentElement;
@@ -69,16 +66,12 @@ function queryTitleElementsByPath(container) {
             if (namedElements.length > 0) {
                 let paths = [];
                 for (let namedElement of namedElements) {
-                    // console.log(c.outerHTML)
-                    // if (c.getAttribute('name') == '/tuple/0') {
-                    //     console.log('dfdf')
-                    // }
+
                     let path = (namedElement.getAttribute('name') || namedElement.getAttribute('id')).split('/');
                     paths.push(path);
                 }
                 const prefix = longest_prefix(paths);
                 titleElementsByPath.set(prefix.join('/'), titleElement);
-                // console.log(titleElement, p);
                 break;
             }
             if (parent === container) break;
@@ -172,8 +165,8 @@ class BaseNode {
         } else {
             this.title = schema.title;
         }
-        if (schema.tooltip) {
-            this.tooltip = schema.tooltip;
+        if (schema.description) {
+            this.description = schema.description;
         }
 
         if (parent) {
@@ -489,15 +482,14 @@ export function createFormChen(rootElement, topSchema, topObj) {
             bindLeafNode(node);
         }
 
-        // if (node.path == '/tuple/0') {
-        //     console.log('dfdfdfdf')
-        // }
-
         const titleElement = titleElementsByPath.get(node.path);
-        if (titleElement instanceof HTMLElement && !titleElement.textContent) {
-            titleElement.textContent = node.title;
-            if (node.tooltip && !titleElement.title) {
-                titleElement.title = node.tooltip;
+        if (titleElement instanceof HTMLElement && !titleElement.firstChild) {
+            let span = document.createElement('span');
+            span.className = 'data-title';
+            span.textContent = node.title + (schema.unit?` [${schema.unit}]`:'');
+            titleElement.appendChild(span);
+            if (node.description) {
+              titleElement.appendChild(document.createTextNode(node.description));
             }
         }
 
@@ -690,6 +682,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
         /**
          * @param {string | number | boolean} value
          * @param {HTMLElement} target
+         * 
          */
         function commit(value, target) {
             const patch = node.patchValue(value);
@@ -697,11 +690,6 @@ export function createFormChen(rootElement, topSchema, topObj) {
             trans.patches.push(patch);
             trans.commit();
         };
-
-        let unit = control.control.querySelector('.data-unit');
-        if (unit && schema.unit) {
-            unit.textContent = `[${schema.unit}]`;
-        }
 
     }
 
@@ -819,12 +807,12 @@ class Control {
         this.element = container.querySelector(`[name="${path}"]`);
 
         if (this.element) {
-            // Case <label><span class="data-title"></span><input name="/plant"></label>
+            // Case <label><span class="data-info"></span><input name="/plant"></label>
             this.control = this.element.closest('label')
         } else {
             this.element = document.getElementById(path);
             if (this.element) {
-                // Case <label for="/reference"><span class="data-title"></span></label><input id="/reference">
+                // Case <label for="/reference"><span class="data-info"></span></label><input id="/reference">
                 this.control = container.querySelector(`[for="${path}"]`);
             }
         }

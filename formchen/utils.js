@@ -797,6 +797,39 @@ export class TransactionManager {
 //     return squashed;
 // }
 
+// For replace operations on non-array fields only keep the lattest operation.
+// TODO: Consider using https://github.com/alshakero/json-squash
+export function squash_formchen_patch(patch) {
+    let scalar_fields = {};
+    let array_fields = {};
+    let squashed = [];
+    for (let op of patch) {
+        let m = op.path.match(/^(.*)\/\d/);
+        if (!m) {
+            console.assert(op.op == 'replace');
+            scalar_fields[op.path] = op;
+        } else {
+            let prefix = m[1];
+            if (!array_fields[prefix]) {
+                array_fields[prefix] = [];
+            }
+            array_fields[prefix].push(op);
+        }
+    }
+
+    for (const op of Object.values(scalar_fields)) {
+        squashed.push(op);
+    }
+
+    for (const [key, item_patch] of Object.entries(array_fields)) {
+        for (const op of Object.values(item_patch)) {
+            squashed.push(op);
+        }
+    }
+
+    return squashed;
+}
+
 
 
 

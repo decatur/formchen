@@ -54,12 +54,12 @@ const schema = {
         someInteger: {
             title: 'Some Integer',
             type: 'integer',
-            unit: '[sec]'
+            unit: 'sec'
         },
         someFloat: {
             title: 'Some Float',
             type: 'number',
-            unit: '[DD]',
+            unit: 'D.D°',
             fractionDigits: 2
         },
         someColor: {

@@ -12,9 +12,14 @@ body {
     display: block;
 }
 
-.data-title {
+.data-info {
     display: inline-block;
-    /*width: 10em;*/
+    font-size: small;
+}
+
+.data-title {
+    font-size: medium;
+    margin-right: 1em;
 }
 
 .demo {

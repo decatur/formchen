@@ -25,7 +25,7 @@ const schema = {
     properties: {
         plant: {
             title: 'Plant',
-            tooltip: 'The name of the plant',
+            description: 'The name of the plant',
             type: 'string'
         },
         observer: {
@@ -41,13 +41,13 @@ const schema = {
         latitude: {
             title: 'Latitude',
             type: 'number',
-            unit: '[DD]',
+            unit: 'D.D°',
             fractionDigits: 5
         },
         longitude: {
             title: 'Longitude',
             type: 'number',
-            unit: '[DD]',
+            unit: 'D.D°',
             fractionDigits: 5
         },
         measurements: {
