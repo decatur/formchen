@@ -47,7 +47,7 @@ const schema = {
             title: 'Longitude',
             type: 'number',
             unit: 'D.D°',
-            fractionDigits: 5
+            fractionDigits: 3
         },
         measurements: {
             title: 'Daylight Measurements',

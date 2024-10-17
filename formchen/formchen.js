@@ -191,7 +191,7 @@ class BaseNode {
             apply() {
                 for (let op of this.operations) {
                     let n = node.tree.getNode(op.path);
-                    n.setValue(op.value, false);
+                    n.setValue(op.value);
                     if (n instanceof LeafNode) n.formElement.focus();
                 }
             }
@@ -216,7 +216,7 @@ class BaseNode {
 
         patch.operations.push(op);
 
-        this.setValue(obj, false);
+        this.setValue(obj);
 
         if (obj == null) {
             patch.operations.push(...this.clearPathToRoot());
@@ -227,9 +227,8 @@ class BaseNode {
 
     /**
      * @param {?} obj
-     * @param {boolean} disabled
      */
-    setValue(obj, disabled) {
+    setValue(obj) {
         if (this.parent && this.parent.obj) {
             if (obj == null) {
                 delete this.parent.obj[this.key];
@@ -240,7 +239,7 @@ class BaseNode {
             throw Error('Value lost')
         }
 
-        this.refreshUI(disabled);
+        this.refreshUI();
 
     }
 
@@ -307,9 +306,8 @@ class BaseNode {
     }
 
     /**
-     * @param {boolean} _disabled
      */
-    refreshUI(_disabled) {
+    refreshUI() {
         throw Error()
     }
 }
@@ -360,9 +358,8 @@ class LeafNode extends BaseNode {
     }
 
     /**
-     * @param {boolean} _disabled
      */
-    refreshUI(_disabled) {
+    refreshUI() {
         return undefined
     }
 }
@@ -391,37 +388,34 @@ class HolderNode extends BaseNode {
      * 
      * @param {*} obj 
      * @param {BaseNode} child
-     * @param {boolean} disabled
      */
-    visitChild(obj, child, disabled) {
-        child.setValue((obj == null ? undefined : obj[child.key]), disabled);
+    visitChild(obj, child) {
+        child.setValue((obj == null ? undefined : obj[child.key]));
     }
 
     /**
      * @param {?} obj
-     * @param {boolean} disabled
      * @returns {?HTMLInputElement}
      */
-    setValue(obj, disabled) {
+    setValue(obj) {
         if (obj == null) {
             delete this.obj;
         } else {
             this.obj = obj;
         }
 
-        super.setValue(obj, disabled);
+        super.setValue(obj);
 
         for (let child of this.children) {
-            this.visitChild(obj, child, disabled);
+            this.visitChild(obj, child);
         }
 
         return undefined
     }
 
     /**
-     * @param {boolean} _disabled
      */
-    refreshUI(_disabled) {
+    refreshUI() {
     }
 
 }
@@ -571,11 +565,12 @@ export function createFormChen(rootElement, topSchema, topObj) {
             if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
             if (element.tagName != 'INPUT') throw Error(element.tagName);
             const input = element;
+            input.readOnly = node.readOnly;
             input.type = 'checkbox';
-            node.refreshUI = function (disabled) {
+
+            node.refreshUI = function () {
                 const value = node.getValue();
                 input.checked = (value == null ? false : value);
-                input.disabled = node.readOnly || disabled;
             };
 
             input.onchange = function (_event) {
@@ -591,9 +586,9 @@ export function createFormChen(rootElement, topSchema, topObj) {
                 option.textContent = String(optionName);
                 input.appendChild(option);
             });
-            node.refreshUI = function (disabled) {
+            node.refreshUI = function () {
                 input.value = node.getValue();
-                input.disabled = node.readOnly || disabled;
+                input.disabled = node.readOnly;
             };
 
             input.onchange = function (_event) {
@@ -603,15 +598,16 @@ export function createFormChen(rootElement, topSchema, topObj) {
         } else if (schema.type === 'string') {
             if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
             const input = element;
+            input.readOnly = node.readOnly;
             const converter = new StringConverter();
-            node.refreshUI = function (disabled) {
+
+            node.refreshUI = function () {
                 const value = node.getValue();
                 if (value == null) {
                     input.defaultValue = input.value = '';
                 } else {
                     input.defaultValue = input.value = converter.toEditable(value);
                 }
-                input.disabled = node.readOnly || disabled;
             };
 
             if (input instanceof HTMLInputElement) {
@@ -633,16 +629,19 @@ export function createFormChen(rootElement, topSchema, topObj) {
         } else {
             if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
             const input = element;
-            let converter;
+            input.readOnly = node.readOnly;
 
-            node.refreshUI = function (disabled) {
+            let converter;
+            node.refreshUI = function () {
                 const value = node.getValue();
                 if (value == null) {
-                    input.defaultValue = input.value = '';
+                    // input.defaultValue = 
+                    input.value = '';
                 } else {
-                    input.defaultValue = input.value = converter.toEditable(value);
+                    //input.defaultValue = 
+                    input.value = value.toFixed(schema.fractionDigits || 2); //.replace(/0+$/, '') //converter.toEditable(value);
                 }
-                input.disabled = node.readOnly || disabled;
+                
             };
 
             if (schema.type === 'integer' || schema.type === 'number') {
@@ -651,7 +650,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
                 if (typeof schema.multipleOf === 'number') {
                     input.step = String(schema.multipleOf);
                 } else if (schema.type === 'number') {
-                    input.step = String(0.1);
+                    input.step = 'any';
                 }
                 if (typeof schema.minimum === 'number') input.min = String(schema.minimum);
                 if (typeof schema.maximum === 'number') input.max = String(schema.maximum);
@@ -664,8 +663,6 @@ export function createFormChen(rootElement, topSchema, topObj) {
 
             } else if (schema.format === 'datetime') {
                 converter = new DateTimeStringConverter(schema.period || 'HOURS');
-                // } else if (schema.format === 'date-partial-time') {
-                //     converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
             } else if (schema.format === 'date') {
                 converter = new FullDateConverter();
             } else {
@@ -676,6 +673,16 @@ export function createFormChen(rootElement, topSchema, topObj) {
                 const newValue = converter.fromEditable(input.value.trim());
                 let value = (newValue === '') ? undefined : newValue;
                 commit(value, input);
+            }
+
+            input.onfocus = () => {
+                // input.defaultValue = 
+                input.value = String(node.getValue());
+            }
+
+            input.onblur = () => {
+                // Important: blur fires after change.
+                node.refreshUI();
             }
         }
 
