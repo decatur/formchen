@@ -10,7 +10,7 @@
 
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
-import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter } from "./converter.js";
+import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter, UrlConverter, ColorConverter, IntegerConverter } from "./converter.js";
 import { Patch, TransactionManager, logger, registerUndo } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
 
@@ -480,10 +480,10 @@ export function createFormChen(rootElement, topSchema, topObj) {
         if (titleElement instanceof HTMLElement && !titleElement.firstChild) {
             let span = document.createElement('span');
             span.className = 'data-title';
-            span.textContent = node.title + (schema.unit?` [${schema.unit}]`:'');
+            span.textContent = node.title + (schema.unit ? ` [${schema.unit}]` : '');
             titleElement.appendChild(span);
             if (node.description) {
-              titleElement.appendChild(document.createTextNode(node.description));
+                titleElement.appendChild(document.createTextNode(node.description));
             }
         }
 
@@ -595,96 +595,121 @@ export function createFormChen(rootElement, topSchema, topObj) {
                 let value = input.value;
                 commit(value, input);
             }
-        } else if (schema.type === 'string') {
-            if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
-            const input = element;
-            input.readOnly = node.readOnly;
-            const converter = new StringConverter();
-
-            node.refreshUI = function () {
-                const value = node.getValue();
-                if (value == null) {
-                    input.defaultValue = input.value = '';
-                } else {
-                    input.defaultValue = input.value = converter.toEditable(value);
-                }
-            };
-
-            if (input instanceof HTMLInputElement) {
-                if (schema.format === 'color') {
-                    input.type = 'color';
-                } else if (schema.format === 'url') {
-                    input.type = 'url';
-                } else {
-                    input.type = 'string';
-                }
-            }
-
-            input.onchange = function (_event) {
-                const newValue = converter.fromEditable(input.value.trim());
-                let value = (newValue === '') ? undefined : newValue;
-                commit(value, input);
-            }
-
-        } else {
-            if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
-            const input = element;
-            input.readOnly = node.readOnly;
+        } else { //if (schema.type === 'string') {
 
             let converter;
-            node.refreshUI = function () {
-                const value = node.getValue();
-                if (value == null) {
-                    // input.defaultValue = 
-                    input.value = '';
-                } else {
-                    //input.defaultValue = 
-                    input.value = value.toFixed(schema.fractionDigits || 2); //.replace(/0+$/, '') //converter.toEditable(value);
-                }
-                
-            };
 
-            if (schema.type === 'integer' || schema.type === 'number') {
-                input.type = 'number';
-                input.style.textAlign = "right";
-                if (typeof schema.multipleOf === 'number') {
-                    input.step = String(schema.multipleOf);
-                } else if (schema.type === 'number') {
-                    input.step = 'any';
-                }
-                if (typeof schema.minimum === 'number') input.min = String(schema.minimum);
-                if (typeof schema.maximum === 'number') input.max = String(schema.maximum);
+            if (schema.type === 'integer') {
+                if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+                converter = new IntegerConverter();
+                converter.conditionInput(element, node.readOnly);
+            } else if (schema.type === 'number') {
+                if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+                converter = new NumberConverter(schema.fractionDigits || 2);
+                converter.conditionInput(element, node.readOnly);
+            } else if (schema.type === 'string' && schema.format) {
+                if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
 
-                if (schema.type === 'integer') {
-                    converter = new NumberConverter(0);
-                } else {
-                    converter = new NumberConverter(schema.fractionDigits || 2);
+                if (schema.format === 'date') {
+                    converter = new FullDateConverter();
+                } else if (schema.format === 'datetime') {
+                    converter = new DateTimeStringConverter(schema.period || 'HOURS');
+                } else if (schema.format === 'url') {
+                    converter = new UrlConverter();
+                } else if (schema.format === 'color') {
+                    converter = new ColorConverter();
                 }
 
-            } else if (schema.format === 'datetime') {
-                converter = new DateTimeStringConverter(schema.period || 'HOURS');
-            } else if (schema.format === 'date') {
-                converter = new FullDateConverter();
+                converter.conditionInput(element, node.readOnly);
+            } else if (schema.type === 'string') {
+                if (!((element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement))) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+                converter = new StringConverter();
+                converter.conditionInput(element, node.readOnly);
             } else {
                 throw Error('Invalid schema at ' + node.path);
             }
 
-            input.onchange = function () {
-                const newValue = converter.fromEditable(input.value.trim());
-                let value = (newValue === '') ? undefined : newValue;
-                commit(value, input);
+            const input = element;
+
+            node.refreshUI = function () {
+                const value = node.getValue();
+                if (value == null) {
+                    input.value = '';
+                } else {
+                    converter.toInput(value, input);
+                }
+            };
+
+            input.oninput = () => {
+                console.log("oninput")
+                input.setCustomValidity('');
+            }
+
+            let invalidCount = 0;
+
+            input.onblur = () => {
+                console.log("onblur " + input.value)
+                let [value, error] = converter.fromInput(input);
+                console.log("onblur1 " + value)
+                if (error && ++invalidCount == 1) {
+                    input.setCustomValidity(error);
+                    input.reportValidity();
+                } else {
+                    invalidCount = 0;
+                }
+                commit((value === '') ? undefined : value, input);
             }
 
             input.onfocus = () => {
-                // input.defaultValue = 
-                input.value = String(node.getValue());
+                let value = node.getValue();
+                console.log('onfocus ' + value);
+                if (converter.toInputEdit) converter.toInputEdit(value, input);
             }
+        } 
+        // else if (schema.type === 'integer' || schema.type === 'number') {
+        //     if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+        //     const input = element;
+        //     let converter;
+        //     if (schema.type === 'integer') {
+        //         converter = new IntegerConverter();
+        //     } else {
+        //         converter = new NumberConverter(schema.fractionDigits || 2);
+        //     }
 
-            input.onblur = () => {
-                // Important: blur fires after change.
-                node.refreshUI();
-            }
-        }
+        //     converter.conditionInput(input, node.readOnly);
+
+        //     node.refreshUI = function () {
+        //         const value = node.getValue();
+        //         if (value == null) {
+        //             input.value = '';
+        //         } else {
+        //             converter.toInput(value, input);
+        //         }
+        //     };
+
+        //     if (typeof schema.multipleOf === 'number') {
+        //         input.step = String(schema.multipleOf);
+        //     } else if (schema.type === 'number') {
+        //         input.step = 'any';
+        //     }
+        //     if (typeof schema.minimum === 'number') input.min = String(schema.minimum);
+        //     if (typeof schema.maximum === 'number') input.max = String(schema.maximum);
+
+        //     input.onchange = function () {
+        //         const value = converter.fromInput(input);
+        //         commit(value, input);
+        //     }
+
+        //     input.onfocus = () => {
+        //         converter.toInputEdit(node.getValue(), input);
+        //     }
+
+        //     input.onblur = () => {
+        //         node.refreshUI();
+        //     }
+        // } 
+        
+
 
         /**
          * @param {string | number | boolean} value

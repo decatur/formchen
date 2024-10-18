@@ -27,6 +27,32 @@ export class StringConverter {
     }
 
     /**
+     * @param {HTMLInputElement|HTMLTextAreaElement} input
+     * @param {boolean} readOnly
+     */
+    conditionInput(input, readOnly) {
+        if (input instanceof HTMLInputElement) input.type = 'string';
+        input.readOnly = readOnly;
+    }
+
+    /**
+    * @param {string} s 
+    * @param {HTMLInputElement} input 
+    */
+    toInput(s, input) {
+        input.value = s;
+    }
+
+    /**
+     * @param {HTMLInputElement} input
+     * @returns {[string, string]}
+     */
+    fromInput(input) {
+        let s = input.value.trim();
+        return [s, ''];
+    }
+
+    /**
      * @param {string} s
      * @returns {string}
      */
@@ -72,32 +98,39 @@ export class StringConverter {
     }
 }
 
-export class URIConverter {
+/**
+ * @implements {Converter}
+ */
+export class ColorConverter extends StringConverter {
     constructor() {
+        super();
     }
 
     /**
-     * @param {string} s
-     * @returns {string}
+     * @param {HTMLInputElement} input
+     * @param {boolean} readOnly
      */
-    toTSV(s) {
-        return String(s)
+    conditionInput(input, readOnly) {
+        input.type = 'color';
+        input.readOnly = readOnly;
+    }
+}
+
+/**
+ * @implements {Converter}
+ */
+export class UrlConverter extends StringConverter {
+    constructor() {
+        super();
     }
 
     /**
-     * @param {string} s
-     * @returns {string}
+     * @param {HTMLInputElement} input
+     * @param {boolean} readOnly
      */
-    toEditable(s) {
-        return String(s)
-    }
-
-    /**
-     * @param {string} s
-     * @returns {string}
-     */
-    fromEditable(s) {
-        return s
+    conditionInput(input, readOnly) {
+        input.type = 'url';
+        input.readOnly = readOnly;
     }
 
     /**
@@ -137,7 +170,7 @@ export class URIConverter {
                     elem.style.removeProperty('cursor');
                     // Reestablish link. Must be done async because if this is a onmouseup event,
                     // an onclick will always fire afterwards, which in turn would follow the link.
-                    window.requestAnimationFrame(function() { elem.href = href; });
+                    window.requestAnimationFrame(function () { elem.href = href; });
                     // Remove this handlers.
                     onMouseUpOrOut(undefined);
                 });
@@ -268,7 +301,47 @@ export class NumberConverter {
         });
         // Default for maximumFractionDigits is 3.
         /** @type {Intl.NumberFormat} */
-        this.nf_editable = new Intl.NumberFormat(locale, {maximumFractionDigits: 10});
+        this.nf_editable = new Intl.NumberFormat(locale, { maximumFractionDigits: 10 });
+        this.fractionDigits = fractionDigits;
+    }
+
+    /**
+     * @param {HTMLInputElement} input
+     * @param {boolean} readOnly
+     */
+    conditionInput(input, readOnly) {
+        input.type = 'number';
+        input.step = 'any';
+        input.style.textAlign = "right";
+        input.readOnly = readOnly;
+    }
+
+    /**
+     * @param {number} n
+     * @param {HTMLInputElement} input 
+     */
+    toInput(n, input) {
+        input.value = n.toFixed(this.fractionDigits)
+    }
+
+    /**
+     * @param {number} n
+     * @param {HTMLInputElement} input 
+     */
+    toInputEdit(n, input) {
+        input.value = String(n)
+    }
+
+    /**
+     * @param {HTMLInputElement} input
+     * @returns {[string|number, string]}
+     */
+    fromInput(input) {
+        let s = input.value.trim();
+        if (!s) return ['', ''];
+        if (s.toLowerCase() === 'nan') return [NaN, ''];
+        const n = Number(s);
+        return isNaN(n) ? [s, 'Invalid Number'] : [n, ''];
     }
 
     /**
@@ -323,6 +396,45 @@ export class NumberConverter {
             element.textContent = this.nf_render.format(value);
             element.className = 'non-string';
         }
+    }
+}
+
+export class IntegerConverter extends NumberConverter {
+    constructor() {
+        super(0)
+    }
+
+    /**
+     * @param {HTMLInputElement} input
+     * @param {boolean} readOnly
+     */
+    conditionInput(input, readOnly) {
+        input.type = 'number';
+        input.step = '1';
+        input.style.textAlign = "right";
+        input.readOnly = readOnly;
+    }
+
+    /**
+     * @param {number} n
+     * @param {HTMLInputElement} input 
+     */
+    toInput(n, input) {
+        input.value = String(n)
+    }
+
+    /**
+     * @param {HTMLInputElement} input
+     * @returns {[string|number, string]}
+     */
+    fromInput(input) {
+        let s = input.value.trim();
+        if (input.validity.stepMismatch) return [s, input.validationMessage]
+        
+        if (!s) return ['', ''];
+        if (s.toLowerCase() === 'nan') return [NaN, ''];
+        const n = Number(s);
+        return isNaN(n) ? [s, 'Invalid Number'] : [n, ''];
     }
 }
 
@@ -415,6 +527,37 @@ export class DateTimeStringConverter {
     constructor(period) {
         this.period = utils.resolvePeriod(period);
         this.parser = utils.localeDateParser();
+    }
+
+    /**
+     * @param {HTMLInputElement} input
+     * @param {boolean} readOnly
+     */
+    conditionInput(input, readOnly) {
+        input.type = 'string';
+        input.readOnly = readOnly;
+    }
+
+    /**
+     * @param {string} s 
+     * @param {HTMLInputElement} input 
+     */
+    toInput(s, input) {
+        input.value = s;
+    }
+
+    /**
+     * @param {HTMLInputElement} input
+     * @returns {[string, string]}
+     */
+    fromInput(input) {
+        let s = input.value.trim();
+        let r = this.parser.dateTime(s);
+        if (r instanceof SyntaxError) {
+            return [s, r.message];
+        } else {
+            return [s, ''];
+        }
     }
 
     /**
@@ -565,6 +708,37 @@ export class FullDateConverter {
 
     constructor() {
         this.parser = utils.localeDateParser();
+    }
+
+    /**
+     * @param {HTMLInputElement} input
+     * @param {boolean} readOnly
+     */
+    conditionInput(input, readOnly) {
+        input.type = 'date';
+        input.readOnly = readOnly;
+    }
+
+    /**
+     * @param {string} s 
+     * @param {HTMLInputElement} input 
+     */
+    toInput(s, input) {
+        input.value = s;
+    }
+
+    /**
+     * @param {HTMLInputElement} input
+     * @returns {[string, string]}
+     */
+    fromInput(input) {
+        let s = input.value.trim();
+        let r = this.parser.fullDate(s);
+        if (r instanceof SyntaxError) {
+            return [s, r.message];
+        } else {
+            return [s, ''];
+        }
     }
 
     /**
