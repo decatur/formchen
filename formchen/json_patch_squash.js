@@ -8,15 +8,184 @@
  * @typedef {JSONPatchOperation & WizardProperties} JSONPatchOperationExt
  */
 
+/**
+ * Applies a patch to a mutable object.
+ * @param {any} obj
+ * @param {JSONPatchOperationExt[]} patch
+ * @returns {any}
+ */
+export function merge_(obj, patch) {
+
+    for (const op of patch) {
+        let o = obj;
+        let path = new Path(op.path);
+        if (op.op == 'add') {
+            for (let i = 1; i < path.parts.length - 1; i++) {
+                o = o[path.parts[i]];
+            }
+            if (Array.isArray(o)) {
+                const i = path.index();
+                if (i > o.length) throw Error();
+                o.splice(path.index(), 0, op.value);
+            } else {
+                o[path.parts.at(-1)] = op.value;
+            }
+        } else if (op.op == 'replace') {
+            if (op.path === '') {
+                obj = o = op.value;
+            } else {
+                for (let i = 1; i < path.parts.length - 1; i++) {
+                    o = o[path.parts[i]];
+                }
+                o[path.parts.at(-1)] = op.value;
+            }
+
+        } else if (op.op == 'remove') {
+            if (op.path === '') {
+                o = undefined;
+            } else {
+                for (let i = 1; i < path.parts.length - 1; i++) {
+                    o = o[path.parts[i]];
+                }
+                if (Array.isArray(o)) {
+                    const i = path.index();
+                    if (i > o.length) throw Error();
+                    o.splice(path.index(), 1);
+                } else {
+                    delete o[path.parts.at(-1)];
+                }
+            }
+
+        }
+    }
+    return obj
+}
+
+/**
+ * 
+ * @param {any} obj
+ * @param {JSONPatchOperation} op
+ */
+function addOp(obj, op) {
+    if (typeof obj === 'number') obj = new Number(obj);
+    else if (typeof obj === 'string') obj = new String(obj);
+    else if (typeof obj === 'boolean') obj = new Boolean(obj);
+    else if (obj === null) obj = new Number(NaN);
+    obj.foo = obj.foo || [];
+    obj.foo.push(op);
+
+    return obj
+}
+
+function clone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+}
+
+/**
+ * Applies a patch to a mutable object.
+ * @param {any} obj
+ * @param {JSONPatchOperationExt[]} patch
+ * @returns {[any, JSONPatchOperationExt[]]}
+ */
+export function merge(obj, patch) {
+    let removes = [];
+    for (const op of patch) {
+        let o = obj;
+        let path = new Path(op.path);
+        if (op.op == 'add') {
+            if (op.path === '') {
+                obj = o = clone(op.value);
+                addOp(o, op);
+            } else {
+                for (let i = 1; i < path.parts.length - 1; i++) {
+                    addOp(o, op);
+                    o = o[path.parts[i]];
+                }
+                addOp(o, op);
+                let value = addOp(clone(op.value), op);
+                value.wasAdded = true;
+                if (Array.isArray(o)) {
+                    const i = path.index();
+                    if (i > o.length) throw Error();
+                    o.splice(path.index(), 0, value);
+                } else {
+                    o[path.parts.at(-1)] = value;
+                }
+            }
+        } else if (op.op == 'replace') {
+            if (op.path === '') {
+                removes = removes.concat(obj.foo);
+                obj = o = clone(op.value);
+                addOp(o, op);
+            } else {
+                for (let i = 1; i < path.parts.length - 1; i++) {
+                    addOp(o, op);
+                    o = o[path.parts[i]];
+                }
+                addOp(o, op);
+                let value = addOp(clone(op.value), op);
+                let oo = o[path.parts.at(-1)];
+                if (oo != null && typeof oo === 'object' && 'foo' in oo) {
+                    if (oo.wasAdded) {
+                        op.op = 'add';
+                    }
+                    removes = removes.concat(oo.foo);
+                }
+                o[path.parts.at(-1)] = value;
+            }
+
+        } else if (op.op == 'remove') {
+            if (op.path === '') {
+                removes = removes.concat(o.foo);
+                o = undefined;
+            } else {
+                for (let i = 1; i < path.parts.length - 1; i++) {
+                    o = o[path.parts[i]];
+                }
+                if (Array.isArray(o)) {
+                    const i = path.index();
+                    if (i > o.length) throw Error();
+                    if (o[path.index()].wasAdded) {
+                        removes.push(op);
+                    }
+                    removes = removes.concat(o[path.index()].foo);
+                    o.splice(path.index(), 1);
+
+                } else {
+                    if (o[path.parts.at(-1)].wasAdded) {
+                        removes.push(op);
+                    }
+                    removes = removes.concat(o[path.parts.at(-1)].foo);
+                    delete o[path.parts.at(-1)];
+                }
+            }
+
+        }
+    }
+
+    let p = patch.filter((op) => !removes.includes(op));
+    obj = JSON.parse(JSON.stringify(obj, (key, value) => {
+        if (key === 'wasAdded' || key === 'foo')
+            return undefined
+        else
+            return value
+    }
+    ));
+
+    return [obj, p]
+}
+
 export const dispense = squash;
 
 /**
  * Squashes all redundant operations.
  *
+ * @param {any} obj
  * @param {JSONPatchOperationExt[]} patch
  * @returns {JSONPatchOperation[]}
  */
-export function squash(patch) {
+export function squash(obj, patch) {
+    return merge(obj, patch)[1];
     if (patch.length <= 1) return patch;
 
     /** 
@@ -25,30 +194,24 @@ export function squash(patch) {
      */
     const normalizedPatch = [];
     for (const op of patch) {
-        op.currentPath = new Path(op.path);
-        // if (op.op === 'replace') {
-        //     normalizedPatch.push({op: 'remove', path: op.path, currentPath: op.currentPath});
-        //     normalizedPatch.push({op: 'add', path: op.path, value: op.value, currentPath: op.currentPath});
-        // } else {
         normalizedPatch.push(op);
-        // }
     }
 
     let p = [];
-    for (const op of normalizedPatch) {
-        /** @type{(string | number)[]} */
-        //const path = op.path.split('/').map(key => /^\d+$/.test(key) ? parseInt(key) : key);
-        p = squashOperation(p, op);
+    for (let i = 0; i < normalizedPatch.length - 1; i++) {
+        const op = normalizedPatch[i];
+        if (op.op != 'foo' && !squashOperation(normalizedPatch.slice(i + 1), op)) {
+            p.push(op);
+        }
     }
 
-    for (const op of p) {
-        delete op.currentPath
-    }
+    let op = normalizedPatch.at(-1);
+    if (op.op != 'foo') p.push(op);
 
     return p
 }
 
-class Path {
+export class Path {
     /** @type{string} path */
     constructor(path) {
         /** @type{(string | number)[]} */
@@ -153,237 +316,66 @@ class Path {
  *
  * @param {JSONPatchOperationExt[]} patch
  * @param {JSONPatchOperationExt} operation
- * @returns {JSONPatchOperation[]}
+ * @returns {boolean}
  */
 export function squashOperation(patch, operation) {
     if (!(operation.op == 'remove' || operation.op == 'add' || operation.op == 'replace')) throw Error(`Invalid op ${operation.op}`);
 
     if (patch.length === 0) {
-        return [operation]
+        return false
     }
 
-    operation.currentPath = new Path(operation.path);
-    const path = operation.currentPath;
+    const path = new Path(operation.path);
 
-    let squashed = [];
-    let oops;
+    for (const op of patch) {
+        if (!(op.op == 'remove' || op.op == 'add' || op.op == 'replace')) throw Error(`Invalid op ${op.op}`);
+        let p = new Path(op.path);
 
-    if (path.isArray && operation.op == 'add') {
-        squashed = patch;
-        oops = operation;
-    } else {
-        /** @type{JSONPatchOperationExt} */
-
-
-        squashed = [];
-        for (const op of patch.reverse()) {
-            if (!(op.op == 'remove' || op.op == 'add' || op.op == 'replace')) throw Error(`Invalid op ${op.op}`);
-            const p = op.currentPath;
-
-            // 3 * 3 = 3 + 2 + 2 + 2
-
-            if (operation.op == 'add' && op.op == 'add') {
-                if (path.equals(p)) {
-                    // operation = {/foo/a add value}
-                    // op        = {/foo/a add value}
-                    throw Error();
-                } else if (path.startsWith(p)) {
-                    // operation = {/foo/a/b add value}
-                    // op        = {/foo/a add value}
-                    squashed.push(op);
-                    oops = operation;
-                    break;
-                } else if (p.startsWith(path)) {
-                    // operation = {/foo/a add value}
-                    // op        = {/foo/a/b add value}
-                    throw Error();
-                } else {
-                    squashed.push(op);
-                    oops = operation;
-                }
-            } else if (operation.op == 'remove' && op.op == 'remove') {
-                if (path.equals(p)) {
-                    // operation = {/foo/a remove value}
-                    // op        = {/foo/a remove value}
-                    throw Error();
-                } else if (path.startsWith(p)) {
-                    // operation = {/foo/a/b remove value}
-                    // op        = {/foo/a remove value}
-                    throw Error();
-                } else if (p.startsWith(path)) {
-                    // operation = {/foo/a remove value}
-                    // op        = {/foo/a/b remove value}
-                    oops = operation;
-                } else {
-                    squashed.push(op);
-                    oops = operation;
-                }
-            } else if (operation.op == 'replace' && op.op == 'replace') {
-                if (path.equals(p)) {
-                    // operation = {/foo/a replace value}
-                    // op        = {/foo/a replace value}
-                    oops = operation;
-                } else if (path.startsWith(p)) {
-                    // operation = {/foo/a/b replace value}
-                    // op        = {/foo/a replace value}
-                    squashed.push(op);
-                    oops = operation;
-                } else if (p.startsWith(path)) {
-                    // operation = {/foo/a replace value}
-                    // op        = {/foo/a/b replace value}
-                    oops = operation;
-                } else {
-                    squashed.push(op);
-                    oops = operation;
-                }
+        if (path.equals(p)) {
+            // operation = {/foo/a/b add value}
+            // op        = {/foo/a/b replace value}
+            if (operation.op == 'add' && op.op == 'replace') {
+                op.op = 'add';
+                return true;
             } else if (operation.op == 'add' && op.op == 'remove') {
-                if (path.equals(p)) {
-                    // operation = {/foo/a add value}
-                    // op        = {/foo/a remove value}
-                    oops = { path: operation.path, op: 'replace', value: operation.value };
-                    break;
-                } else if (path.startsWith(p)) {
-                    // operation = {/foo/a/b add value}
-                    // op        = {/foo/a remove value}
-                    oops = operation;
-                    break;
-                } else if (p.startsWith(path)) {
-                    // operation = {/foo/a add value}
-                    // op        = {/foo/a/b remove value}
-                    throw Error();
-                } else {
-                    squashed.push(op);
-                    oops = operation;
-                }
-            } else if (operation.op == 'remove' && op.op == 'add') {
-                if (path.equals(p)) {
-                    // operation = {/foo/a remove value}
-                    // op        = {/foo/a add value}
-                    oops = undefined;
-                    break;
-                } else if (path.startsWith(p)) {
-                    // operation = {/foo/a/b remove value}
-                    // op        = {/foo/a add value}
-                    squashed.push(op);
-                    oops = operation;
-                    break;
-                } else if (p.startsWith(path)) {
-                    // operation = {/foo/a remove value}
-                    // op        = {/foo/a/b add value}
-                    oops = operation;
-                    break;
-                } else {
-                    squashed.push(op);
-                    oops = operation;
-                }
-            } else if (operation.op == 'replace' && op.op == 'add') {
-                if (path.equals(p)) {
-                    // operation = {/foo/a replace value}
-                    // op        = {/foo/a add value}
-                    oops = { path: operation.path, op: 'add', value: operation.value };
-                    break;
-                } else if (path.startsWith(p)) {
-                    // operation = {/foo/a/b replace value}
-                    // op        = {/foo/a add value}
-                    squashed.push(op);
-                    oops = operation;
-                    break;
-                } else if (p.startsWith(path)) {
-                    // operation = {/foo/a replace value}
-                    // op        = {/foo/a/b add value}
-                    oops = { path: operation.path, op: 'replace', value: operation.value };
-                    break;
-                } else {
-                    squashed.push(op);
-                    oops = operation;
-                }
-            } else if (operation.op == 'add' && op.op == 'replace') {
-                if (path.equals(p)) {
-                    // operation = {/foo/a add value}
-                    // op        = {/foo/a replace value}
-                    oops = operation;
-                    break;
-                } else if (path.startsWith(p)) {
-                    // operation = {/foo/a/b add value}
-                    // op        = {/foo/a replace value}
-                    throw Error();
-                } else if (p.startsWith(path)) {
-                    // operation = {/foo/a add value}
-                    // op        = {/foo/a/b replace value}
-                    oops = operation;
-                } else {
-                    squashed.push(op);
-                    oops = operation;
-                }
-            } else if (operation.op == 'remove' && op.op == 'replace') {
-                if (path.equals(p)) {
-                    // operation = {/foo/a remove value}
-                    // op        = {/foo/a replace value}
-                    oops = operation;
-                    break;
-                } else if (path.startsWith(p)) {
-                    // operation = {/foo/a/b remove value}
-                    // op        = {/foo/a replace value}
-                    squashed.push(op);
-                    oops = operation;
-                    break;
-                } else if (p.startsWith(path)) {
-                    // operation = {/foo/a remove value}
-                    // op        = {/foo/a/b replace value}
-                    oops = operation;
-                    break;
-                } else {
-                    squashed.push(op);
-                    oops = operation;
-                }
-            } else if (operation.op == 'replace' && op.op == 'remove') {
-                if (path.equals(p)) {
-                    // operation = {/foo/a replace value}
-                    // op        = {/foo/a remove value}
-                    throw Error();
-                } else if (path.startsWith(p)) {
-                    // operation = {/foo/a/b replace value}
-                    // op        = {/foo/a remove value}
-                    throw Error();
-                } else if (p.startsWith(path)) {
-                    // operation = {/foo/a replace value}
-                    // op        = {/foo/a/b remove value}
-                    oops = operation;
-                } else {
-                    squashed.push(op);
-                    oops = operation;
-                }
-            } else throw Error();
+                // { "op": "add", "path": "/a/b", "value": "A" },
+                // { "op": "remove", "path": "/a/b" }
+                op.op = 'foo';
+                op.path = '/foo/bar/fooo';
+                return true;
+            } else if (operation.op == 'add' && op.op == 'add') {
+                if (!p.isArray()) return true
+            } else {
+                return true
+            }
+        } else if (path.startsWith(p)) {
+            // operation = {/foo/a/b add value}
+            // op        = {/foo/a replace value}
+            return true
+        } else if (p.startsWith(path)) {
+            // operation = {/foo/a add value}
+            // op        = {/foo/a/b add value}
+            return false
         }
-    }
 
-    if (oops) {
-        squashed.push(oops);
-    }
-
-    if (path.isArray()) {
-        for (let i=0; i<squashed.length-1; i++) {
-            const op = squashed[i];
-            const p = op.currentPath;
+        if (path.isArray()) {
             if (path.sameArray(p)) {
                 let [index, otherIndex] = path.indices(p);
-                if (index <= otherIndex) {
-                    if (operation.op == 'add') {
+                if (otherIndex <= index) {
+                    if (op.op == 'add') {
                         // operation = {/foo/2 add value}
                         // op        = {/foo/3 replace value}
-                        op.currentPath.increment(path.parts.length - 1);
-                    } else if (operation.op == 'remove') {
+                        path.increment(path.parts.length - 1);
+                    } else if (op.op == 'remove') {
                         // operation = {/foo/2 add value}
                         // op        = {/foo/3 replace value}
-                        op.currentPath.decrement(path.parts.length - 1);
+                        path.decrement(path.parts.length - 1);
                     }
                 }
             }
-
         }
     }
 
+    return false
 
-
-    return squashed
 }

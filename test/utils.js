@@ -69,9 +69,19 @@ function assertTrue(b) {
     }
 }
 
+/**
+ * @param {boolean} b 
+ */
+function assertFalse(b) {
+    if (b !== false) {
+        throw Error()
+    }
+}
+
 export const assert = {
     equal: assertEqual,
-    true: assertTrue
+    true: assertTrue,
+    false: assertFalse
 };
 
 /**
@@ -80,21 +90,30 @@ export const assert = {
  * @returns {void}
  */
 
+// /**
+//  * @param {string} test_name 
+//  * @param {F2Type} func 
+//  */
+// export function test(test_name, func) {
+//     let hash = encodeURIComponent(test_name);
+//     if (window.location.hash === '' || window.location.hash == '#' + hash) {
+//         let url = window.location.origin + window.location.pathname + '#' + hash;
+//         log(`Running ${test_name} ${url}`);
+//         func(test_name);
+//     }
+// }
+
 /**
- * 
  * @param {string} test_name 
  * @param {F2Type} func 
  */
-export function test(test_name, func) {
-    if (window.location.hash === '' || decodeURIComponent(window.location.hash) == '#' + test_name) {
-        log('Running ' + test_name);
-        func(test_name);
-    }
-}
-
 export async function async_test(test_name, func) {
-    if (window.location.hash === '' || window.location.hash == '#' + test_name) {
-        log('Running ' + test_name);
+    let hash = encodeURIComponent(test_name);
+    if (window.location.hash === '' || window.location.hash == '#' + hash) {
+        let url = window.location.origin + window.location.pathname + '#' + hash;
+        log(`Running ${test_name} ${url}`);
         await func(test_name);
     }
 }
+
+export const test = async_test;
