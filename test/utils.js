@@ -9,8 +9,9 @@ export function log(msg) {
 
 function error(a, b, msg) {
     const err = Error('assertEqual failed');
-    // console.error(err);
-    console.error(msg, 'Expected ' + a, 'Actual ' + b);
+    console.error(`left: ${a}`);
+    console.error(`right: ${b}`);
+    if (msg) console.error(msg);
     throw err;
 }
 
@@ -90,18 +91,18 @@ export const assert = {
  * @returns {void}
  */
 
-// /**
-//  * @param {string} test_name 
-//  * @param {F2Type} func 
-//  */
-// export function test(test_name, func) {
-//     let hash = encodeURIComponent(test_name);
-//     if (window.location.hash === '' || window.location.hash == '#' + hash) {
-//         let url = window.location.origin + window.location.pathname + '#' + hash;
-//         log(`Running ${test_name} ${url}`);
-//         func(test_name);
-//     }
-// }
+/**
+ * @param {string} test_name 
+ * @param {F2Type} func 
+ */
+export function test(test_name, func) {
+    let hash = encodeURIComponent(test_name);
+    if (window.location.hash === '' || window.location.hash == '#' + hash) {
+        let url = window.location.origin + window.location.pathname + '#' + hash;
+        log(`Running: ${test_name} ${url}`);
+        func(test_name);
+    }
+}
 
 /**
  * @param {string} test_name 
@@ -111,9 +112,8 @@ export async function async_test(test_name, func) {
     let hash = encodeURIComponent(test_name);
     if (window.location.hash === '' || window.location.hash == '#' + hash) {
         let url = window.location.origin + window.location.pathname + '#' + hash;
-        log(`Running ${test_name} ${url}`);
+        log(`Running: ${test_name} ${url}`);
         await func(test_name);
     }
 }
 
-export const test = async_test;

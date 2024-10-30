@@ -9,59 +9,6 @@
  */
 
 /**
- * Applies a patch to a mutable object.
- * @param {any} obj
- * @param {JSONPatchOperationExt[]} patch
- * @returns {any}
- */
-export function merge_(obj, patch) {
-
-    for (const op of patch) {
-        let o = obj;
-        let path = new Path(op.path);
-        if (op.op == 'add') {
-            for (let i = 1; i < path.parts.length - 1; i++) {
-                o = o[path.parts[i]];
-            }
-            if (Array.isArray(o)) {
-                const i = path.index();
-                if (i > o.length) throw Error();
-                o.splice(path.index(), 0, op.value);
-            } else {
-                o[path.parts.at(-1)] = op.value;
-            }
-        } else if (op.op == 'replace') {
-            if (op.path === '') {
-                obj = o = op.value;
-            } else {
-                for (let i = 1; i < path.parts.length - 1; i++) {
-                    o = o[path.parts[i]];
-                }
-                o[path.parts.at(-1)] = op.value;
-            }
-
-        } else if (op.op == 'remove') {
-            if (op.path === '') {
-                o = undefined;
-            } else {
-                for (let i = 1; i < path.parts.length - 1; i++) {
-                    o = o[path.parts[i]];
-                }
-                if (Array.isArray(o)) {
-                    const i = path.index();
-                    if (i > o.length) throw Error();
-                    o.splice(path.index(), 1);
-                } else {
-                    delete o[path.parts.at(-1)];
-                }
-            }
-
-        }
-    }
-    return obj
-}
-
-/**
  * 
  * @param {any} obj
  * @param {JSONPatchOperation} op
@@ -71,13 +18,14 @@ function addOp(obj, op) {
     else if (typeof obj === 'string') obj = new String(obj);
     else if (typeof obj === 'boolean') obj = new Boolean(obj);
     else if (obj === null) obj = new Number(NaN);
-    obj.foo = obj.foo || [];
-    obj.foo.push(op);
+    obj.fooo = obj.fooo || [];
+    obj.fooo.push(op);
 
     return obj
 }
 
 function clone(obj) {
+    if (obj === undefined) throw Error('"undefined" is not valid JSON');
     return JSON.parse(JSON.stringify(obj));
 }
 
@@ -90,23 +38,30 @@ function clone(obj) {
 export function merge(obj, patch) {
     let removes = [];
     for (const op of patch) {
+        if (op.path === undefined) throw Error('missing path parameter');
+        if (typeof op.path !== 'string') throw Error(`invalid path parameter: ${op.path}`);
         let o = obj;
         let path = new Path(op.path);
         if (op.op == 'add') {
             if (op.path === '') {
+                if (!('value' in op)) throw Error("missing 'value' parameter")
                 obj = o = clone(op.value);
                 addOp(o, op);
             } else {
                 for (let i = 1; i < path.parts.length - 1; i++) {
                     addOp(o, op);
                     o = o[path.parts[i]];
+                    if (o === undefined) {
+                        throw Error(`path ${path.parts.slice(0, i + 1).join('/')} does not exist`);
+                    }
                 }
                 addOp(o, op);
+                if (!('value' in op)) throw Error("missing 'value' parameter")
                 let value = addOp(clone(op.value), op);
                 value.wasAdded = true;
                 if (Array.isArray(o)) {
                     const i = path.index();
-                    if (i > o.length) throw Error();
+                    if (i > o.length) throw Error('index is greater than number of items in array');
                     o.splice(path.index(), 0, value);
                 } else {
                     o[path.parts.at(-1)] = value;
@@ -114,58 +69,78 @@ export function merge(obj, patch) {
             }
         } else if (op.op == 'replace') {
             if (op.path === '') {
-                removes = removes.concat(obj.foo);
+                removes = removes.concat(obj.fooo);
+                if (!('value' in op)) throw Error("missing 'value' parameter")
                 obj = o = clone(op.value);
                 addOp(o, op);
             } else {
                 for (let i = 1; i < path.parts.length - 1; i++) {
                     addOp(o, op);
                     o = o[path.parts[i]];
+                    if (o === undefined) {
+                        throw Error(`path ${path.parts.slice(0, i + 1).join('/')} does not exist`);
+                    }
                 }
+                
                 addOp(o, op);
+                if (!('value' in op)) throw Error("missing 'value' parameter")
                 let value = addOp(clone(op.value), op);
                 let oo = o[path.parts.at(-1)];
-                if (oo != null && typeof oo === 'object' && 'foo' in oo) {
+                if (oo === undefined) {
+                    throw Error(`path ${op.path} does not exist`);
+                }
+                if (oo != null && typeof oo === 'object' && 'fooo' in oo) {
                     if (oo.wasAdded) {
                         op.op = 'add';
                     }
-                    removes = removes.concat(oo.foo);
+                    removes = removes.concat(oo.fooo);
                 }
                 o[path.parts.at(-1)] = value;
             }
 
         } else if (op.op == 'remove') {
             if (op.path === '') {
-                removes = removes.concat(o.foo);
+                removes = removes.concat(o.fooo);
                 o = undefined;
             } else {
                 for (let i = 1; i < path.parts.length - 1; i++) {
                     o = o[path.parts[i]];
+                    if (o === undefined) {
+                        throw Error(`path ${path.parts.slice(0, i + 1).join('/')} does not exist`);
+                    }
                 }
                 if (Array.isArray(o)) {
                     const i = path.index();
-                    if (i > o.length) throw Error();
+                    if (i >= o.length) throw Error('index is greater than number of items in array');
                     if (o[path.index()].wasAdded) {
                         removes.push(op);
                     }
-                    removes = removes.concat(o[path.index()].foo);
+                    removes = removes.concat(o[path.index()].fooo);
                     o.splice(path.index(), 1);
 
                 } else {
-                    if (o[path.parts.at(-1)].wasAdded) {
-                        removes.push(op);
+                    let oo = o[path.parts.at(-1)];
+                    if (oo === undefined) {
+                        throw Error(`path ${op.path} does not exist`);
                     }
-                    removes = removes.concat(o[path.parts.at(-1)].foo);
+                    if (oo != null && typeof oo === 'object' && 'fooo' in oo) {
+                        if (oo.wasAdded) {
+                            removes.push(op);
+                        }
+                        removes = removes.concat(oo.fooo);
+                    }
                     delete o[path.parts.at(-1)];
                 }
             }
 
+        } else {
+            throw Error(`Unsupported op ${op.op}`)
         }
     }
 
     let p = patch.filter((op) => !removes.includes(op));
     obj = JSON.parse(JSON.stringify(obj, (key, value) => {
-        if (key === 'wasAdded' || key === 'foo')
+        if (key === 'wasAdded' || key === 'fooo')
             return undefined
         else
             return value
@@ -175,8 +150,6 @@ export function merge(obj, patch) {
     return [obj, p]
 }
 
-export const dispense = squash;
-
 /**
  * Squashes all redundant operations.
  *
@@ -184,38 +157,17 @@ export const dispense = squash;
  * @param {JSONPatchOperationExt[]} patch
  * @returns {JSONPatchOperation[]}
  */
-export function squash(obj, patch) {
+export function dispense(obj, patch) {
     return merge(obj, patch)[1];
-    if (patch.length <= 1) return patch;
-
-    /** 
-     * Contains only operations add and remove.
-     * @type{JSONPatchOperationExt[]} 
-     */
-    const normalizedPatch = [];
-    for (const op of patch) {
-        normalizedPatch.push(op);
-    }
-
-    let p = [];
-    for (let i = 0; i < normalizedPatch.length - 1; i++) {
-        const op = normalizedPatch[i];
-        if (op.op != 'foo' && !squashOperation(normalizedPatch.slice(i + 1), op)) {
-            p.push(op);
-        }
-    }
-
-    let op = normalizedPatch.at(-1);
-    if (op.op != 'foo') p.push(op);
-
-    return p
 }
 
 export class Path {
     /** @type{string} path */
     constructor(path) {
         /** @type{(string | number)[]} */
+        if (path.length > 0 && !path.startsWith('/')) throw Error(`path should start with a slash: ${path}`)
         this.parts = path.split('/').map(key => /^\d+$/.test(key) ? parseInt(key) : key);
+        
     }
 
     /**
@@ -231,7 +183,7 @@ export class Path {
     index() {
         let key = this.parts.at(-1);
         if (typeof key === 'number') return key;
-        throw Error();
+        throw Error(`Invalid array index ${key}`);
     }
 
     /**
@@ -311,71 +263,4 @@ export class Path {
     }
 }
 
-/**
- * Dispense all redundant operation values.
- *
- * @param {JSONPatchOperationExt[]} patch
- * @param {JSONPatchOperationExt} operation
- * @returns {boolean}
- */
-export function squashOperation(patch, operation) {
-    if (!(operation.op == 'remove' || operation.op == 'add' || operation.op == 'replace')) throw Error(`Invalid op ${operation.op}`);
 
-    if (patch.length === 0) {
-        return false
-    }
-
-    const path = new Path(operation.path);
-
-    for (const op of patch) {
-        if (!(op.op == 'remove' || op.op == 'add' || op.op == 'replace')) throw Error(`Invalid op ${op.op}`);
-        let p = new Path(op.path);
-
-        if (path.equals(p)) {
-            // operation = {/foo/a/b add value}
-            // op        = {/foo/a/b replace value}
-            if (operation.op == 'add' && op.op == 'replace') {
-                op.op = 'add';
-                return true;
-            } else if (operation.op == 'add' && op.op == 'remove') {
-                // { "op": "add", "path": "/a/b", "value": "A" },
-                // { "op": "remove", "path": "/a/b" }
-                op.op = 'foo';
-                op.path = '/foo/bar/fooo';
-                return true;
-            } else if (operation.op == 'add' && op.op == 'add') {
-                if (!p.isArray()) return true
-            } else {
-                return true
-            }
-        } else if (path.startsWith(p)) {
-            // operation = {/foo/a/b add value}
-            // op        = {/foo/a replace value}
-            return true
-        } else if (p.startsWith(path)) {
-            // operation = {/foo/a add value}
-            // op        = {/foo/a/b add value}
-            return false
-        }
-
-        if (path.isArray()) {
-            if (path.sameArray(p)) {
-                let [index, otherIndex] = path.indices(p);
-                if (otherIndex <= index) {
-                    if (op.op == 'add') {
-                        // operation = {/foo/2 add value}
-                        // op        = {/foo/3 replace value}
-                        path.increment(path.parts.length - 1);
-                    } else if (op.op == 'remove') {
-                        // operation = {/foo/2 add value}
-                        // op        = {/foo/3 replace value}
-                        path.decrement(path.parts.length - 1);
-                    }
-                }
-            }
-        }
-    }
-
-    return false
-
-}
