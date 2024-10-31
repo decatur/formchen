@@ -1,6 +1,6 @@
 import { test, assert, log } from './utils.js'
-import { dispense, merge, Path } from "../formchen/json_patch_squash.js";
-import { testCases } from "../json-patch-tests/spec_tests.js"
+import { removeNoOps, merge, Path } from "../formchen/json_patch_squash.js";
+import { testCases as testCasesA } from "../json-patch-tests/spec_tests.js"
 import { testCases as testCasesB } from "../json-patch-tests/tests.js"
 
 log('\x1B[41;93;4m####### Loading test/test_json_patch_merge.js')
@@ -83,7 +83,7 @@ test('replace A + replace B -> replace B', () => {
         { "op": "replace", "path": "/a/b", "value": "A" },
         { "op": "replace", "path": "/a/b", "value": "B" }
     ];
-    const mergedPatch = dispense({ a: { b: 2 } }, patch);
+    const mergedPatch = removeNoOps({ a: { b: 2 } }, patch);
     assert.equal([{ "op": "replace", "path": "/a/b", "value": "B" }], mergedPatch);
 });
 
@@ -92,7 +92,7 @@ test('replace A + remove -> remove', () => {
         { "op": "replace", "path": "/a/b", "value": "A" },
         { "op": "remove", "path": "/a/b" }
     ];
-    const mergedPatch = dispense({ a: { b: 2 } }, patch);
+    const mergedPatch = removeNoOps({ a: { b: 2 } }, patch);
     assert.equal([{ "op": "remove", "path": "/a/b" }], mergedPatch);
 });
 
@@ -102,7 +102,7 @@ test('replace A + replace B + remove', () => {
         { "op": "replace", "path": "/a/c", "value": "B" },
         { "op": "remove", "path": "/a" }
     ];
-    const mergedPatch = dispense({ a: { b: 'C', c: 'D' } }, patch);
+    const mergedPatch = removeNoOps({ a: { b: 'C', c: 'D' } }, patch);
     assert.equal([{ "op": "remove", "path": "/a" }], mergedPatch);
 });
 
@@ -111,7 +111,7 @@ test('add A + replace B -> add B', () => {
         { "op": "add", "path": "/a/b", "value": "A" },
         { "op": "replace", "path": "/a/b", "value": "B" }
     ];
-    let mergedPatch = dispense({ a: {} }, patch);
+    let mergedPatch = removeNoOps({ a: {} }, patch);
     assert.equal([{ "op": "add", "path": "/a/b", "value": "B" }], mergedPatch);
 
     patch = [
@@ -119,7 +119,7 @@ test('add A + replace B -> add B', () => {
         { "op": "add", "path": "/a/c", "value": "A" },
         { "op": "replace", "path": "/a", "value": "B" }
     ];
-    mergedPatch = dispense({ a: {} }, patch);
+    mergedPatch = removeNoOps({ a: {} }, patch);
     assert.equal([{ "op": "replace", "path": "/a", "value": "B" }], mergedPatch);
 });
 
@@ -128,7 +128,7 @@ test('add A + remove -> NoOp', () => {
         { "op": "add", "path": "/a/b", "value": "A" },
         { "op": "remove", "path": "/a/b" }
     ];
-    const mergedPatch = dispense({ a: {} }, patch);
+    const mergedPatch = removeNoOps({ a: {} }, patch);
     assert.equal([], mergedPatch);
 });
 
@@ -138,7 +138,7 @@ test('add A + remove -> NoOp', () => {
         { "op": "add", "path": "/a/1", "value": "B" },
         { "op": "remove", "path": "/a/1" }
     ];
-    const mergedPatch = dispense({ a: ['X', 'Y'] }, patch);
+    const mergedPatch = removeNoOps({ a: ['X', 'Y'] }, patch);
     assert.equal(mergedPatch, [{ "op": "add", "path": "/a/2", "value": "A" }]);
 });
 
@@ -147,7 +147,7 @@ test('(indexed) replace A + replace B -> replace B', () => {
         { "op": "replace", "path": "/a/1", "value": "A" },
         { "op": "replace", "path": "/a/1", "value": "B" }
     ];
-    const mergedPatch = dispense({ a: ['X', 'Y'] }, patch);
+    const mergedPatch = removeNoOps({ a: ['X', 'Y'] }, patch);
     assert.equal([{ "op": "replace", "path": "/a/1", "value": "B" }], mergedPatch);
 });
 
@@ -156,7 +156,7 @@ test('(indexed) replace A + remove -> remove', () => {
         { "op": "replace", "path": "/a/1", "value": "A" },
         { "op": "remove", "path": "/a/1" }
     ];
-    let mergedPatch = dispense({ a: ['X', 'Y'] }, patch);
+    let mergedPatch = removeNoOps({ a: ['X', 'Y'] }, patch);
     assert.equal([{ "op": "remove", "path": "/a/1" }], mergedPatch);
 
     patch = [
@@ -164,7 +164,7 @@ test('(indexed) replace A + remove -> remove', () => {
         { "op": "add", "path": "/a/2", "value": "B" },
         { "op": "remove", "path": "/a/1" }
     ];
-    mergedPatch = dispense({ a: ['X', 'Y'] }, patch);
+    mergedPatch = removeNoOps({ a: ['X', 'Y'] }, patch);
     assert.equal([
         { "op": "add", "path": "/a/2", "value": 'B' },
         { "op": "remove", "path": "/a/1" }], mergedPatch);
@@ -175,7 +175,7 @@ test('(indexed) add A + replace B -> add B', () => {
         { "op": "add", "path": "/a/1", "value": "A" },
         { "op": "replace", "path": "/a/1", "value": "B" }
     ];
-    const mergedPatch = dispense({ a: ['X', 'Y'] }, patch);
+    const mergedPatch = removeNoOps({ a: ['X', 'Y'] }, patch);
     assert.equal([
         { "op": "add", "path": "/a/1", "value": 'B' }
     ], mergedPatch);
@@ -186,7 +186,7 @@ test('(indexed) add A + remove -> NoOp', () => {
         { "op": "add", "path": "/a/1", "value": "A" },
         { "op": "remove", "path": "/a/1" }
     ];
-    const mergedPatch = dispense({ a: ['X', 'Y'] }, patch);
+    const mergedPatch = removeNoOps({ a: ['X', 'Y'] }, patch);
     assert.equal([], mergedPatch);
 });
 
@@ -196,7 +196,7 @@ test('(indexed) add A + remove -> NoOp', () => {
         { "op": "add", "path": "/a/1", "value": 2 },
         { "op": "remove", "path": "/a/2" }
     ];
-    const mergedPatch = dispense({ a: ['X'] }, patch);
+    const mergedPatch = removeNoOps({ a: ['X'] }, patch);
     const expected = [
         { "op": "add", "path": "/a/1", "value": 2 }
     ];
@@ -209,7 +209,7 @@ test('prefix', () => {
         { "op": "add", "path": "/a/1", "value": 1 },
         { "op": "remove", "path": "/a" }
     ];
-    const mergedPatch = dispense({ a: ['X'] }, patch);
+    const mergedPatch = removeNoOps({ a: ['X'] }, patch);
     assert.equal([{ "op": "remove", "path": "/a" }], mergedPatch);
 });
 
@@ -218,7 +218,7 @@ test('add + add', () => {
         { "op": "add", "path": "/a", "value": [] },
         { "op": "add", "path": "/a/0", "value": 13 }
     ];
-    const mergedPatch = dispense({}, patch);
+    const mergedPatch = removeNoOps({}, patch);
     const expected = [
         { "op": "add", "path": "/a", "value": [] },
         { "op": "add", "path": "/a/0", "value": 13 }
@@ -232,7 +232,7 @@ test('add + add + add', () => {
         { "op": "add", "path": "/a/0", "value": 13 },
         { "op": "add", "path": "/a/0/b", "value": 14 }
     ];
-    const mergedPatch = dispense({}, patch);
+    const mergedPatch = removeNoOps({}, patch);
     const expected = [
         { "op": "add", "path": "/a", "value": [] },
         { "op": "add", "path": "/a/0", "value": 13 },
@@ -245,7 +245,7 @@ test('replace', () => {
     const patch = [
         { "op": "replace", "path": "/a/0/b", "value": 14 }
     ];
-    const mergedPatch = dispense({ a: [{ b: 13 }] }, patch);
+    const mergedPatch = removeNoOps({ a: [{ b: 13 }] }, patch);
     assert.equal(mergedPatch, [{ "op": "replace", "path": "/a/0/b", "value": 14 }]);
 });
 
@@ -254,7 +254,7 @@ test('add + replace', () => {
         { "op": "add", "path": "/a/0", "value": { b: 13 } },
         { "op": "replace", "path": "/a/0/b", "value": 14 }
     ];
-    const mergedPatch = dispense({ a: [] }, patch);
+    const mergedPatch = removeNoOps({ a: [] }, patch);
     assert.equal(mergedPatch, [
         { "op": "add", "path": "/a/0", "value": { b: 13 } },
         { "op": "replace", "path": "/a/0/b", "value": 14 }
@@ -265,15 +265,15 @@ test('misc', () => {
     const doc = { storage: { dischargeMax: [0, 1, 2] } };
     const patch = [
         {
-            "op": "remove",  // dispensable
+            "op": "remove",
             "path": "/storage/dischargeMax/1"
         },
         {
-            "op": "remove",  // dispensable
+            "op": "remove",
             "path": "/storage/dischargeMax/0"
         },
         {
-            "op": "remove",  // dispensable
+            "op": "remove",
             "path": "/storage/dischargeMax"
         },
         {
@@ -306,44 +306,8 @@ test('misc', () => {
     ];
 
     const expected = patch;
-    const mergedPatch = dispense(doc, patch);
+    const mergedPatch = removeNoOps(doc, patch);
     assert.equal(mergedPatch, expected);
-
-});
-
-test("4.1. add with missing object", () => {
-    const tc = {
-        "comment": "4.1. add with missing object",
-        "doc": { "q": { "bar": 2 } },
-        "patch": [{ "op": "add", "path": "/a/b", "value": 1 }],
-        "error":
-            "path /a does not exist -- missing objects are not created recursively"
-    };
-
-    try {
-        dispense(tc.doc, tc.patch);
-    } catch (e) {
-        assert.equal(e.message, tc.error.split('--')[0].trim());
-    }
-});
-
-test("A.1.  Adding an Object Member", () => {
-    const tc = {
-        "comment": "A.1.  Adding an Object Member",
-        "doc": {
-            "foo": "bar"
-        },
-        "patch": [
-            { "op": "add", "path": "/baz", "value": "qux" }
-        ],
-        "expected": {
-            "baz": "qux",
-            "foo": "bar"
-        }
-    };
-
-    const [mergedDoc, _] = merge(tc.doc, tc.patch);
-    assert.equal(mergedDoc, tc.expected);
 
 });
 
@@ -357,14 +321,13 @@ function failure(tc) {
         merge(tc.doc, tc.patch);
     } catch (e) {
         // console.error(e);
-        log(e.message);
         assert.equal(e.message, tc.error.split('--')[0].trim());
         return
     }
     throw Error(`Expected error: ${tc.error}`)
 }
 
-function bar(testCases) {
+function runJsonPatchTests(testCases) {
     foo: for (const tc of testCases) {
         for (const op of tc.patch) {
             if (['add', 'replace', 'remove'].indexOf(op.op) == -1) {
@@ -381,10 +344,10 @@ function bar(testCases) {
         } else if ('error' in tc) {
             test(tc.comment, () => { failure(tc) })
         } else {
-            throw Error();
+            throw Error('test case must contain "expected" or "error" property');
         }
     }
 }
 
-bar(testCases);
-bar(testCasesB);
+runJsonPatchTests(testCasesA);
+runJsonPatchTests(testCasesB);

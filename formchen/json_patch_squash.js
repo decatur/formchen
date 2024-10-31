@@ -1,12 +1,14 @@
 
 /** @import { JSONPatchOperation } from "./types" */
 
-/**
- * @typedef {Object} WizardProperties
- * @property {Path=} currentPath
- * 
- * @typedef {JSONPatchOperation & WizardProperties} JSONPatchOperationExt
- */
+// /**
+//  * @typedef {Object} WizardProperties
+//  * @property {Path=} currentPath
+//  * 
+//  * @typedef {JSONPatchOperation & WizardProperties} JSONPatchOperationExt
+//  */
+
+const childPatchKey = Symbol();
 
 /**
  * 
@@ -18,12 +20,16 @@ function addOp(obj, op) {
     else if (typeof obj === 'string') obj = new String(obj);
     else if (typeof obj === 'boolean') obj = new Boolean(obj);
     else if (obj === null) obj = new Number(NaN);
-    obj.fooo = obj.fooo || [];
-    obj.fooo.push(op);
+    if (!(childPatchKey in obj)) obj[childPatchKey] = [];
+    obj[childPatchKey].push(op);
 
     return obj
 }
 
+/**
+  * @param {any} obj 
+ * @returns 
+ */
 function clone(obj) {
     if (obj === undefined) throw Error('"undefined" is not valid JSON');
     return JSON.parse(JSON.stringify(obj));
@@ -32,10 +38,11 @@ function clone(obj) {
 /**
  * Applies a patch to a mutable object.
  * @param {any} obj
- * @param {JSONPatchOperationExt[]} patch
- * @returns {[any, JSONPatchOperationExt[]]}
+ * @param {JSONPatchOperation[]} patch
+ * @returns {[any, JSONPatchOperation[]]}
  */
 export function merge(obj, patch) {
+    const wasAddedKey = Symbol();
     let removes = [];
     for (const op of patch) {
         if (op.path === undefined) throw Error('missing path parameter');
@@ -58,7 +65,7 @@ export function merge(obj, patch) {
                 addOp(o, op);
                 if (!('value' in op)) throw Error("missing 'value' parameter")
                 let value = addOp(clone(op.value), op);
-                value.wasAdded = true;
+                value[wasAddedKey] = true;
                 if (Array.isArray(o)) {
                     const i = path.index();
                     if (i > o.length) throw Error('index is greater than number of items in array');
@@ -69,7 +76,7 @@ export function merge(obj, patch) {
             }
         } else if (op.op == 'replace') {
             if (op.path === '') {
-                removes = removes.concat(obj.fooo);
+                removes = removes.concat(obj[childPatchKey]);
                 if (!('value' in op)) throw Error("missing 'value' parameter")
                 obj = o = clone(op.value);
                 addOp(o, op);
@@ -89,18 +96,18 @@ export function merge(obj, patch) {
                 if (oo === undefined) {
                     throw Error(`path ${op.path} does not exist`);
                 }
-                if (oo != null && typeof oo === 'object' && 'fooo' in oo) {
-                    if (oo.wasAdded) {
+                if (oo != null && typeof oo === 'object' && childPatchKey in oo) {
+                    if (oo[wasAddedKey]) {
                         op.op = 'add';
                     }
-                    removes = removes.concat(oo.fooo);
+                    removes = removes.concat(oo[childPatchKey]);
                 }
                 o[path.parts.at(-1)] = value;
             }
 
         } else if (op.op == 'remove') {
             if (op.path === '') {
-                removes = removes.concat(o.fooo);
+                removes = removes.concat(o[childPatchKey]);
                 o = undefined;
             } else {
                 for (let i = 1; i < path.parts.length - 1; i++) {
@@ -112,10 +119,10 @@ export function merge(obj, patch) {
                 if (Array.isArray(o)) {
                     const i = path.index();
                     if (i >= o.length) throw Error('index is greater than number of items in array');
-                    if (o[path.index()].wasAdded) {
+                    if (o[path.index()][wasAddedKey]) {
                         removes.push(op);
                     }
-                    removes = removes.concat(o[path.index()].fooo);
+                    removes = removes.concat(o[path.index()][childPatchKey]);
                     o.splice(path.index(), 1);
 
                 } else {
@@ -123,11 +130,11 @@ export function merge(obj, patch) {
                     if (oo === undefined) {
                         throw Error(`path ${op.path} does not exist`);
                     }
-                    if (oo != null && typeof oo === 'object' && 'fooo' in oo) {
-                        if (oo.wasAdded) {
+                    if (oo != null && typeof oo === 'object' && childPatchKey in oo) {
+                        if (oo[wasAddedKey]) {
                             removes.push(op);
                         }
-                        removes = removes.concat(oo.fooo);
+                        removes = removes.concat(oo[childPatchKey]);
                     }
                     delete o[path.parts.at(-1)];
                 }
@@ -139,25 +146,24 @@ export function merge(obj, patch) {
     }
 
     let p = patch.filter((op) => !removes.includes(op));
-    obj = JSON.parse(JSON.stringify(obj, (key, value) => {
-        if (key === 'wasAdded' || key === 'fooo')
-            return undefined
-        else
-            return value
-    }
-    ));
-
+    // Get rid of the symbol keys.
+    obj = clone(obj);
     return [obj, p]
 }
 
 /**
- * Squashes all redundant operations.
+ * Removes all null operations, for example in the patch
+ *   [
+ *     {op:replace, path:/foo/bar, value:...},
+ *     {op:replace, path:/foo, value:...}
+ *   ]
+ * the first operation is removed.
  *
  * @param {any} obj
- * @param {JSONPatchOperationExt[]} patch
+ * @param {JSONPatchOperation[]} patch
  * @returns {JSONPatchOperation[]}
  */
-export function dispense(obj, patch) {
+export function removeNoOps(obj, patch) {
     return merge(obj, patch)[1];
 }
 
