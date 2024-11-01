@@ -71,7 +71,7 @@ test('FormChen', (test_name) => {
             someFloat: {
                 title: 'Some Float',
                 type: 'number',
-                unit: '[DD]',
+                unit: 'D.D°',
                 fractionDigits: 2
             },
             someMatrix: {
@@ -119,15 +119,15 @@ test('FormChen', (test_name) => {
 
     assert.equal('Rubus idaeus', input.value);
     input.value = 'foo';
-    input.onchange(null);
+    input.onblur(null);
     assert.equal({ op: "replace", path: "/someString", value: "foo", oldValue: 'Rubus idaeus' }, fc.patch.pop());
     input.value = 'bar';
-    input.onchange(null);
+    input.onblur(null);
     assert.equal({ op: "replace", path: "/someString", value: "bar", oldValue: 'foo' }, fc.patch.pop());
 
     input = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/someURI"]`));
     input.value = 'ftp://bar';
-    input.onchange(null);
+    input.onblur(null);
     assert.equal({ op: "replace", path: "/someURI", value: "ftp://bar", oldValue: 'https://en.wikipedia.org/wiki/Rubus_idaeus' }, fc.patch.pop());
 
     let select =  /** @type{HTMLSelectElement} */ (container.querySelector(`[name="/someEnum"]`));
@@ -139,13 +139,13 @@ test('FormChen', (test_name) => {
     input = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/someDate"]`));
     assert.equal('2019-01-01', input.value);
     input.value = '2020-01-01';
-    input.onchange(null);
+    input.onblur(null);
     assert.equal({ op: "replace", path: "/someDate", value: '2020-01-01', oldValue: '2019-01-01' }, fc.patch.pop());
 
     input = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/someDateTime"]`));
     assert.equal('2019-01-01 01+01:00', input.value);
     input.value = '2020-01-01T00:00Z';
-    input.onchange(null);
+    input.onblur(null);
     assert.equal({ op: "replace", path: "/someDateTime", value: '2020-01-01T00:00Z', oldValue: '2019-01-01 01+01:00' }, fc.patch.pop());
 
     input = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/someBoolean"]`));
@@ -157,13 +157,13 @@ test('FormChen', (test_name) => {
     input = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/someInteger"]`));
     assert.equal('7', input.value);
     input.value = '13';
-    input.onchange(null);
+    input.onblur(null);
     assert.equal({ op: "replace", path: "/someInteger", value: 13, oldValue: 7 }, fc.patch.pop());
 
     input = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/someFloat"]`));
     assert.equal('3.14', input.value);
     input.value = '3.15';
-    input.onchange(null);
+    input.onblur(null);
     assert.equal({ op: "replace", path: "/someFloat", value: 3.15, oldValue: 3.14 }, fc.patch.pop());
 
     /** @type{GridChen} */

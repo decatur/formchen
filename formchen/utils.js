@@ -42,7 +42,7 @@ if (logLevel) {
         if (level > logLevel) return
         if (showConsole) {
             let div = document.createElement('div');
-            div.textContent = a + (b?' : ' + b: '');
+            div.textContent = a + (b ? ' : ' + b : '');
             document.body.appendChild(div);
         } else {
             console.log(a, b)
@@ -91,7 +91,7 @@ export class Patch {
     apply() {
         throw Error('Not implemented')
     }
-    
+
     /**
      * @returns {Patch}
      */
@@ -320,7 +320,7 @@ function isAmbiguous(s) {
     let month = parts[1];
     let hours = parts[3];
     let d = new Date(...parts);
-    
+
     //let ts_before = ts - 3600*1000;
     // console.log(hours, d.getHours());
     // console.log(new Date(ts_before));
@@ -331,11 +331,11 @@ function isAmbiguous(s) {
         if (hours != d.getHours()) {
             return true
         }
-        return false 
+        return false
     } else {
         // 2024-10-27T02:30 -> 2024-10-27T02:30+02:00 (earlier hour)
         let ts = d.getTime();
-        let ts_after = ts + 3600*1000;
+        let ts_after = ts + 3600 * 1000;
         if (hours == (new Date(ts_after)).getHours()) {
             return true
         }
@@ -366,16 +366,22 @@ export class FullDate {
 
 }
 
- /**
-     * @param {string} s
-     * @returns {FullDate|SyntaxError}
-     */
- function parseFullDate(s) {
-    const parts = s.split('-');
-    if (parts.length === 3) {
-        return new FullDate(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+/**
+ * Parses full dates of the form 2019-10-27
+ * @param {string} s
+ * @returns {FullDate|SyntaxError}
+ */
+function parseFullDate(s) {
+    if (!/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        return new SyntaxError(`Date ${s} does not match yyyy-mm-dd`);
+    }
+    let [year, month, date] = s.split('-').map((p) => parseInt(p, 10));
+    month -= 1;
+    const d = new Date(year, month, date);
+    if (d.getMonth() === month && d.getDate() === date && d.getFullYear() === year) {
+        return new FullDate(year, month, date)
     } else {
-        return new SyntaxError(s)
+        return new SyntaxError(`Date ${s} is invalid`);
     }
 }
 
@@ -433,12 +439,11 @@ function parseDateOptionalTimeTimezone(s) {
 */
 export class LocalDateParserClass {
     /**
-     * Parses full dates of the form 2019-10-27, 10/27/2019, ...
+     * Parses full dates of the form 2019-10-27
      * @param {string} s
      * @returns {FullDate|SyntaxError}
      */
     fullDate(s) {
-        // This is currently only used for unit testing.
         return parseFullDate(s);
     }
 
@@ -465,7 +470,7 @@ export class LocalDateParserClass {
      */
     dateTime(s) {
         const r = parseDateOptionalTimeTimezone(s);
-        if ( r instanceof SyntaxError ) {
+        if (r instanceof SyntaxError) {
             return r
         } else if (r.length !== 9) {
             return new SyntaxError(s)
@@ -719,7 +724,7 @@ export class TransactionManager {
         if (!trans) return;
         this.redoTransactions.push(trans);
         const reversedTransaction = /**@type{Transaction}*/ (Object.assign({}, trans));
-        reversedTransaction.patches = [];           
+        reversedTransaction.patches = [];
         for (let patch of trans.patches.slice().reverse()) {
             const reversedPatch = patch.reverse();
             reversedTransaction.patches.push(reversedPatch);
@@ -805,6 +810,39 @@ export class TransactionManager {
 
 //     return squashed;
 // }
+
+// For replace operations on non-array fields only keep the lattest operation.
+// TODO: Consider using https://github.com/alshakero/json-squash
+export function squash_formchen_patch(patch) {
+    let scalar_fields = {};
+    let array_fields = {};
+    let squashed = [];
+    for (let op of patch) {
+        let m = op.path.match(/^(.*)\/\d/);
+        if (!m) {
+            console.assert(op.op == 'replace');
+            scalar_fields[op.path] = op;
+        } else {
+            let prefix = m[1];
+            if (!array_fields[prefix]) {
+                array_fields[prefix] = [];
+            }
+            array_fields[prefix].push(op);
+        }
+    }
+
+    for (const op of Object.values(scalar_fields)) {
+        squashed.push(op);
+    }
+
+    for (const [key, item_patch] of Object.entries(array_fields)) {
+        for (const op of Object.values(item_patch)) {
+            squashed.push(op);
+        }
+    }
+
+    return squashed;
+}
 
 
 

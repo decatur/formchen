@@ -2,7 +2,7 @@ import { test, assert } from './utils.js'
 import * as c from "../formchen/converter.js";
 
 test('URIConverter', (test_name) => {
-    const converter = new c.URIConverter();
+    const converter = new c.UrlConverter();
     const markdown = '[foobar](http://foobar.org)';
     assert.equal(markdown, converter.toTSV(markdown));
     assert.equal(markdown, converter.toEditable(markdown));

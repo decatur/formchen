@@ -10,7 +10,8 @@
 
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
-import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter } from "./converter.js";
+
+import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter, UrlConverter, ColorConverter, IntegerConverter } from "./converter.js";
 import { Patch, TransactionManager, clone, logger, registerUndo } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
 import { removeNoOps } from "./json_patch_squash.js";
@@ -55,14 +56,11 @@ function longest_prefix(arrays) {
  */
 function queryTitleElementsByPath(container) {
 
-    const titles = container.querySelectorAll('.data-title');
+    const titles = container.querySelectorAll('.data-info');
     const titleElementsByPath = new Map();
 
     for (let titleElement of titles) {
         let parent = titleElement;
-        // if (titleElement instanceof HTMLHeadingElement) {
-        //     console.log('dfdf')
-        // }
 
         while (true) {
             parent = parent.parentElement;
@@ -70,16 +68,12 @@ function queryTitleElementsByPath(container) {
             if (namedElements.length > 0) {
                 let paths = [];
                 for (let namedElement of namedElements) {
-                    // console.log(c.outerHTML)
-                    // if (c.getAttribute('name') == '/tuple/0') {
-                    //     console.log('dfdf')
-                    // }
+
                     let path = (namedElement.getAttribute('name') || namedElement.getAttribute('id')).split('/');
                     paths.push(path);
                 }
                 const prefix = longest_prefix(paths);
                 titleElementsByPath.set(prefix.join('/'), titleElement);
-                // console.log(titleElement, p);
                 break;
             }
             if (parent === container) break;
@@ -173,8 +167,8 @@ class BaseNode {
         } else {
             this.title = schema.title;
         }
-        if (schema.tooltip) {
-            this.tooltip = schema.tooltip;
+        if (schema.description) {
+            this.description = schema.description;
         }
 
         if (parent) {
@@ -199,7 +193,7 @@ class BaseNode {
             apply() {
                 for (let op of this.operations) {
                     let n = node.tree.getNode(op.path);
-                    n.setValue(op.value, false);
+                    n.setValue(op.value);
                     if (n instanceof LeafNode) n.formElement.focus();
                 }
             }
@@ -224,7 +218,7 @@ class BaseNode {
 
         patch.operations.push(op);
 
-        this.setValue(obj, false);
+        this.setValue(obj);
 
         if (obj == null) {
             patch.operations.push(...this.clearPathToRoot());
@@ -235,9 +229,8 @@ class BaseNode {
 
     /**
      * @param {?} obj
-     * @param {boolean} disabled
      */
-    setValue(obj, disabled) {
+    setValue(obj) {
         if (this.parent && this.parent.obj) {
             if (obj == null) {
                 delete this.parent.obj[this.key];
@@ -248,7 +241,7 @@ class BaseNode {
             throw Error('Value lost')
         }
 
-        this.refreshUI(disabled);
+        this.refreshUI();
 
     }
 
@@ -315,9 +308,8 @@ class BaseNode {
     }
 
     /**
-     * @param {boolean} _disabled
      */
-    refreshUI(_disabled) {
+    refreshUI() {
         throw Error()
     }
 }
@@ -368,9 +360,8 @@ class LeafNode extends BaseNode {
     }
 
     /**
-     * @param {boolean} _disabled
      */
-    refreshUI(_disabled) {
+    refreshUI() {
         return undefined
     }
 }
@@ -399,37 +390,34 @@ class HolderNode extends BaseNode {
      * 
      * @param {*} obj 
      * @param {BaseNode} child
-     * @param {boolean} disabled
      */
-    visitChild(obj, child, disabled) {
-        child.setValue((obj == null ? undefined : obj[child.key]), disabled);
+    visitChild(obj, child) {
+        child.setValue((obj == null ? undefined : obj[child.key]));
     }
 
     /**
      * @param {?} obj
-     * @param {boolean} disabled
      * @returns {?HTMLInputElement}
      */
-    setValue(obj, disabled) {
+    setValue(obj) {
         if (obj == null) {
             delete this.obj;
         } else {
             this.obj = obj;
         }
 
-        super.setValue(obj, disabled);
+        super.setValue(obj);
 
         for (let child of this.children) {
-            this.visitChild(obj, child, disabled);
+            this.visitChild(obj, child);
         }
 
         return undefined
     }
 
     /**
-     * @param {boolean} _disabled
      */
-    refreshUI(_disabled) {
+    refreshUI() {
     }
 
 }
@@ -491,15 +479,14 @@ export function createFormChen(rootElement, topSchema, topObj) {
             bindLeafNode(node);
         }
 
-        // if (node.path == '/tuple/0') {
-        //     console.log('dfdfdfdf')
-        // }
-
         const titleElement = titleElementsByPath.get(node.path);
-        if (titleElement instanceof HTMLElement && !titleElement.textContent) {
-            titleElement.textContent = node.title;
-            if (node.tooltip && !titleElement.title) {
-                titleElement.title = node.tooltip;
+        if (titleElement instanceof HTMLElement && !titleElement.firstChild) {
+            let span = document.createElement('span');
+            span.className = 'data-title';
+            span.textContent = node.title + (schema.unit ? ` [${schema.unit}]` : '');
+            titleElement.appendChild(span);
+            if (node.description) {
+                titleElement.appendChild(document.createTextNode(node.description));
             }
         }
 
@@ -581,11 +568,12 @@ export function createFormChen(rootElement, topSchema, topObj) {
             if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
             if (element.tagName != 'INPUT') throw Error(element.tagName);
             const input = element;
+            input.readOnly = node.readOnly;
             input.type = 'checkbox';
-            node.refreshUI = function (disabled) {
+
+            node.refreshUI = function () {
                 const value = node.getValue();
                 input.checked = (value == null ? false : value);
-                input.disabled = node.readOnly || disabled;
             };
 
             input.onchange = function (_event) {
@@ -601,97 +589,135 @@ export function createFormChen(rootElement, topSchema, topObj) {
                 option.textContent = String(optionName);
                 input.appendChild(option);
             });
-            node.refreshUI = function (disabled) {
+            node.refreshUI = function () {
                 input.value = node.getValue();
-                input.disabled = node.readOnly || disabled;
+                input.disabled = node.readOnly;
             };
 
             input.onchange = function (_event) {
                 let value = input.value;
                 commit(value, input);
             }
-        } else if (schema.type === 'string') {
-            if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
-            const input = element;
-            const converter = new StringConverter();
-            node.refreshUI = function (disabled) {
-                const value = node.getValue();
-                if (value == null) {
-                    input.defaultValue = input.value = '';
-                } else {
-                    input.defaultValue = input.value = converter.toEditable(value);
-                }
-                input.disabled = node.readOnly || disabled;
-            };
+        } else { //if (schema.type === 'string') {
 
-            if (input instanceof HTMLInputElement) {
-                if (schema.format === 'color') {
-                    input.type = 'color';
-                } else if (schema.format === 'url') {
-                    input.type = 'url';
-                } else {
-                    input.type = 'string';
-                }
-            }
-
-            input.onchange = function (_event) {
-                const newValue = converter.fromEditable(input.value.trim());
-                let value = (newValue === '') ? undefined : newValue;
-                commit(value, input);
-            }
-
-        } else {
-            if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
-            const input = element;
             let converter;
 
-            node.refreshUI = function (disabled) {
-                const value = node.getValue();
-                if (value == null) {
-                    input.defaultValue = input.value = '';
-                } else {
-                    input.defaultValue = input.value = converter.toEditable(value);
-                }
-                input.disabled = node.readOnly || disabled;
-            };
+            if (schema.type === 'integer') {
+                if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+                converter = new IntegerConverter();
+                converter.conditionInput(element, node.readOnly);
+            } else if (schema.type === 'number') {
+                if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+                converter = new NumberConverter(schema.fractionDigits || 2);
+                converter.conditionInput(element, node.readOnly);
+            } else if (schema.type === 'string' && schema.format) {
+                if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
 
-            if (schema.type === 'integer' || schema.type === 'number') {
-                input.type = 'number';
-                input.style.textAlign = "right";
-                if (typeof schema.multipleOf === 'number') {
-                    input.step = String(schema.multipleOf);
-                } else if (schema.type === 'number') {
-                    input.step = String(0.1);
-                }
-                if (typeof schema.minimum === 'number') input.min = String(schema.minimum);
-                if (typeof schema.maximum === 'number') input.max = String(schema.maximum);
-
-                if (schema.type === 'integer') {
-                    converter = new NumberConverter(0);
-                } else {
-                    converter = new NumberConverter(schema.fractionDigits || 2);
+                if (schema.format === 'date') {
+                    converter = new FullDateConverter();
+                } else if (schema.format === 'datetime') {
+                    converter = new DateTimeStringConverter(schema.period || 'HOURS');
+                } else if (schema.format === 'url') {
+                    converter = new UrlConverter();
+                } else if (schema.format === 'color') {
+                    converter = new ColorConverter();
                 }
 
-            } else if (schema.format === 'datetime') {
-                converter = new DateTimeStringConverter(schema.period || 'HOURS');
-                // } else if (schema.format === 'date-partial-time') {
-                //     converter = new DatePartialTimeStringConverter(schema.period || 'HOURS');
-            } else if (schema.format === 'date') {
-                converter = new FullDateConverter();
+                converter.conditionInput(element, node.readOnly);
+            } else if (schema.type === 'string') {
+                if (!((element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement))) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+                converter = new StringConverter();
+                converter.conditionInput(element, node.readOnly);
             } else {
                 throw Error('Invalid schema at ' + node.path);
             }
 
-            input.onchange = function () {
-                const newValue = converter.fromEditable(input.value.trim());
-                let value = (newValue === '') ? undefined : newValue;
-                commit(value, input);
+            const input = element;
+
+            node.refreshUI = function () {
+                const value = node.getValue();
+                if (value == null) {
+                    input.value = '';
+                } else {
+                    converter.toInput(value, input);
+                }
+            };
+
+            input.oninput = () => {
+                console.log("oninput")
+                input.setCustomValidity('');
             }
-        }
+
+            let invalidCount = 0;
+
+            input.onblur = () => {
+                console.log("onblur " + input.value)
+                let [value, error] = converter.fromInput(input);
+                console.log("onblur1 " + value)
+                if (error && ++invalidCount == 1) {
+                    input.setCustomValidity(error);
+                    input.reportValidity();
+                } else {
+                    invalidCount = 0;
+                }
+                commit((value === '') ? undefined : value, input);
+            }
+
+            input.onfocus = () => {
+                let value = node.getValue();
+                console.log('onfocus ' + value);
+                if (converter.toInputEdit) converter.toInputEdit(value, input);
+            }
+        } 
+        // else if (schema.type === 'integer' || schema.type === 'number') {
+        //     if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
+        //     const input = element;
+        //     let converter;
+        //     if (schema.type === 'integer') {
+        //         converter = new IntegerConverter();
+        //     } else {
+        //         converter = new NumberConverter(schema.fractionDigits || 2);
+        //     }
+
+        //     converter.conditionInput(input, node.readOnly);
+
+        //     node.refreshUI = function () {
+        //         const value = node.getValue();
+        //         if (value == null) {
+        //             input.value = '';
+        //         } else {
+        //             converter.toInput(value, input);
+        //         }
+        //     };
+
+        //     if (typeof schema.multipleOf === 'number') {
+        //         input.step = String(schema.multipleOf);
+        //     } else if (schema.type === 'number') {
+        //         input.step = 'any';
+        //     }
+        //     if (typeof schema.minimum === 'number') input.min = String(schema.minimum);
+        //     if (typeof schema.maximum === 'number') input.max = String(schema.maximum);
+
+        //     input.onchange = function () {
+        //         const value = converter.fromInput(input);
+        //         commit(value, input);
+        //     }
+
+        //     input.onfocus = () => {
+        //         converter.toInputEdit(node.getValue(), input);
+        //     }
+
+        //     input.onblur = () => {
+        //         node.refreshUI();
+        //     }
+        // } 
+        
+
 
         /**
          * @param {string | number | boolean} value
          * @param {HTMLElement} target
+         * 
          */
         function commit(value, target) {
             const patch = node.patchValue(value);
@@ -699,11 +725,6 @@ export function createFormChen(rootElement, topSchema, topObj) {
             trans.patches.push(patch);
             trans.commit();
         };
-
-        let unit = control.control.querySelector('.data-unit');
-        if (unit && schema.unit) {
-            unit.textContent = `[${schema.unit}]`;
-        }
 
     }
 
@@ -784,12 +805,12 @@ class Control {
         this.element = container.querySelector(`[name="${path}"]`);
 
         if (this.element) {
-            // Case <label><span class="data-title"></span><input name="/plant"></label>
+            // Case <label><span class="data-info"></span><input name="/plant"></label>
             this.control = this.element.closest('label')
         } else {
             this.element = document.getElementById(path);
             if (this.element) {
-                // Case <label for="/reference"><span class="data-title"></span></label><input id="/reference">
+                // Case <label for="/reference"><span class="data-info"></span></label><input id="/reference">
                 this.control = container.querySelector(`[for="${path}"]`);
             }
         }

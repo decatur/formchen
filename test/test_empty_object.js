@@ -24,7 +24,7 @@ test('Empty Object one Level', (test_name) => {
     let input = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/foo"]`));
 
     input.value = 'foo';
-    input.onchange(null);
+    input.onblur(null);
     /** @type{JSONPatchOperation[]} */
     let expected = [
         { op: 'add', path: "", value: {} },
@@ -35,7 +35,7 @@ test('Empty Object one Level', (test_name) => {
     assert.equal({ foo: 'foo' }, fc.value);
 
     input.value = 'foobar';
-    input.onchange(null);
+    input.onblur(null);
     expected = [
         { op: 'add', path: "", value: {} },
         { op: 'add', path: "/foo", value: "foobar", oldValue: 'foo' }
@@ -69,7 +69,7 @@ test('Empty Object two Levels', (test_name) => {
     let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/bar/foobar"]`));
 
     foobarInput.value = 'bar';
-    foobarInput.onchange(null);
+    foobarInput.onblur(null);
     /** @type{JSONPatchOperation[]} */
     let expected = [
         { op: 'add', path: "", value: {} },
@@ -80,7 +80,7 @@ test('Empty Object two Levels', (test_name) => {
     assert.equal({ bar: { foobar: 'bar' } }, fc.value);
 
     foobarInput.value = 'foobar';
-    foobarInput.onchange(null);
+    foobarInput.onblur(null);
     expected = [
         { op: 'add', path: "", value: {} },
         { op: 'add', path: "/bar", value: {} },
@@ -90,7 +90,7 @@ test('Empty Object two Levels', (test_name) => {
     assert.equal({ bar: { foobar: 'foobar' } }, fc.value);
 
     fooInput.value = 'foo';
-    fooInput.onchange(null);
+    fooInput.onblur(null);
     expected.push({ op: 'add', path: "/foo", value: "foo" });
     assert.equal(expected, fc.patch);
     assert.equal({ bar: { foobar: 'foobar' }, foo: 'foo' }, fc.value);
@@ -119,7 +119,7 @@ test('Delete', (test_name) => {
 
     let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/bar/foobar"]`));
     foobarInput.value = '';
-    foobarInput.onchange(null);
+    foobarInput.onblur(null);
     let expected = [
         { op: 'remove', path: "/bar/foobar", oldValue: "foobar" },
         { op: 'remove', path: "/bar", oldValue: {} },

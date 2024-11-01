@@ -144,7 +144,7 @@ function createColumSchemas(schemas) {
             schema.converter = new c.BooleanStringConverter();
             schema.compare = compareBoolean;
         } else if (schema.type === 'string' && schema.format === 'url') {
-            schema.converter = new c.URIConverter();
+            schema.converter = new c.UrlConverter();
             schema.compare = compareString;
         } else if (schema.type === 'string') {
             // string and others
