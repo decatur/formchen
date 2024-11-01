@@ -1,3 +1,11 @@
+/**
+ * Credits: This module based on the JSON test cases in 
+ * https://github.com/json-patch/json-patch-tests/blob/86ad182cbc2ba0c4ed0f539753a283c6c9755f21/tests.json
+ * 
+ * Tests with invalid JavaScript syntax (duplicate object properties).
+ * The comment field was set whenever it was missing.
+ */
+
 export const testCases = [
   {
     "comment": "empty list, empty docs",
