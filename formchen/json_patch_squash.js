@@ -70,6 +70,9 @@ export function merge(obj, patch) {
             }
         } else if (op.op == 'replace') {
             if (op.path === '') {
+                if (o === undefined) {
+                    throw Error(`path "${op.path}" does not exist`);
+                }
                 removes = removes.concat(obj[childPatchKey]);
                 if (!('value' in op)) throw Error("missing 'value' parameter")
                 obj = o = clone(op.value);

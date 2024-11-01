@@ -88,6 +88,41 @@ test('remove root obj not set', () => {
     throw Error();
 });
 
+test('replace root', () => {
+    const patch = [
+        { "op": "replace", "path": "", value: "Hello"}
+    ];
+    const mergedPatch = removeNoOps({ a: { b: 2 } }, patch);
+    assert.equal(patch, mergedPatch);
+});
+
+test('remove sub-path obj not set', () => {
+    const patch = [
+        { "op": "replace", "path": "/a", value: "Hello"}
+    ];
+    try {
+        removeNoOps({}, patch);
+    } catch (e) {
+        assert.equal(e.message, 'path /a does not exist');
+        return
+    }
+    throw Error();
+    
+});
+
+test('remove root obj not set', () => {
+    const patch = [
+        { "op": "replace", "path": "", value: "Hello"}
+    ];
+    try {
+        removeNoOps(undefined, patch);
+    } catch (e) {
+        assert.equal(e.message, 'path "" does not exist');
+        return
+    }
+    throw Error();
+});
+
 test('replace A + replace B -> replace B', () => {
     const patch = [
         { "op": "replace", "path": "/a/b", "value": "A" },
