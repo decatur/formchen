@@ -380,7 +380,7 @@ export const testCases = [
     "doc": { "foo": { "bar": [1, 2, 5, 4] } },
     "patch": [{ "op": "test", "path": "/foo", "value": { "bar": [1, 2, 5, 4] } }],
     "expected": { "foo": { "bar": [1, 2, 5, 4] } }
-    
+
   },
 
   {

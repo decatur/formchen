@@ -1,5 +1,6 @@
-
 /** @import { JSONPatchOperation } from "./types" */
+
+import { clone } from "./utils.js";
 
 // /**
 //  * @typedef {Object} WizardProperties
@@ -8,7 +9,9 @@
 //  * @typedef {JSONPatchOperation & WizardProperties} JSONPatchOperationExt
 //  */
 
+// We use symbols as property keys on wrapper objects
 const childPatchKey = Symbol();
+const wasAddedKey = Symbol();
 
 /**
  * 
@@ -27,22 +30,13 @@ function addOp(obj, op) {
 }
 
 /**
-  * @param {any} obj 
- * @returns 
- */
-function clone(obj) {
-    if (obj === undefined) throw Error('"undefined" is not valid JSON');
-    return JSON.parse(JSON.stringify(obj));
-}
-
-/**
  * Applies a patch to a mutable object.
  * @param {any} obj
  * @param {JSONPatchOperation[]} patch
  * @returns {[any, JSONPatchOperation[]]}
  */
 export function merge(obj, patch) {
-    const wasAddedKey = Symbol();
+
     let removes = [];
     for (const op of patch) {
         if (op.path === undefined) throw Error('missing path parameter');
@@ -88,7 +82,7 @@ export function merge(obj, patch) {
                         throw Error(`path ${path.parts.slice(0, i + 1).join('/')} does not exist`);
                     }
                 }
-                
+
                 addOp(o, op);
                 if (!('value' in op)) throw Error("missing 'value' parameter")
                 let value = addOp(clone(op.value), op);
@@ -107,10 +101,16 @@ export function merge(obj, patch) {
 
         } else if (op.op == 'remove') {
             if (op.path === '') {
+                if (o === undefined) {
+                    throw Error(`path "${op.path}" does not exist`);
+                }
                 removes = removes.concat(o[childPatchKey]);
                 o = undefined;
             } else {
                 for (let i = 1; i < path.parts.length - 1; i++) {
+                    if (o === undefined) {
+                        throw Error(`path "${path.parts.slice(0, i).join('/')}" does not exist`);
+                    }
                     o = o[path.parts[i]];
                     if (o === undefined) {
                         throw Error(`path ${path.parts.slice(0, i + 1).join('/')} does not exist`);
@@ -167,20 +167,17 @@ export function removeNoOps(obj, patch) {
     return merge(obj, patch)[1];
 }
 
+/**
+ * Represents a JSON Pointer.
+ */
 export class Path {
-    /** @type{string} path */
+   /**
+    * @param {string} path 
+    */
     constructor(path) {
         /** @type{(string | number)[]} */
         if (path.length > 0 && !path.startsWith('/')) throw Error(`path should start with a slash: ${path}`)
         this.parts = path.split('/').map(key => /^\d+$/.test(key) ? parseInt(key) : key);
-        
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    isArray() {
-        return typeof this.parts.at(-1) === 'number'
     }
 
     /**
@@ -190,82 +187,6 @@ export class Path {
         let key = this.parts.at(-1);
         if (typeof key === 'number') return key;
         throw Error(`Invalid array index ${key}`);
-    }
-
-    /**
-     * @param {Path} other 
-     * @returns {boolean}
-     */
-    equals(other) {
-        return other.parts.length == this.parts.length && this.startsWith(other)
-    }
-
-    parent() {
-        if (this.parts.length === 0) {
-            throw Error();
-        }
-        if (this.parts.length === 1) {
-            // the whole document
-            return new Path('')
-        }
-        return new Path(this.parts.slice(0, this.parts.length - 1).join('/'))
-    }
-
-    /**
-     * @param {Path} other 
-     * @returns {boolean} return true if this is an array and the other path is a child of this array.
-     */
-    sameArray(other) {
-        if (!this.isArray()) return false;
-        if (other.parts.length < this.parts.length) return false;
-        // TODO: Assert that this is not the case
-        //   this:  /a/1
-        //   other: /a/b
-        return other.startsWith(this.parent())
-    }
-
-    /**
-     * 
-     * @param {Path} other 
-     * @returns {[number, number]}
-     */
-    indices(other) {
-        if (!this.sameArray(other)) throw Error();
-        const otherIndex = other.parts[this.parts.length - 1];
-        if (typeof otherIndex !== 'number') throw Error();
-        return [this.index(), otherIndex]
-    }
-
-    /**
-     * 
-     * @param {Path} other 
-     * @returns 
-     */
-    startsWith(other) {
-        if (other.parts.length > this.parts.length) return false
-        for (const i in other.parts) {
-            if (this.parts[i] !== other.parts[i]) return false;
-        }
-        return true
-    }
-
-    /**
-     * @param {number} level 
-     */
-    increment(level) {
-        console.log('increment', this.parts, level)
-        let index = this.parts[level];
-        if (typeof index !== 'number') throw Error();
-        this.parts[level] = index + 1;
-    }
-
-    /**
-     * @param {number} level 
-     */
-    decrement(level) {
-        let index = this.parts[level];
-        if (typeof index !== 'number') throw Error();
-        this.parts[level] = index - 1;
     }
 }
 

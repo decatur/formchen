@@ -6,33 +6,8 @@ import { testCases as testCasesB } from "../json-patch-tests/tests.js"
 log('\x1B[41;93;4m####### Loading test/test_json_patch_merge.js')
 
 test('Path', () => {
-    let path = new Path('/a/b');
-    assert.false(path.isArray());
-    assert.true(path.equals(new Path('/a/b')));
-    assert.false(path.equals(new Path('/a/b/c')));
-    assert.false(path.equals(new Path('/a')));
-
-    path = new Path('/a/1');
-    assert.true(path.isArray());
+    let path = new Path('/a/1');
     assert.equal(path.index(), 1);
-
-    assert.true(path.sameArray(path));
-    assert.true(path.sameArray(new Path('/a/0')));
-    assert.true(path.sameArray(new Path('/a/2/b')));
-    assert.true(path.sameArray(new Path('/a/2/b/3')));
-    assert.false(path.sameArray(new Path('/b/2')));
-
-    assert.equal(path.indices(new Path('/a/2/b/3')), [1, 2]);
-
-    assert.true(new Path('/a/1/b/3').startsWith(path));
-    assert.false(new Path('/a/2/b/3').startsWith(path));
-
-    path = new Path('/a/2/b/3');
-    path.increment(2);
-    assert.true(path.equals(new Path('/a/3/b/3')));
-    path.decrement(4);
-    assert.true(path.equals(new Path('/a/3/b/2')));
-
 });
 
 test('merge', () => {
@@ -76,6 +51,41 @@ test('merge', () => {
     ];
     const [obj, p] = merge({ a: { b: 1 } }, patch);
     assert.equal({ a: {} }, obj);
+});
+
+test('remove root', () => {
+    const patch = [
+        { "op": "remove", "path": ""}
+    ];
+    const mergedPatch = removeNoOps({ a: { b: 2 } }, patch);
+    assert.equal(patch, mergedPatch);
+});
+
+test('remove sub-path obj not set', () => {
+    const patch = [
+        { "op": "remove", "path": "/a"}
+    ];
+    try {
+        removeNoOps({}, patch);
+    } catch (e) {
+        assert.equal(e.message, 'path /a does not exist');
+        return
+    }
+    throw Error();
+    
+});
+
+test('remove root obj not set', () => {
+    const patch = [
+        { "op": "remove", "path": ""}
+    ];
+    try {
+        removeNoOps(undefined, patch);
+    } catch (e) {
+        assert.equal(e.message, 'path "" does not exist');
+        return
+    }
+    throw Error();
 });
 
 test('replace A + replace B -> replace B', () => {

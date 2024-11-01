@@ -36,7 +36,10 @@ test('Empty Object one Level', (test_name) => {
 
     input.value = 'foobar';
     input.onchange(null);
-    expected.push({ op: 'replace', path: "/foo", value: "foobar", oldValue: 'foo' });
+    expected = [
+        { op: 'add', path: "", value: {} },
+        { op: 'add', path: "/foo", value: "foobar", oldValue: 'foo' }
+    ];
     assert.equal(expected, fc.patch);
     assert.equal({ foo: 'foobar' }, fc.value);
 });
@@ -78,7 +81,11 @@ test('Empty Object two Levels', (test_name) => {
 
     foobarInput.value = 'foobar';
     foobarInput.onchange(null);
-    expected.push({ op: 'replace', path: "/bar/foobar", value: "foobar", "oldValue": "bar" });
+    expected = [
+        { op: 'add', path: "", value: {} },
+        { op: 'add', path: "/bar", value: {} },
+        { op: 'add', path: "/bar/foobar", value: "foobar", "oldValue": "bar" }
+    ];
     assert.equal(expected, fc.patch);
     assert.equal({ bar: { foobar: 'foobar' } }, fc.value);
 
@@ -215,14 +222,7 @@ test('Empty object with grid', (test_name) => {
         {
             "op": "add",
             "path": "/foo/1",
-            "value": null
-        },
-        {
-            "op": "replace",
-            "path": "/foo/1",
-            "value": [
-                null
-            ],
+            "value": [null],
             "oldValue": null
         },
         {
@@ -239,19 +239,10 @@ test('Empty object with grid', (test_name) => {
     gc._keyboard('keydown', { code: 'Delete' });
     patch = fc.patch;
 
-    assert.equal(patch[5], {
-        "op": "replace",
-        "path": "/foo/1/0",
-        "value": null,
-        "oldValue": "2020-01-02T01:00+01:00"
-    });
-
-    assert.equal(patch[6], {
+    assert.equal(patch[2], {
         "op": "remove",
         "path": "/foo/1",
-        "oldValue": [
-            null
-        ]
+        "oldValue": [null]
     });
 
     value = fc.value;

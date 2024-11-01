@@ -72,6 +72,15 @@ export const logger = {
     }
 };
 
+/**
+ * @param {any} obj 
+ * @returns 
+ */
+export function clone(obj) {
+    if (obj === undefined) throw Error('"undefined" is not valid JSON');
+    return JSON.parse(JSON.stringify(obj));
+}
+
 export class Patch {
     constructor() {
         this.pathPrefix = '';

@@ -11,8 +11,9 @@
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
 import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter } from "./converter.js";
-import { Patch, TransactionManager, logger, registerUndo } from "./utils.js";
+import { Patch, TransactionManager, clone, logger, registerUndo } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
+import { removeNoOps } from "./json_patch_squash.js";
 
 logger.info('Loading Formchen with locale ' + navigator.language);
 
@@ -440,6 +441,7 @@ class HolderNode extends BaseNode {
  * @returns {FormChen}
  */
 export function createFormChen(rootElement, topSchema, topObj) {
+    const orgObj = clone(topObj);
     const titleElementsByPath = queryTitleElementsByPath(rootElement);
 
     const transactionManager = new TransactionManager();
@@ -746,7 +748,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
         }
 
         get patch() {
-            return transactionManager.patch
+            return removeNoOps(orgObj, transactionManager.patch)
         }
 
         clearPatch() {
@@ -768,43 +770,6 @@ export function createFormChen(rootElement, topSchema, topObj) {
 
     return new FormChenClass();
 }
-
-
-// For replace operations on non-array fields only keep the lattest operation.
-// TODO: Consider using https://github.com/alshakero/json-squash
-// /**
-//  * @param {any} patch
-//  */
-// function squash_formchen_patch(patch) {
-//     let scalar_fields = {};
-//     let array_fields = {};
-//     let squashed = [];
-//     for (let op of patch) {
-//         let m = op.path.match(/^(.*)\/\d/);
-//         if (!m) {
-//             console.assert(op.op == 'replace');
-//             scalar_fields[op.path] = op;
-//         } else {
-//             let prefix = m[1];
-//             if (!array_fields[prefix]) {
-//                 array_fields[prefix] = [];
-//             }
-//             array_fields[prefix].push(op);
-//         }
-//     }
-
-//     for (const op of Object.values(scalar_fields)) {
-//         squashed.push(op);
-//     }
-
-//     for (const [key, item_patch] of Object.entries(array_fields)) {
-//         for (const op of Object.values(item_patch)) {
-//             squashed.push(op);
-//         }
-//     }
-
-//     return squashed;
-// }
 
 class Control {
     /**
