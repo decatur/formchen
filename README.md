@@ -25,6 +25,8 @@ Check https://decatur.github.io/formchen/index.html with both light and dark mod
 
 # Development
 
+https://json8.github.io/patch/demos/apply/
+
 ```
 http://127.0.0.1:3000/index.html?loglevel=info&console=true
 ```

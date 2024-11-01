@@ -57,8 +57,9 @@ test('remove root', () => {
     const patch = [
         { "op": "remove", "path": ""}
     ];
-    const mergedPatch = removeNoOps({ a: { b: 2 } }, patch);
-    assert.equal(patch, mergedPatch);
+    const [obj, p] = merge({ a: { b: 2 } }, patch);
+    assert.equal(patch, p);
+    assert.equal(obj, null);
 });
 
 test('remove sub-path obj not set', () => {
@@ -75,17 +76,18 @@ test('remove sub-path obj not set', () => {
     
 });
 
-test('remove root obj not set', () => {
+test('remove sub-path root not set', () => {
     const patch = [
-        { "op": "remove", "path": ""}
+        { "op": "remove", "path": "/a"}
     ];
     try {
-        removeNoOps(undefined, patch);
+        removeNoOps(null, patch);
     } catch (e) {
         assert.equal(e.message, 'path "" does not exist');
         return
     }
     throw Error();
+    
 });
 
 test('replace root', () => {
@@ -96,7 +98,30 @@ test('replace root', () => {
     assert.equal(patch, mergedPatch);
 });
 
-test('remove sub-path obj not set', () => {
+test('replace root', () => {
+    const patch = [
+        { "op": "add", "path": "", value: "Hello"},
+        { "op": "replace", "path": "", value: "Hello World"}
+    ];
+    const mergedPatch = removeNoOps(null, patch);
+    assert.equal(mergedPatch, patch.slice(1, 2));
+});
+
+test('replace sub-path obj not set', () => {
+    const patch = [
+        { "op": "replace", "path": "/a", value: "Hello"}
+    ];
+    try {
+        removeNoOps(null, patch);
+    } catch (e) {
+        assert.equal(e.message, 'path "" does not exist');
+        return
+    }
+    throw Error();
+    
+});
+
+test('replace sub-path obj not set', () => {
     const patch = [
         { "op": "replace", "path": "/a", value: "Hello"}
     ];
@@ -110,13 +135,27 @@ test('remove sub-path obj not set', () => {
     
 });
 
-test('remove root obj not set', () => {
+test('add root', () => {
     const patch = [
-        { "op": "replace", "path": "", value: "Hello"}
+        { "op": "add", "path": "", value: "Hello"}
+    ];
+    let [obj, p] = merge({ a: { b: 1 } }, patch);
+    assert.equal(obj, "Hello");
+    assert.equal(p, patch);
+
+    [obj, p] = merge(null, patch);
+    assert.equal(obj, "Hello");
+    assert.equal(p, patch);
+});
+
+test('add obj not set', () => {
+    const patch = [
+        { "op": "add", "path": "/a", value: "Hello"}
     ];
     try {
-        removeNoOps(undefined, patch);
+        removeNoOps(null, patch);
     } catch (e) {
+        // console.error(e);
         assert.equal(e.message, 'path "" does not exist');
         return
     }

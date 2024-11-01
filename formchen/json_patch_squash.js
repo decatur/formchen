@@ -18,7 +18,7 @@ const wasAddedKey = Symbol();
  * @param {any} obj
  * @param {JSONPatchOperation} op
  */
-function addOp(obj, op) {
+function appendOp(obj, op) {
     if (typeof obj === 'number') obj = new Number(obj);
     else if (typeof obj === 'string') obj = new String(obj);
     else if (typeof obj === 'boolean') obj = new Boolean(obj);
@@ -36,29 +36,27 @@ function addOp(obj, op) {
  * @returns {[any, JSONPatchOperation[]]}
  */
 export function merge(obj, patch) {
+    if (obj === undefined) {
+        throw Error(`"undefined" is not valid JSON`);
+    }
 
     let removes = [];
+    let root = clone(obj);
     for (const op of patch) {
         if (op.path === undefined) throw Error('missing path parameter');
         if (typeof op.path !== 'string') throw Error(`invalid path parameter: ${op.path}`);
-        let o = obj;
+        let o = root;
         let path = new Path(op.path);
         if (op.op == 'add') {
             if (op.path === '') {
                 if (!('value' in op)) throw Error("missing 'value' parameter")
-                obj = o = clone(op.value);
-                addOp(o, op);
+                root  = clone(op.value);
+                appendOp(root, op);
             } else {
-                for (let i = 1; i < path.parts.length - 1; i++) {
-                    addOp(o, op);
-                    o = o[path.parts[i]];
-                    if (o === undefined) {
-                        throw Error(`path ${path.parts.slice(0, i + 1).join('/')} does not exist`);
-                    }
-                }
-                addOp(o, op);
+                o = path.query(o, op);
+
                 if (!('value' in op)) throw Error("missing 'value' parameter")
-                let value = addOp(clone(op.value), op);
+                let value = appendOp(clone(op.value), op);
                 value[wasAddedKey] = true;
                 if (Array.isArray(o)) {
                     const i = path.index();
@@ -69,56 +67,35 @@ export function merge(obj, patch) {
                 }
             }
         } else if (op.op == 'replace') {
-            if (op.path === '') {
-                if (o === undefined) {
-                    throw Error(`path "${op.path}" does not exist`);
-                }
-                removes = removes.concat(obj[childPatchKey]);
-                if (!('value' in op)) throw Error("missing 'value' parameter")
-                obj = o = clone(op.value);
-                addOp(o, op);
-            } else {
-                for (let i = 1; i < path.parts.length - 1; i++) {
-                    addOp(o, op);
-                    o = o[path.parts[i]];
-                    if (o === undefined) {
-                        throw Error(`path ${path.parts.slice(0, i + 1).join('/')} does not exist`);
-                    }
-                }
+            if (op.value === undefined) throw Error("missing 'value' parameter");
+            let targetValue = appendOp(clone(op.value), op);
 
-                addOp(o, op);
-                if (!('value' in op)) throw Error("missing 'value' parameter")
-                let value = addOp(clone(op.value), op);
-                let oo = o[path.parts.at(-1)];
-                if (oo === undefined) {
+            if (op.path === '') {
+                if (o != null && typeof o === 'object' && childPatchKey in o) removes = removes.concat(o[childPatchKey]);
+                root = targetValue;
+            } else {
+                o = path.query(o, op);
+
+                let srcValue = o[path.parts.at(-1)];
+                if (srcValue === undefined) {
                     throw Error(`path ${op.path} does not exist`);
                 }
-                if (oo != null && typeof oo === 'object' && childPatchKey in oo) {
-                    if (oo[wasAddedKey]) {
+                if (srcValue != null && typeof srcValue === 'object' && childPatchKey in srcValue) {
+                    if (srcValue[wasAddedKey]) {
                         op.op = 'add';
                     }
-                    removes = removes.concat(oo[childPatchKey]);
+                    removes = removes.concat(srcValue[childPatchKey]);
                 }
-                o[path.parts.at(-1)] = value;
+                o[path.parts.at(-1)] = targetValue;
             }
 
         } else if (op.op == 'remove') {
             if (op.path === '') {
-                if (o === undefined) {
-                    throw Error(`path "${op.path}" does not exist`);
-                }
-                removes = removes.concat(o[childPatchKey]);
-                o = undefined;
+                if (o != null && typeof o === 'object' && childPatchKey in o) removes = removes.concat(o[childPatchKey]);
+                root = null;
             } else {
-                for (let i = 1; i < path.parts.length - 1; i++) {
-                    if (o === undefined) {
-                        throw Error(`path "${path.parts.slice(0, i).join('/')}" does not exist`);
-                    }
-                    o = o[path.parts[i]];
-                    if (o === undefined) {
-                        throw Error(`path ${path.parts.slice(0, i + 1).join('/')} does not exist`);
-                    }
-                }
+                o = path.query(o, op);
+               
                 if (Array.isArray(o)) {
                     const i = path.index();
                     if (i >= o.length) throw Error('index is greater than number of items in array');
@@ -150,8 +127,8 @@ export function merge(obj, patch) {
 
     let p = patch.filter((op) => !removes.includes(op));
     // Get rid of the symbol keys.
-    obj = clone(obj);
-    return [obj, p]
+    root = clone(root);
+    return [root, p]
 }
 
 /**
@@ -190,6 +167,26 @@ export class Path {
         let key = this.parts.at(-1);
         if (typeof key === 'number') return key;
         throw Error(`Invalid array index ${key}`);
+    }
+
+    /**
+     * @param {any} o
+     * @param {JSONPatchOperation} op
+     * @returns {any}
+     */
+    query(o, op) {
+        if (o === null) {
+            throw Error(`path "" does not exist`);
+        }
+        for (let i = 1; i < this.parts.length - 1; i++) {
+            if (op.op != 'remove') appendOp(o, op);
+            o = o[this.parts[i]];
+            if (o === undefined) {
+                throw Error(`path ${this.parts.slice(0, i + 1).join('/')} does not exist`);
+            }
+        }
+        if (op.op != 'remove') appendOp(o, op);
+        return o
     }
 }
 

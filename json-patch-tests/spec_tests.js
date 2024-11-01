@@ -1,5 +1,5 @@
 /**
- * Credits: This module based on the JSON test cases in 
+ * Credits: This module is based on the JSON test cases in 
  * https://github.com/json-patch/json-patch-tests/blob/86ad182cbc2ba0c4ed0f539753a283c6c9755f21/spec_tests.json
  * 
  * Tests with invalid JavaScript syntax (duplicate object properties).
