@@ -145,7 +145,7 @@ export const testCases = [
     "comment": "Out of bounds (lower)",
     "doc": { "bar": [1, 2] },
     "patch": [{ "op": "add", "path": "/bar/-1", "value": "5" }],
-    "error": "Invalid array index -1"
+    "error": 'Invalid array index "-1"'
   },
 
   {
@@ -229,7 +229,7 @@ export const testCases = [
     "comment": "?B",
     "doc": ["foo", "sil"],
     "patch": [{ "op": "add", "path": "/bar", "value": 42 }],
-    "error": "Invalid array index bar"
+    "error": 'Invalid array index "bar"'
   },
 
   {
@@ -527,14 +527,14 @@ export const testCases = [
     "comment": "test remove with bad index should fail",
     "doc": [1, 2, 3, 4],
     "patch": [{ "op": "remove", "path": "/1e0" }],
-    "error": "Invalid array index 1e0"
+    "error": 'Invalid array index "1e0"'
   },
 
   {
     "comment": "test replace with bad number should fail",
     "doc": [""],
     "patch": [{ "op": "replace", "path": "/1e0", "value": false }],
-    "error": 'path "/1e0" does not exist'
+    "error": 'Invalid array index "1e0"'
   },
 
   {
@@ -555,7 +555,7 @@ export const testCases = [
     "comment": "test add with bad number should fail",
     "doc": ["foo", "sil"],
     "patch": [{ "op": "add", "path": "/1e0", "value": "bar" }],
-    "error": "Invalid array index 1e0"
+    "error": 'Invalid array index "1e0"'
   },
 
   {
@@ -569,7 +569,7 @@ export const testCases = [
     "comment": "'path' parameter with null value",
     "doc": {},
     "patch": [{ "op": "add", "path": null, "value": "bar" }],
-    "error": "invalid path parameter: null"
+    "error": 'invalid path parameter "null"'
   },
 
   {

@@ -29,15 +29,8 @@ function appendOp(obj, op) {
     return obj
 }
 
-
-function checkIndex(key, supValue) {
-    if (typeof key != 'number') throw Error(`Invalid array index ${key}`);
-    if (key >= supValue) throw Error(`index ${key} is greater than max value ${supValue-1}`);
-    return key
-}
-
 /**
- * Applies a patch to a mutable object.
+ * Applies a patch to an immutable object.
  * @param {any} obj
  * @param {JSONPatchOperation[]} patch
  * @returns {[any, JSONPatchOperation[]]}
@@ -51,46 +44,44 @@ export function merge(obj, patch) {
     let root = clone(obj);
     for (const op of patch) {
         if (op.path === undefined) throw Error('missing path parameter');
-        if (typeof op.path !== 'string') throw Error(`invalid path parameter: ${op.path}`);
-        let path = new Path(op.path);
+        if (typeof op.path !== 'string') throw Error(`invalid path parameter "${op.path}"`);
+        
+        let targetValue;
+        if (op.op == 'add' || op.op == 'replace') {
+            if (op.value === undefined) throw Error("missing 'value' parameter");
+            targetValue = appendOp(clone(op.value), op);
+        }
+        
         let holder = { "": root };
-        let [p, c] = path.query(holder, op);
+        let [p, c, key] = Path.query(holder, op);
 
         if (op.op == 'add') {
-            if (op.value === undefined) throw Error("missing 'value' parameter");
-            let targetValue = appendOp(clone(op.value), op);
             targetValue[wasAddedKey] = true;
             if (Array.isArray(p)) {
-                const i = checkIndex(path.key(), p.length+1);
-                p.splice(i, 0, targetValue);
+                p.splice(Number(key), 0, targetValue);
             } else {
-                p[path.key()] = targetValue;
+                p[key] = targetValue;
             }
             root = holder[""];
         } else if (op.op == 'replace') {
-            if (op.value === undefined) throw Error("missing 'value' parameter");
-            let targetValue = appendOp(clone(op.value), op);
-
-            let srcValue = c;
-            if (srcValue === undefined) {
+            if (c === undefined) {
                 throw Error(`path "${op.path}" does not exist`);
             }
-            if (srcValue != null && typeof srcValue === 'object' && childPatchKey in srcValue) {
-                if (srcValue[wasAddedKey]) {
+            if (c != null && typeof c === 'object' && childPatchKey in c) {
+                if (c[wasAddedKey]) {
                     op.op = 'add';
                 }
-                removes = removes.concat(srcValue[childPatchKey]);
+                removes = removes.concat(c[childPatchKey]);
             }
-            p[path.key()] = targetValue;
+            p[key] = targetValue;
             root = holder[""];
         } else if (op.op == 'remove') {
             if (Array.isArray(p)) {
-                const i = checkIndex(path.key(), p.length);
                 if (c[wasAddedKey]) {
                     removes.push(op);
                 }
                 removes = removes.concat(c[childPatchKey]);
-                p.splice(i, 1);
+                p.splice(Number(key), 1);
             } else {
                 if (c === undefined) {
                     throw Error(`path "${op.path}" does not exist`);
@@ -101,7 +92,7 @@ export function merge(obj, patch) {
                     }
                     removes = removes.concat(c[childPatchKey]);
                 }
-                delete p[path.key()];
+                delete p[key];
             }
             root = holder[""];
             if (root === undefined) root = null;
@@ -138,42 +129,41 @@ export function removeNoOps(obj, patch) {
  */
 export class Path {
     /**
-     * @param {string} path 
+     * @param {string} jsonPointer 
      */
-    constructor(path) {
+    constructor(jsonPointer) {
         /** @type{(string | number)[]} */
-        if (path.length > 0 && !path.startsWith('/')) throw Error(`path should start with a slash: ${path}`)
-        this.parts = path.split('/').map(key => /^\d+$/.test(key) ? parseInt(key) : key);
-    }
-
-    /**
-     * @returns {string | number}
-     */
-    key() {
-        return this.parts.at(-1)
+        if (jsonPointer.length > 0 && !jsonPointer.startsWith('/')) throw Error(`path should start with a slash: ${jsonPointer}`)
+        this.parts = jsonPointer.split('/').map(key => /^\d+$/.test(key) ? parseInt(key) : key);
     }
 
     /**
      * @param {any} o
      * @param {JSONPatchOperation} op
-     * @returns {[any, any]}
+     * @returns {[any, any, string | number]}
      */
-    query(o, op) {
-        if (o === null) {
-            throw Error(`path "" does not exist`);
-        }
-        for (let i = 0; i < this.parts.length - 1; i++) {
-            if (op.op != 'remove') appendOp(o, op);
-            o = o[this.parts[i]];
+    static query(o, op) {
+        let path = new Path(op.path);
+        for (let i = 0; i < path.parts.length - 1; i++) {
+            o = o[path.parts[i]];
             if (o === undefined) {
-                throw Error(`path "${this.parts.slice(0, i + 1).join('/')}" does not exist`);
+                throw Error(`path "${path.parts.slice(0, i + 1).join('/')}" does not exist`);
             }
+            if (op.op != 'remove') appendOp(o, op);
         }
-        if (op.op != 'remove') appendOp(o, op);
+
         if (o == null || !(o.constructor == Object || o.constructor == Array)) {
-            throw Error(`path "${this.parts.join('/')}" does not exist`);
+            throw Error(`path "${path.parts.join('/')}" does not exist`);
         }
-        return [o, o[this.key()]]
+
+        let key = path.parts.at(-1);
+        if (o.constructor == Array) {
+            if (typeof key != 'number') throw Error(`Invalid array index "${key}"`);
+            const supValue = op.op === 'add'?o.length+1:o.length;
+            if (key >= supValue) throw Error(`index ${key} is greater than max value ${supValue-1}`);
+        }
+        
+        return [o, o[key], key]
     }
 }
 
