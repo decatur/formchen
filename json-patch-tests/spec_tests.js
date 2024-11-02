@@ -12,7 +12,7 @@ export const testCases = [
     "doc": { "q": { "bar": 2 } },
     "patch": [{ "op": "add", "path": "/a/b", "value": 1 }],
     "error":
-      "path /a does not exist -- missing objects are not created recursively"
+      'path "/a" does not exist -- missing objects are not created recursively'
   },
 
   {
@@ -189,7 +189,7 @@ export const testCases = [
     "patch": [
       { "op": "add", "path": "/baz/bat", "value": "qux" }
     ],
-    "error": "path /baz does not exist"
+    "error": 'path "/baz" does not exist'
   },
 
   // {

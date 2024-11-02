@@ -7,7 +7,7 @@ log('\x1B[41;93;4m####### Loading test/test_json_patch_merge.js')
 
 test('Path', () => {
     let path = new Path('/a/1');
-    assert.equal(path.index(), 1);
+    assert.equal(path.key(), 1);
 });
 
 test('merge', () => {
@@ -55,7 +55,7 @@ test('merge', () => {
 
 test('remove root', () => {
     const patch = [
-        { "op": "remove", "path": ""}
+        { "op": "remove", "path": "" }
     ];
     const [obj, p] = merge({ a: { b: 2 } }, patch);
     assert.equal(patch, p);
@@ -64,35 +64,35 @@ test('remove root', () => {
 
 test('remove sub-path obj not set', () => {
     const patch = [
-        { "op": "remove", "path": "/a"}
+        { "op": "remove", "path": "/a" }
     ];
     try {
         removeNoOps({}, patch);
     } catch (e) {
-        assert.equal(e.message, 'path /a does not exist');
+        assert.equal(e.message, 'path "/a" does not exist');
         return
     }
     throw Error();
-    
+
 });
 
 test('remove sub-path root not set', () => {
     const patch = [
-        { "op": "remove", "path": "/a"}
+        { "op": "remove", "path": "/a" }
     ];
     try {
         removeNoOps(null, patch);
     } catch (e) {
-        assert.equal(e.message, 'path "" does not exist');
+        assert.equal(e.message, 'path "/a" does not exist');
         return
     }
     throw Error();
-    
+
 });
 
 test('replace root', () => {
     const patch = [
-        { "op": "replace", "path": "", value: "Hello"}
+        { "op": "replace", "path": "", value: "Hello" }
     ];
     const mergedPatch = removeNoOps({ a: { b: 2 } }, patch);
     assert.equal(patch, mergedPatch);
@@ -100,8 +100,8 @@ test('replace root', () => {
 
 test('replace root', () => {
     const patch = [
-        { "op": "add", "path": "", value: "Hello"},
-        { "op": "replace", "path": "", value: "Hello World"}
+        { "op": "add", "path": "", value: "Hello" },
+        { "op": "replace", "path": "", value: "Hello World" }
     ];
     const mergedPatch = removeNoOps(null, patch);
     assert.equal(mergedPatch, patch.slice(1, 2));
@@ -109,35 +109,36 @@ test('replace root', () => {
 
 test('replace sub-path obj not set', () => {
     const patch = [
-        { "op": "replace", "path": "/a", value: "Hello"}
+        { "op": "replace", "path": "/a", value: "Hello" }
     ];
     try {
         removeNoOps(null, patch);
     } catch (e) {
-        assert.equal(e.message, 'path "" does not exist');
+        // console.error(e)
+        assert.equal(e.message, 'path "/a" does not exist');
         return
     }
     throw Error();
-    
+
 });
 
 test('replace sub-path obj not set', () => {
     const patch = [
-        { "op": "replace", "path": "/a", value: "Hello"}
+        { "op": "replace", "path": "/a", value: "Hello" }
     ];
     try {
         removeNoOps({}, patch);
     } catch (e) {
-        assert.equal(e.message, 'path /a does not exist');
+        assert.equal(e.message, 'path "/a" does not exist');
         return
     }
     throw Error();
-    
+
 });
 
 test('add root', () => {
     const patch = [
-        { "op": "add", "path": "", value: "Hello"}
+        { "op": "add", "path": "", value: "Hello" }
     ];
     let [obj, p] = merge({ a: { b: 1 } }, patch);
     assert.equal(obj, "Hello");
@@ -150,13 +151,13 @@ test('add root', () => {
 
 test('add obj not set', () => {
     const patch = [
-        { "op": "add", "path": "/a", value: "Hello"}
+        { "op": "add", "path": "/a", value: "Hello" }
     ];
     try {
         removeNoOps(null, patch);
     } catch (e) {
         // console.error(e);
-        assert.equal(e.message, 'path "" does not exist');
+        assert.equal(e.message, 'path "/a" does not exist');
         return
     }
     throw Error();
@@ -313,13 +314,13 @@ test('add + add', () => {
 test('add + add + add', () => {
     const patch = [
         { "op": "add", "path": "/a", "value": [] },
-        { "op": "add", "path": "/a/0", "value": 13 },
+        { "op": "add", "path": "/a/0", "value": {} },
         { "op": "add", "path": "/a/0/b", "value": 14 }
     ];
     const mergedPatch = removeNoOps({}, patch);
     const expected = [
         { "op": "add", "path": "/a", "value": [] },
-        { "op": "add", "path": "/a/0", "value": 13 },
+        { "op": "add", "path": "/a/0", "value": {} },
         { "op": "add", "path": "/a/0/b", "value": 14 }
     ];
     assert.equal(expected, mergedPatch);

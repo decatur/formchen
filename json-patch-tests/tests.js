@@ -138,7 +138,7 @@ export const testCases = [
     "comment": "Out of bounds (upper)",
     "doc": { "bar": [1, 2] },
     "patch": [{ "op": "add", "path": "/bar/8", "value": "5" }],
-    "error": "index is greater than number of items in array"
+    "error": "index 8 is greater than max value 2"
   },
 
   {
@@ -208,7 +208,7 @@ export const testCases = [
     "comment": "add item to array at index > length should fail",
     "doc": ["foo", "sil"],
     "patch": [{ "op": "add", "path": "/3", "value": "bar" }],
-    "error": "index is greater than number of items in array"
+    "error": "index 3 is greater than max value 2"
   },
 
   {
@@ -317,7 +317,7 @@ export const testCases = [
     "comment": "test replace with missing parent key should fail",
     "doc": { "bar": "baz" },
     "patch": [{ "op": "replace", "path": "/foo/bar", "value": false }],
-    "error": "path /foo does not exist"
+    "error": 'path "/foo" does not exist'
   },
 
   {
@@ -505,7 +505,7 @@ export const testCases = [
     "comment": "test remove with bad number should fail",
     "doc": { "foo": 1, "baz": [{ "qux": "hello" }] },
     "patch": [{ "op": "remove", "path": "/baz/1e0/qux" }],
-    "error": "path /baz/1e0 does not exist"
+    "error": 'path "/baz/1e0" does not exist'
   },
 
   {
@@ -534,7 +534,7 @@ export const testCases = [
     "comment": "test replace with bad number should fail",
     "doc": [""],
     "patch": [{ "op": "replace", "path": "/1e0", "value": false }],
-    "error": "path /1e0 does not exist"
+    "error": 'path "/1e0" does not exist'
   },
 
   {
@@ -660,21 +660,21 @@ export const testCases = [
     "comment": "Removing nonexistent field",
     "doc": { "foo": "bar" },
     "patch": [{ "op": "remove", "path": "/baz" }],
-    "error": "path /baz does not exist"
+    "error": 'path "/baz" does not exist'
   },
 
   {
     "comment": "Removing deep nonexistent path",
     "doc": { "foo": "bar" },
     "patch": [{ "op": "remove", "path": "/missing1/missing2" }],
-    "error": "path /missing1 does not exist"
+    "error": 'path "/missing1" does not exist'
   },
 
   {
     "comment": "Removing nonexistent index",
     "doc": ["foo", "bar"],
     "patch": [{ "op": "remove", "path": "/2" }],
-    "error": "index is greater than number of items in array"
+    "error": "index 2 is greater than max value 1"
   },
 
   {
