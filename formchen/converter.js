@@ -554,7 +554,7 @@ export class DateTimeStringConverter {
         let s = input.value.trim();
         let r = this.parser.dateTime(s);
         if (r instanceof SyntaxError) {
-            return [s, r.message];
+            return [s, r.toString()];
         } else {
             return [s, ''];
         }

@@ -186,7 +186,7 @@ class BaseNode {
      * @param {any} obj 
      * @returns {Patch}
      */
-    patchValue(obj) {
+    patchValue(obj, error) {
         let oldValue = this.getValue();
         const node = this;
         class MyPatch extends Patch {
@@ -215,6 +215,8 @@ class BaseNode {
         } else {
             op = { op: 'replace', path: this.path, value: obj, oldValue };
         }
+
+        if (error) op.error = error;
 
         patch.operations.push(op);
 
@@ -660,7 +662,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
                 } else {
                     invalidCount = 0;
                 }
-                commit((value === '') ? undefined : value, input);
+                commit((value === '') ? undefined : value, input, error);
             }
 
             input.onfocus = () => {
@@ -719,8 +721,8 @@ export function createFormChen(rootElement, topSchema, topObj) {
          * @param {HTMLElement} target
          * 
          */
-        function commit(value, target) {
-            const patch = node.patchValue(value);
+        function commit(value, target, error) {
+            const patch = node.patchValue(value, error);
             const trans = transactionManager.openTransaction(target);
             trans.patches.push(patch);
             trans.commit();
