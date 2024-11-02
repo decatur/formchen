@@ -14,7 +14,7 @@ import { createView } from "./gridchen/matrixview.js";
 import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter, UrlConverter, ColorConverter, IntegerConverter } from "./converter.js";
 import { Patch, TransactionManager, clone, logger, registerUndo } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
-import { removeNoOps } from "./json_patch_squash.js";
+import { removeNoOps } from "./json_patch_merge.js";
 
 logger.info('Loading Formchen with locale ' + navigator.language);
 
