@@ -433,6 +433,47 @@ function parseDateOptionalTimeTimezone(s) {
     return /** @type{[number, number, number, number, number, number, number, number, number]} */ ([...[fullDateResult.year, fullDateResult.month, fullDateResult.day], hours, minutes, seconds, millis, ...timeZone])
 }
 
+export class ParsedValue {
+    /**
+     * 
+     * @param {string} input 
+     * @param {string | number | boolean} parsed 
+     * @param {string=} validation 
+     */
+    constructor(input, parsed, validation) {
+        this.input = input;
+        this.parsed = parsed;
+        this.validation = validation;
+    }
+
+    /**
+     * @returns {string | number | boolean}
+     */
+    get value() {
+        return this.validation?this.input:this.parsed;
+      }
+}
+
+/**
+ * 
+ * @param {string} s 
+ * @param {number} period 
+ * @returns 
+ */
+function parseDateTimeToLocal(s, period) {
+    let r = localeDateParser().dateTime(s);
+    if (r instanceof SyntaxError) {
+        return new ParsedValue(s, null, r.toString());
+    }
+
+    r[3] -= r[7]; // Get rid of hour offset
+    r[4] -= r[8]; // Get rid of minute offset
+    let tuple = /**@type{[number, number]}*/(r.slice(0, 1 + period));
+
+    const d = new Date(Date.UTC(...tuple));
+    return new ParsedValue(s, toLocaleISODateTimeString(d, period).replace(' ', 'T'));
+}
+
 /**
 * The created parser can parse strings of the form YYYY-MM-DDTHH:mm:ss.sssZ,
 * see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#date_time_string_format

@@ -5,8 +5,8 @@
  * Module implementing two-way hierachical data binding.
  */
 
-/** @import { JSONPatchOperation, JSONSchemaOrRef, JSONSchema } from "./types" */
-/** @import { FormChen, GridChenElement } from "./types" */
+/** @import { JSONPatchOperation, JSONSchemaOrRef, JSONSchema, FormChen, GridChenElement } from "./types" */
+/** @import { Converter } from "./private-types.js" */
 
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
@@ -602,6 +602,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
             }
         } else { //if (schema.type === 'string') {
 
+            /** @type{Converter} */
             let converter;
 
             if (schema.type === 'integer') {
@@ -654,15 +655,16 @@ export function createFormChen(rootElement, topSchema, topObj) {
 
             input.onblur = () => {
                 console.log("onblur " + input.value)
-                let [value, error] = converter.fromInput(input);
-                console.log("onblur1 " + value)
-                if (error && ++invalidCount == 1) {
-                    input.setCustomValidity(error);
+                let parsedValue = converter.fromInput(input);
+                console.log("onblur1 " + parsedValue)
+                if (parsedValue.validation && ++invalidCount == 1) {
+                    input.setCustomValidity(parsedValue.validation);
                     input.reportValidity();
                 } else {
                     invalidCount = 0;
                 }
-                commit((value === '') ? undefined : value, input, error);
+
+                commit(parsedValue.value, input, parsedValue.validation);
             }
 
             input.onfocus = () => {

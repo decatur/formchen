@@ -10,7 +10,7 @@
 /** @import { Transaction } from "../utils" */
 
 
-import { logger, Patch, wrap, TransactionManager, registerUndo } from "../utils.js";
+import { logger, Patch, wrap, TransactionManager, registerUndo, ParsedValue } from "../utils.js";
 import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import * as edit from "./editor.js"
 import { createView } from "../gridchen/matrixview.js"
@@ -92,25 +92,25 @@ function openDialog() {
     return dialog;
 }
 
-/**
- * @param {ResizeObserverEntry[]} entries
- */
-function debounceResize(entries) {
-    for (const entry of entries) {
-        const gridChen = /**@type{GridChen}*/(entry.target);
-        if (gridChen._timeOutHandle) {
-            window.clearTimeout(gridChen._timeOutHandle);
-        }
+// /**
+//  * @param {ResizeObserverEntry[]} entries
+//  */
+// function debounceResize(entries) {
+//     for (const entry of entries) {
+//         const gridChen = /**@type{GridChen}*/(entry.target);
+//         if (gridChen._timeOutHandle) {
+//             window.clearTimeout(gridChen._timeOutHandle);
+//         }
 
-        gridChen._timeOutHandle = window.setTimeout(() => {
-            gridChen._timeOutHandle = void 0;
-            if (gridChen._onresize) gridChen._onresize();
-            gridChen.reset();
-        }, 100);
-    }
-}
+//         gridChen._timeOutHandle = window.setTimeout(() => {
+//             gridChen._timeOutHandle = void 0;
+//             if (gridChen._onresize) gridChen._onresize();
+//             gridChen.reset();
+//         }, 100);
+//     }
+// }
 
-const ro = new window.ResizeObserver(entry => debounceResize(entry));
+// const ro = new window.ResizeObserver(entry => debounceResize(entry));
 
 
 /**
@@ -128,9 +128,10 @@ export class GridChen extends HTMLElement {
         /** @type {TransactionManager} */
         this._transactionManager;
 
-        ro.observe(this);
+        //ro.observe(this);
 
         // Properties mixed in later
+        this.pathPrefix;
         this._timeOutHandle = undefined;
         this._onresize = undefined;
         this.selectedRange = undefined;
@@ -180,6 +181,7 @@ export class GridChen extends HTMLElement {
      * @returns {GridChenElement}
      */
     resetFromView(view, transactionManager, pathPrefix) {
+        this.pathPrefix = pathPrefix;
         this._viewModel = view;
         this._transactionManager = transactionManager;
         if (this.shadowRoot) {
@@ -208,7 +210,7 @@ export class GridChen extends HTMLElement {
     reset() {
         // console.log('reset clientHeight:' + this.clientHeight);
         if (this._viewModel && this._totalHeight !== this.clientHeight) {
-            this.resetFromView(this._viewModel, this._transactionManager);
+            this.resetFromView(this._viewModel, this._transactionManager, this.pathPrefix);
         }
     }
 }
@@ -1045,15 +1047,19 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         if (!activeCell.isReadOnly()) {
             const rowIndex = selection.active.rowIndex;
             const colIndex = selection.active.columnIndex;
-            let v;
+            let parsedValue;
             if (value === '') {
-                v = undefined;
+                parsedValue = new ParsedValue('', null);
             } else {
-                v = schemas[colIndex].converter.fromEditable(value);
+                parsedValue = schemas[colIndex].converter.fromEditable(value);
             }
 
             const model = viewModel.getModel();
-            const operations = viewModel.setCell(rowIndex, colIndex, v);
+            if (!parsedValue.validation) {
+
+            }
+            const operations = viewModel.setCell(rowIndex, colIndex, parsedValue.value, parsedValue.validation);
+            
             const trans = tm.openTransaction(gridchenElement);
 
             if (model !== viewModel.getModel()) {
@@ -1189,13 +1195,8 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
 
             for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                 let s = matrix[i][j];
-                let value;
-                if (s !== undefined) {
-                    value = schemas[colIndex].converter.fromEditable(s.trim());
-                } else {
-                    value = s;
-                }
-                patch.push(...viewModel.setCell(rowIndex, colIndex, value));
+                let parsedValue = schemas[colIndex].converter.fromEditable(s.trim());
+                patch.push(...viewModel.setCell(rowIndex, colIndex, parsedValue.value, parsedValue.validation));
             }
         }
 

@@ -11,8 +11,6 @@
 import * as c from "../converter.js";
 import { applyJSONPatch, Patch } from '../utils.js'
 
-const numeric = new Set(['number', 'integer']);
-
 /**
  * @param {number} count
  * @returns {number[]}
@@ -112,14 +110,15 @@ function createColumSchemas(schemas) {
         schema.width = Number(schema.width || (schema.title.length * 12) || 100);
         // schema.type = schema.type || 'string';
 
-        if (numeric.has(schema.type)) {
+        if (schema.type === 'number') {
             let fractionDigits = 2;
             if (schema.fractionDigits !== undefined) {
                 fractionDigits = schema.fractionDigits;
-            } else if (schema.type === 'integer') {
-                fractionDigits = 0;
             }
             schema.converter = new c.NumberConverter(fractionDigits);
+            schema.compare = compareNumber;
+        } else if (schema.type === 'integer') {
+            schema.converter = new c.IntegerConverter();
             schema.compare = compareNumber;
         } else if (schema.type === 'string' && schema.format === 'date') {
             schema.converter = new c.FullDateConverter();
@@ -506,7 +505,13 @@ export function createRowMatrixView(jsonSchema, rows) {
          * @param {any} value
          * @returns {JSONPatch}
          */
-        setCell(rowIndex, colIndex, value) {
+        setCell(rowIndex, colIndex, value, error) {
+            function createOperation() {
+                const oldValue = rows[rowIndex][colIndex];
+                let op = { op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue };
+                if (error) op.error = error;
+                return op
+            }
             colIndex = columnIndices[colIndex];
             let patch = [];
 
@@ -514,10 +519,9 @@ export function createRowMatrixView(jsonSchema, rows) {
                 if (!rows[rowIndex]) {
                     return patch
                 }
-                const oldValue = rows[rowIndex][colIndex];
                 // Important: Must not delete rows[rowIndex][colIndex], as this would produce an empty index, which is not JSON.
                 rows[rowIndex][colIndex] = null;
-                patch.push({ op: 'replace', path: `/${rowIndex}/${colIndex}`, value: null, oldValue });
+                patch.push(createOperation());
                 return patch
             }
 
@@ -540,7 +544,7 @@ export function createRowMatrixView(jsonSchema, rows) {
                 // TODO: assert that patch is empty?
                 return patch
             }
-            patch.push({ op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue: oldValue });
+            patch.push(createOperation());
 
             rows[rowIndex][colIndex] = value;
             return patch;

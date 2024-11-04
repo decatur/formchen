@@ -41,12 +41,24 @@ export interface GridSchema {
     readOnly?: boolean;
 }
 
+export interface ParsedValue {
+    input: string;
+    parsed: number | string | boolean;
+    validation: string;
+    value: number | string | boolean;
+}
+
 export interface Converter {
-    fromEditable: (a: string) => (number | Date | string | boolean);
+    fromEditable: (a: string) => ParsedValue; 
     toTSV: (a: (number | Date | string | boolean)) => string;
     toEditable: (a: (number | Date | string | boolean)) => string;
     createElement: () => HTMLElement;
     render: (element: HTMLElement, value: any) => void;
+
+    conditionInput: (element: HTMLInputElement|HTMLTextAreaElement, readOnly: boolean) => void;
+    fromInput: (HTMLInputElement) => ParsedValue;
+    toInput: (string, HTMLInputElement) => void;
+    toInputEdit: (number, HTMLInputElement) => void;
 }
 
 /**
