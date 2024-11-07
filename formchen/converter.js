@@ -64,7 +64,7 @@ export class StringConverter {
      */
     fromEditable(s) {
         s = s.trim();
-        return new ParsedValue(s, s);
+        return new ParsedValue(s, s?s:null);
     }
 
     /**
@@ -504,7 +504,7 @@ export class IntegerConverter extends StringConverter {
 }
 
 /**
- * Converter for timezone aware dates.
+ * Converter for timezone aware dates. The converter does not really convert but validates.
  * @implements {Converter}
  */
 export class DateTimeStringConverter extends StringConverter {
@@ -540,7 +540,8 @@ export class DateTimeStringConverter extends StringConverter {
      */
     toTSV(s) {
         // Apply String() for type checker only.
-        return String(this.fromEditable(s).parsed).replace('T', ' ')
+        // return String(this.fromEditable(s).parsed).replace('T', ' ')
+        return s
     }
 
     /**
@@ -548,7 +549,7 @@ export class DateTimeStringConverter extends StringConverter {
      * @returns {string}
      */
     toEditable(s) {
-        return this.toTSV(s)
+        return s
     }
 
     /**
@@ -561,7 +562,10 @@ export class DateTimeStringConverter extends StringConverter {
             return new ParsedValue(s, String(s), 'Not a string');
         }
 
-        let r = this.parser.dateTime(s);
+        s = s.trim();
+        if (!s) return new ParsedValue('', null);
+
+        let r = this.parser.dateTime(s, this.period);
         if (r instanceof SyntaxError) {
             return new ParsedValue(s, null, r.toString());
         }
@@ -585,12 +589,13 @@ export class DateTimeStringConverter extends StringConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-            const r = this.parser.dateTime(value);
+            const r = this.parser.dateTime(value, this.period);
             if (r instanceof SyntaxError) {
                 element.textContent = value;
                 element.className = 'error';
             } else {
                 element.textContent = value;
+                element.className = 'non-string';
             }
         }
     }
@@ -666,6 +671,9 @@ export class FullDateConverter extends StringConverter {
      * @returns {ParsedValue}
      */
     fromEditable(s) {
+        s = s.trim();
+        if (!s) return new ParsedValue('', null);
+
         let r = this.parser.fullDate(s);
         if (r instanceof SyntaxError) {
             // TODO: Style this case differently?

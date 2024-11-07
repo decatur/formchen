@@ -10,7 +10,7 @@
 /** @import { Transaction } from "../utils" */
 
 
-import { logger, Patch, wrap, TransactionManager, registerUndo, ParsedValue } from "../utils.js";
+import { logger, Patch, wrap, TransactionManager, registerUndo, ParsedValue, clone } from "../utils.js";
 import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import * as edit from "./editor.js"
 import { createView } from "../gridchen/matrixview.js"
@@ -169,7 +169,7 @@ export class GridChen extends HTMLElement {
     bind(schema, value, tm, pathPrefix) {
         tm = tm || new TransactionManager();
         const view = createView(schema, value);
-        registerUndo(document.body, tm);
+        //registerUndo(document.body, tm);
         this.resetFromView(view, tm, pathPrefix);
     }
 
@@ -698,7 +698,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
 
             for (; rowIndex < endRowIndex; rowIndex++) {
                 for (let colIndex = r.columnIndex; colIndex < endColIndex; colIndex++) {
-                    operations.push(...viewModel.setCell(rowIndex, colIndex, undefined));
+                    operations.push(...viewModel.setCell(rowIndex, colIndex, null));
                 }
             }
         }
@@ -1063,7 +1063,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             const trans = tm.openTransaction(gridchenElement);
 
             if (model !== viewModel.getModel()) {
-                trans.patches.push(viewModel.updateHolder());
+                trans.patches.push(clone(viewModel.updateHolder()));
             } else {
                 trans.patches.push(createPatch(operations, pathPrefix));
             }
@@ -1284,7 +1284,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             for (let colIndex = 0; colIndex < colCount; colIndex++) {
                 let elem = elemRow[colIndex];
                 elem.removeAttribute('class');
-                let value = (row ? row[colIndex] : undefined);
+                let value = (row ? row[colIndex] : null);
                 if (value == null) { // JavaScript hack: checks also for undefined
                     elem.textContent = '';
                     continue;

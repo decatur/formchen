@@ -1,5 +1,5 @@
 import { test, assert } from './utils.js'
-import {localeDateParser, FullDate} from "../formchen/utils.js";
+import {localeDateParser, FullDate, resolvePeriod, } from "../formchen/utils.js";
 
 test('FullDate', () => {
     let parser = localeDateParser();
@@ -9,9 +9,9 @@ test('FullDate', () => {
 
 test('DateTime', () => {
     let parser = localeDateParser();
-    assert.equal([2019, 9, 27, 1, 2, 0, 0, 0, 0], parser.dateTime('2019-10-27 01:02Z'));
-    assert.true(parser.dateTime('27.10.2019 01:02+01:00') instanceof SyntaxError);
-    assert.true(parser.dateTime('27.10.2019') instanceof SyntaxError);
+    assert.equal([2019, 9, 27, 1, 2, 0, 0, 0, 0], parser.dateTime('2019-10-27 01:02Z', resolvePeriod('MINUTES')));
+    assert.true(parser.dateTime('27.10.2019 01+01:00',  resolvePeriod('MINUTES')) instanceof SyntaxError);
+    assert.true(parser.dateTime('27.10.2019', resolvePeriod('MINUTES')) instanceof SyntaxError);
 });
 
 // test('toUTCDateTimeString', () => {

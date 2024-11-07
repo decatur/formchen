@@ -58,7 +58,9 @@ test('FormChen', (test_name) => {
             someDateTime: {
                 title: 'Some DateTime',
                 type: 'string',
-                format: 'datetime'
+                format: 'datetime',
+                period: 'MINUTES'
+
             },
             someBoolean: {
                 title: 'Some Boolean',
@@ -169,9 +171,9 @@ test('FormChen', (test_name) => {
     /** @type{GridChen} */
     const gc = (container.querySelector(`[name="/someMatrix"]`));
     gc._keyboard('keydown', { key: " " });
-    gc._sendKeys('2020-01-01 00:00Z');
+    gc._sendKeys('2020-01-01T00:00Z');
     gc._keyboard('keydown', { code: 'Enter' });
-    assert.equal({ op: "replace", path: "/someMatrix/0/0", value: "2020-01-01T01:00+01:00", "oldValue": "2019-01-01 00:00Z" }, fc.patch.pop());
+    assert.equal({ op: "replace", path: "/someMatrix/0/0", value: "2020-01-01T00:00Z", "oldValue": "2019-01-01 00:00Z" }, fc.patch.pop());
 
 });
 

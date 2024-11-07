@@ -506,8 +506,7 @@ export function createRowMatrixView(jsonSchema, rows) {
          * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value, error) {
-            function createOperation() {
-                const oldValue = rows[rowIndex][colIndex];
+            function createOperation(oldValue) {
                 let op = { op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue };
                 if (error) op.error = error;
                 return op
@@ -520,8 +519,8 @@ export function createRowMatrixView(jsonSchema, rows) {
                     return patch
                 }
                 // Important: Must not delete rows[rowIndex][colIndex], as this would produce an empty index, which is not JSON.
+                patch.push(createOperation(rows[rowIndex][colIndex]));
                 rows[rowIndex][colIndex] = null;
-                patch.push(createOperation());
                 return patch
             }
 
@@ -544,7 +543,7 @@ export function createRowMatrixView(jsonSchema, rows) {
                 // TODO: assert that patch is empty?
                 return patch
             }
-            patch.push(createOperation());
+            patch.push(createOperation(oldValue));
 
             rows[rowIndex][colIndex] = value;
             return patch;

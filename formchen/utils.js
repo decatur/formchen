@@ -152,7 +152,7 @@ function pad(v) {
  * @returns {number}
  */
 export function resolvePeriod(period) {
-    const index = ['YEARS', 'MONTHS', 'DAYS', 'HOURS', 'MINUTES', 'SECONDS', 'MILLISECONDS'].indexOf(period.toUpperCase());
+    const index = ['YEARS', 'MONTHS', 'DAYS', 'HOURS', 'MINUTES', 'SECONDS', 'MILLI_SECONDS'].indexOf(period.toUpperCase());
     if (index === -1) {
         throw new RangeError('Invalid period: ' + period);
     }
@@ -164,6 +164,7 @@ const DAYS = resolvePeriod('DAYS');
 const HOURS = resolvePeriod('HOURS');
 const MINUTES = resolvePeriod('MINUTES');
 const SECONDS = resolvePeriod('SECONDS');
+const MILLI_SECONDS = resolvePeriod('MILLI_SECONDS');
 
 /**
  * @callback F1Type
@@ -352,7 +353,6 @@ console.assert(isAmbiguous('2024-03-31T02:30'));
 console.assert(!isAmbiguous('2024-03-31T03:30'));
 
 export class FullDate {
-
     /**
      * @param {number} year 
      * @param {number} month 
@@ -363,7 +363,6 @@ export class FullDate {
         this.month = month;
         this.day = day;
     }
-
 }
 
 /**
@@ -386,51 +385,60 @@ function parseFullDate(s) {
 }
 
 /**
- * @param {string} s
- * @returns {[number, number, number, number, number, number, number, number, number] | SyntaxError}
+ * @typedef {[number, number, number, number, number, number, number, number, number]} DateTimeParts
  */
-function parseDateOptionalTimeTimezone(s) {
-    const dateTimeParts = s.trim().split(/\s+|T/);
-    const fullDateResult = parseFullDate(dateTimeParts[0]);
-    if (fullDateResult instanceof SyntaxError) {
-        return fullDateResult
-    } else if (dateTimeParts.length === 1) {
-        let parts = [...[fullDateResult.year, fullDateResult.month, fullDateResult.day], 0, 0, 0, 0];
-        return /** @type{[number, number, number, number, number, number, number, number, number]} */ (parts)
+
+/**
+ * Parses date times of the form 2019-10-27 00:00Z or 2019-10-27T01:02:03.123+01:00, i.e.
+ * simplifications of the ISO 8601 calendar date extended format, see
+ * https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-date-time-string-format
+ * 
+ * Example: 
+ *     parseDateTime('2019-10-27T01:02:03.123-01:00')
+ *     -> [2019, 9, 27, 1, 2, 3, 123, -1, 0]
+ * 
+ * @param {string} s
+ * @param {number} period
+ * @returns {DateTimeParts | SyntaxError}
+ */
+function parseDateTime(s, period) {
+    //   0                                1       2     3     4    5     6      7     8      9     10      11     12        13     14
+    //  ['2019-10-27T00:00:00.123+01:00', '2019', '10', '27', 'T', '00', ':00', '00', ':00', '00', '.123', '123', '+01:00', '+01', '00']
+    let m = s.trim().match(/^(\d{4})-(\d{2})-(\d{2})(\s+|T)(\d+)(:(\d+))?(:(\d+))?(\.(\d\d\d))?(Z|([+-]\d\d):(\d\d))$/);
+    if (m == null) {
+        return new SyntaxError(s);
+    }
+    let p = [m[1], m[2], m[3], m[5], m[7], m[9], m[11]];
+    if (p[4] == undefined) p[4] = '00';
+    else if (period < MINUTES) { return new SyntaxError(s); }
+
+    if (p[5] == undefined) p[5] = '00';
+    else if (period < SECONDS) { return new SyntaxError(s); }
+
+    if (p[6] == undefined) p[6] = '000';
+    else if (period < MILLI_SECONDS) { return new SyntaxError(s); }
+
+    let parts = p.map((item) => parseInt(item, 10));
+    parts[1]--;
+
+    let offset = m[12];
+    let offsetParts;
+    if (offset == 'Z') {
+        offsetParts = [0, 0];
+    } else {
+        offsetParts = m.slice(13).map((p) => parseInt(p, 10));;
+    } 
+
+    // Let Date.UTC() and comparing toISOString() with the expected string do the heavy lifting.
+    // @ts-ignore
+    let d = new Date(Date.UTC(...parts));
+
+    if (d.toISOString() != `${p[0]}-${p[1]}-${p[2]}T${p[3]}:${p[4]}:${p[5]}.${p[6]}Z`) {
+        return new SyntaxError(s);
     }
 
-    //  19:52:53.3434+00:00 ->
-    //   0                        1     2      3      4          5
-    //  ["19:52:53.123456+00:00", "19", ":52", ":53", ".123456", "+00:00"]
-    const m = dateTimeParts[1].match(/^(\d+)(:\d+)?(:\d+)?(\.[0-9]+)?(Z|[+-][0-9:]+)?$/);
-    if (!m) {
-        return new SyntaxError(s)
-    }
-
-    const hours = Number(m[1]);
-    const minutes = m[2] ? Number(m[2].substring(1)) : 0;
-    const seconds = m[3] ? Number(m[3].substring(1)) : 0;
-    let millis = 0;
-    if (m[4]) {
-        // Ignore sub-millis as JS Date does not support those.
-        // Example: ".1234567" -> .1234567 -> 123.4567 -> 123
-        millis = Math.floor(Number(m[4]) * 1000);
-    }
-    let timeZone = [];
-    if (m[5]) {
-        if (m[5] === 'Z') {
-            timeZone = [0, 0];
-        } else {
-            // This will also take care of negative offsets, i.e. "-01:00" -> [-1, 0]
-            timeZone = m[5].split(':').map(v => Number(v));
-        }
-        if (timeZone.length !== 2 || someNaN(timeZone)) {
-            return new SyntaxError(s)
-        }
-    }
-
-    // Array of length 9
-    return /** @type{[number, number, number, number, number, number, number, number, number]} */ ([...[fullDateResult.year, fullDateResult.month, fullDateResult.day], hours, minutes, seconds, millis, ...timeZone])
+    // @ts-ignore
+    return parts.concat(offsetParts);
 }
 
 export class ParsedValue {
@@ -454,25 +462,25 @@ export class ParsedValue {
       }
 }
 
-/**
- * 
- * @param {string} s 
- * @param {number} period 
- * @returns 
- */
-function parseDateTimeToLocal(s, period) {
-    let r = localeDateParser().dateTime(s);
-    if (r instanceof SyntaxError) {
-        return new ParsedValue(s, null, r.toString());
-    }
+// /**
+//  * 
+//  * @param {string} s 
+//  * @param {number} period 
+//  * @returns 
+//  */
+// function parseDateTimeToLocal(s, period) {
+//     let r = localeDateParser().dateTime(s);
+//     if (r instanceof SyntaxError) {
+//         return new ParsedValue(s, null, r.toString());
+//     }
 
-    r[3] -= r[7]; // Get rid of hour offset
-    r[4] -= r[8]; // Get rid of minute offset
-    let tuple = /**@type{[number, number]}*/(r.slice(0, 1 + period));
+//     r[3] -= r[7]; // Get rid of hour offset
+//     r[4] -= r[8]; // Get rid of minute offset
+//     let tuple = /**@type{[number, number]}*/(r.slice(0, 1 + period));
 
-    const d = new Date(Date.UTC(...tuple));
-    return new ParsedValue(s, toLocaleISODateTimeString(d, period).replace(' ', 'T'));
-}
+//     const d = new Date(Date.UTC(...tuple));
+//     return new ParsedValue(s, toLocaleISODateTimeString(d, period).replace(' ', 'T'));
+// }
 
 /**
 * The created parser can parse strings of the form YYYY-MM-DDTHH:mm:ss.sssZ,
@@ -480,7 +488,7 @@ function parseDateTimeToLocal(s, period) {
 */
 export class LocalDateParserClass {
     /**
-     * Parses full dates of the form 2019-10-27
+     * Delegates to parseFullDate()
      * @param {string} s
      * @returns {FullDate|SyntaxError}
      */
@@ -505,19 +513,13 @@ export class LocalDateParserClass {
     // }
 
     /**
-     * Parses date times of the form 2019-10-27 00:00Z, 10/27/2019T01:02+01:00, ...
+     * Delegates to parseDateTime().
      * @param {string} s
-     * @returns {[number, number, number, number, number, number, number, number, number] | SyntaxError}
+     * @param {number} period
+     * @returns {DateTimeParts | SyntaxError}
      */
-    dateTime(s) {
-        const r = parseDateOptionalTimeTimezone(s);
-        if (r instanceof SyntaxError) {
-            return r
-        } else if (r.length !== 9) {
-            return new SyntaxError(s)
-        } else {
-            return r
-        }
+    dateTime(s, period) {
+        return parseDateTime(s, period)
     }
 }
 
@@ -624,17 +626,17 @@ export function registerUndo(container, tm) {
      * @param {KeyboardEvent} evt
      */
     function listener(evt) {
-        if (evt.code === 'KeyY' && evt.ctrlKey) {
-
+        console.log(`keydown ${evt.key}`)
+        if (evt.key === 'z' && evt.ctrlKey) {
             const target = /**@type{HTMLElement} */ (evt.target);
-            if (target instanceof HTMLInputElement && target.value !== target.defaultValue) {
+            if ((target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) && target.value !== target.defaultValue) {
                 // Let the default browser undo action be performed on this input element.
             } else {
                 evt.preventDefault();
                 evt.stopPropagation();
                 tm.undo();
             }
-        } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
+        } else if (evt.key === 'y' && evt.ctrlKey) {
             // Note: It it too complex to support default browser redos. We do not support those!
             evt.preventDefault();
             evt.stopPropagation();
@@ -761,6 +763,7 @@ export class TransactionManager {
     }
 
     undo() {
+        console.log('undo')
         const trans = this.transactions.pop();
         if (!trans) return;
         this.redoTransactions.push(trans);

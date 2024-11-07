@@ -172,7 +172,7 @@ test('Empty object with grid', (test_name) => {
                 items: {
                     type: 'array',
                     items: [  // tuple schema
-                        { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime' },
+                        { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime', period: 'MINUTES' },
                         { title: 'Age [d]', width: 100, type: 'number' },
                         { title: 'Weight [g]', width: 100, type: 'number' }
                     ]
@@ -192,13 +192,13 @@ test('Empty object with grid', (test_name) => {
     const gc = /** @type{GridChen} */ (container.querySelector('[name="/foo"]'));
 
     gc._click(0, 0);  // NoOp because cell 0,0 is selected by default.
-    gc._sendKeys('2020-01-01 00:00Z');
+    gc._sendKeys('2020-01-01T00:00Z');
     gc._keyboard('keydown', { code: 'Enter' });
-    gc._sendKeys('2020-01-02 00:00Z');
+    gc._sendKeys('2020-01-02T00:00Z');
     gc._keyboard('keydown', { code: 'Enter' });
 
     let value = fc.value;
-    assert.equal({ foo: [['2020-01-01T01:00+01:00'], ['2020-01-02T01:00+01:00']] }, value);
+    assert.equal({ foo: [['2020-01-01T00:00Z'], ['2020-01-02T00:00Z']] }, value);
 
     let patch = fc.patch;
     // We do not have a contract of how the patch is laid out, unfortunately.
@@ -212,10 +212,7 @@ test('Empty object with grid', (test_name) => {
             "path": "/foo",
             "value": [
                 [
-                    "2020-01-01T01:00+01:00"
-                ],
-                [
-                    "2020-01-02T01:00+01:00"
+                    "2020-01-01T00:00Z"
                 ]
             ]
         },
@@ -228,7 +225,7 @@ test('Empty object with grid', (test_name) => {
         {
             "op": "replace",
             "path": "/foo/1/0",
-            "value": "2020-01-02T01:00+01:00",
+            "value": "2020-01-02T00:00Z",
             "oldValue": null
         }
     ];
@@ -246,24 +243,24 @@ test('Empty object with grid', (test_name) => {
     });
 
     value = fc.value;
-    assert.equal(value, { "foo": [["2020-01-01T01:00+01:00"]] });
+    assert.equal(value, { "foo": [["2020-01-01T00:00Z"]] });
 
     const tm = fc["_transactionManager"];
     tm.undo();
     value = fc.value;
-    assert.equal(value, { "foo": [["2020-01-01T01:00+01:00"], ["2020-01-02T01:00+01:00"]] });
+    assert.equal(value, { "foo": [["2020-01-01T00:00Z"], ["2020-01-02T00:00Z"]] });
 
     tm.redo();
     value = fc.value;
-    assert.equal(value, { "foo": [["2020-01-01T01:00+01:00"]] });
+    assert.equal(value, { "foo": [["2020-01-01T00:00Z"]] });
 
     tm.undo();
     value = fc.value;
-    assert.equal(value, { "foo": [["2020-01-01T01:00+01:00"], ["2020-01-02T01:00+01:00"]] });
+    assert.equal(value, { "foo": [["2020-01-01T00:00Z"], ["2020-01-02T00:00Z"]] });
 
     tm.undo();
     value = fc.value;
-    assert.equal(value, { "foo": [["2020-01-01T01:00+01:00"]] });
+    assert.equal(value, { "foo": [["2020-01-01T00:00Z"]] });
 
     gc._click(0, 0);
     gc._keyboard('keydown', { code: 'Delete' });

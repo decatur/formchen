@@ -6,7 +6,7 @@ test('URIConverter', (test_name) => {
     const markdown = '[foobar](http://foobar.org)';
     assert.equal(markdown, converter.toTSV(markdown));
     assert.equal(markdown, converter.toEditable(markdown));
-    assert.equal(markdown, converter.fromEditable(markdown));
+    assert.equal(markdown, converter.fromEditable(markdown).parsed);
 
     const elem = document.createElement('a');
     converter.render(elem, markdown);
@@ -25,11 +25,11 @@ test('BooleanStringConverter', () => {
     assert.equal('true', converter.toEditable(true));
 
     for (const truely of ['true', 'wahr', '1', 'y']) {
-        assert.equal(true, converter.fromEditable(truely));
+        assert.equal(true, converter.fromEditable(truely).parsed);
     }
 
     for (const falsey of ['false', 'falsch', '0', 'n']) {
-        assert.equal(false, converter.fromEditable(falsey));
+        assert.equal(false, converter.fromEditable(falsey).parsed);
     }
 
     const elem = document.createElement('span');
@@ -46,15 +46,15 @@ test('NumberConverter', () => {
     const elem = document.createElement('span');
 
     let converter = new c.NumberConverter(0);
-    assert.equal(NaN, converter.fromEditable('nan'));
+    assert.equal(NaN, converter.fromEditable('nan').parsed);
 
     assert.equal(converter.toTSV(Math.PI).length, 12);
     assert.equal(converter.toEditable(Math.PI), String(Math.PI));
-    assert.equal(converter.fromEditable('3'), 3);
+    assert.equal(converter.fromEditable('3').parsed, 3);
 
     converter = new c.NumberConverter(2);
     assert.equal(converter.toTSV(Math.PI).length, 12);
-    assert.equal(converter.fromEditable('3.1415926536'), 3.1415926536);
+    assert.equal(converter.fromEditable('3.1415926536').parsed, 3.1415926536);
 
     converter.render(elem, Math.PI);
     assert.equal(elem.textContent.length, 4);
@@ -65,7 +65,7 @@ test('NumberConverter', () => {
     assert.equal('error', elem.className);
 
     converter = new c.NumberConverter(0);
-    assert.equal(NaN, converter.fromEditable('NaN'));
+    assert.equal(NaN, converter.fromEditable('NaN').parsed);
 });
 
 function assertNotADate(converter, elem) {
@@ -171,19 +171,17 @@ test('FullDateConverter', () => {
 // });
 
 test('DateTimeStringConverter HOURS', () => {
-    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
+    const localizedDates = ['2019-10-27T02:13+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
 
     let converter = new c.DateTimeStringConverter('HOURS');
     assert.equal('not_a_date', converter.toTSV('not_a_date'));
-    assert.equal('2019-10-27 01+02:00', converter.toTSV('2019-10-27T01+02:00'));
-    assert.equal('2019-10-27 00+02:00', converter.toEditable('2019-10-27T00+02:00'));
-    for (const date of localizedDates) {
-        assert.equal('2019-10-27T02+02:00', converter.fromEditable(date));
-    }
+    assert.equal('2019-10-27T01+02:00', converter.toTSV('2019-10-27T01+02:00'));
+    assert.equal('2019-10-27T00+02:00', converter.toEditable('2019-10-27T00+02:00'));
+    assert.equal('2019-10-27T02+02:00', converter.fromEditable('2019-10-27T02+02:00').parsed);
 
     const elem = document.createElement('span');
     converter.render(elem, '2019-10-27T01+02:00');
-    assert.equal('2019-10-27 01+02:00', elem.textContent);
+    assert.equal('2019-10-27T01+02:00', elem.textContent);
     assert.equal('non-string', elem.className);
 
     assertNotADate(converter, elem);
@@ -191,18 +189,16 @@ test('DateTimeStringConverter HOURS', () => {
 });
 
 test('DateTimeStringConverter MINUTES', () => {
-    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
     let converter = new c.DateTimeStringConverter('MINUTES');
     assert.equal('not_a_date', converter.toTSV('not_a_date'));
-    assert.equal('2019-10-27 01:13+02:00', converter.toTSV('2019-10-27T01:13+02:00'));
-    assert.equal('2019-10-27 00:13+02:00', converter.toEditable('2019-10-27T00:13+02:00'));
-    for (const date of localizedDates) {
-        assert.equal('2019-10-27T02:13+02:00', converter.fromEditable(date));
-    }
-
+    assert.equal('2019-10-27T01:13+02:00', converter.toTSV('2019-10-27T01:13+02:00'));
+    assert.equal('2019-10-27T00:13+02:00', converter.toEditable('2019-10-27T00:13+02:00'));
+    assert.equal('2019-10-27T02:13+02:00', converter.fromEditable('2019-10-27T02:13+02:00').parsed);
+    assert.true(converter.fromEditable('2019-10-27T02:13:14+02:00').validation != '');
+    
     const elem = document.createElement('span');
     converter.render(elem, '2019-10-27T01:13+02:00');
-    assert.equal('2019-10-27 01:13+02:00', elem.textContent);
+    assert.equal('2019-10-27T01:13+02:00', elem.textContent);
     assert.equal('non-string', elem.className);
 
     assertNotADate(converter, elem);
@@ -213,15 +209,13 @@ test('DateTimeStringConverter SECONDS', () => {
     const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
     let converter = new c.DateTimeStringConverter('SECONDS');
     assert.equal('not_a_date', converter.toTSV('not_a_date'));
-    assert.equal('2019-10-27 01:13:14+02:00', converter.toTSV('2019-10-27T01:13:14+02:00'));
-    assert.equal('2019-10-27 00:13:14+02:00', converter.toEditable('2019-10-27T00:13:14+02:00'));
-    for (const date of localizedDates) {
-        assert.equal('2019-10-27T02:13:14+02:00', converter.fromEditable(date));
-    }
+    assert.equal('2019-10-27T01:13:14+02:00', converter.toTSV('2019-10-27T01:13:14+02:00'));
+    assert.equal('2019-10-27T00:13:14+02:00', converter.toEditable('2019-10-27T00:13:14+02:00'));     
+    assert.equal('2019-10-27T02:13:14+02:00', converter.fromEditable('2019-10-27T02:13:14+02:00').parsed);
 
     const elem = document.createElement('span');
     converter.render(elem, '2019-10-27T01:13:14+02:00');
-    assert.equal('2019-10-27 01:13:14+02:00', elem.textContent);
+    assert.equal('2019-10-27T01:13:14+02:00', elem.textContent);
     assert.equal('non-string', elem.className);
 
     assertNotADate(converter, elem);
@@ -229,18 +223,15 @@ test('DateTimeStringConverter SECONDS', () => {
 });
 
 test('DateTimeStringConverter MILLISECONDS', () => {
-    const localizedDates = ['2019-10-27T02:13:14.123+02:00', '2019-10-27 02:13:14.123+02:00', '2019-10-27T00:13:14.123Z'];
-    let converter = new c.DateTimeStringConverter('MILLISECONDS');
+    let converter = new c.DateTimeStringConverter('MILLI_SECONDS');
     assert.equal('not_a_date', converter.toTSV('not_a_date'));
-    assert.equal('2019-10-27 01:13:14.123+02:00', converter.toTSV('2019-10-27T01:13:14.123+02:00'));
-    assert.equal('2019-10-27 00:13:14.123+02:00', converter.toEditable('2019-10-27T00:13:14.123+02:00'));
-    for (const date of localizedDates) {
-        assert.equal('2019-10-27T02:13:14.123+02:00', converter.fromEditable(date));
-    }
-
+    assert.equal('2019-10-27T01:13:14.123+02:00', converter.toTSV('2019-10-27T01:13:14.123+02:00'));
+    assert.equal('2019-10-27T00:13:14.123+02:00', converter.toEditable('2019-10-27T00:13:14.123+02:00'));
+    assert.equal('2019-10-27T02:13:14.123+02:00', converter.fromEditable('2019-10-27T02:13:14.123+02:00').parsed);
+    
     const elem = document.createElement('span');
     converter.render(elem, '2019-10-27T01:13:14.123+02:00');
-    assert.equal('2019-10-27 01:13:14.123+02:00', elem.textContent);
+    assert.equal('2019-10-27T01:13:14.123+02:00', elem.textContent);
     assert.equal('non-string', elem.className);
 
     assertNotADate(converter, elem);

@@ -440,7 +440,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
         throw Error("Root schema must be an object")
     }
 
-    registerUndo(document.body, transactionManager);
+    registerUndo(rootElement, transactionManager);
 
     /** @type{NodeTree} */
     const rootTree = new NodeTree();
@@ -639,11 +639,14 @@ export function createFormChen(rootElement, topSchema, topObj) {
 
             node.refreshUI = function () {
                 const value = node.getValue();
+                console.log(`node.refreshUI ${value}`);
                 if (value == null) {
-                    input.value = '';
+                    input.defaultValue = input.value = '';
                 } else {
                     converter.toInput(value, input);
                 }
+                // Needed by registerUndo()
+                input.defaultValue = input.value;
             };
 
             input.oninput = () => {
