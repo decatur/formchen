@@ -84,7 +84,7 @@ function queryTitleElementsByPath(container) {
     return titleElementsByPath
 }
 
-class NodeTree {
+export class NodeTree {
     /**
      */
     constructor() {
@@ -121,9 +121,9 @@ class NodeTree {
                   │                             │                   
                   │                             │                   
                   ▼                             ▼        
-     ┌────────────────────────┐                        
-     │       LeafNode         │      ┌──────────────────┐   
-     │ obj:  {bar: 'foobar'}} │      │    LeafNode      │   
+     ┌────────────────────────┐      ┌──────────────────┐                       
+     │       LeafNode         │      │    LeafNode      │
+     │ obj:  {bar: 'foobar'}} │      │ obj:  1          │   
      │ key:  'foo'            │      │ key:  'bar'      │   
      │ path: '/foo'           |      | path: '/foo/bar' |
      └────────────┬───────────┘      └──────────────────┘   
@@ -131,7 +131,8 @@ class NodeTree {
                   │                                                 
                   ▼                                                 
           ┌──────────────────┐                                         
-          │    LeafNode      │   
+          │    LeafNode      │
+          │ obj:  'foobar'   │  
           │ key:  'bar'      │
           │ path: '/foo/bar' │
           └──────────────────┘                                         
@@ -264,18 +265,20 @@ class BaseNode {
         /** @type{JSONPatchOperation[]} */
         let operations = [];
         /** @type{HolderNode} */
-        let n = this.parent;
+        let p = this.parent;
         let v = value;
         /** @type{string | number} */
         let key = this.key;
-        while (n && n.obj == null) {
-            let empty = n.schema.type === 'array' ? [[], []] : [{}, {}];
-            operations.unshift({ op: 'add', path: n.path, value: empty[0] });
-            n.obj = empty[1];
-            n.obj[key] = v;
-            key = n.key;
-            v = n.obj;
-            n = n.parent;
+        while (p && (p.obj == null || p.obj[key] == null)) {
+            if (p.obj == null) {
+                let ctor = p.schema.type === 'array' ? Array:Object;
+                p.obj = new ctor();
+                operations.unshift({ op: 'add', path: p.path, value: new ctor() });
+            }
+            p.obj[key] = v;
+            key = p.key;
+            v = p.obj;
+            p = p.parent;
         }
         return operations
     }
@@ -325,7 +328,7 @@ class BaseNode {
     }
 }
 
-class LeafNode extends BaseNode {
+export class LeafNode extends BaseNode {
 
     /**
      * @param {NodeTree} tree
@@ -346,29 +349,29 @@ class LeafNode extends BaseNode {
         return undefined;
     }
 
-    /**
-     * @param{number | string | boolean} value
-     * @returns {JSONPatchOperation[]}
-     */
-    createPathToRoot(value) {
-        /** @type{JSONPatchOperation[]} */
-        let operations = [];
-        /** @type{HolderNode} */
-        let n = this.parent;
-        let v = value;
-        /** @type{string | number} */
-        let key = this.key;
-        while (n && n.obj == null) {
-            let empty = n.schema.type === 'array' ? [[], []] : [{}, {}];
-            operations.unshift({ op: 'add', path: n.path, value: empty[0] });
-            n.obj = empty[1];
-            n.obj[key] = v;
-            key = n.key;
-            v = n.obj;
-            n = n.parent;
-        }
-        return operations
-    }
+    // /**
+    //  * @param{number | string | boolean} value
+    //  * @returns {JSONPatchOperation[]}
+    //  */
+    // createPathToRoot(value) {
+    //     /** @type{JSONPatchOperation[]} */
+    //     let operations = [];
+    //     /** @type{HolderNode} */
+    //     let n = this.parent;
+    //     let v = value;
+    //     /** @type{string | number} */
+    //     let key = this.key;
+    //     while (n && n.obj == null) {
+    //         let empty = n.schema.type === 'array' ? [[], []] : [{}, {}];
+    //         operations.unshift({ op: 'add', path: n.path, value: empty[0] });
+    //         n.obj = empty[1];
+    //         n.obj[key] = v;
+    //         key = n.key;
+    //         v = n.obj;
+    //         n = n.parent;
+    //     }
+    //     return operations
+    // }
 
     /**
      */
@@ -377,7 +380,7 @@ class LeafNode extends BaseNode {
     }
 }
 
-class HolderNode extends BaseNode {
+export class HolderNode extends BaseNode {
     /**
      * @param {NodeTree} tree
      * @param {string | number} key

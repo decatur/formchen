@@ -1,7 +1,7 @@
 /** @import { JSONSchema } from "../formchen/types" */
 
 import { test, assert } from './utils.js'
-import { createFormChen } from '../formchen/formchen.js'
+import { createFormChen, HolderNode, LeafNode, NodeTree } from '../formchen/formchen.js'
 
 import { GridChen } from "../formchen/gridchen/gridchen.js";
 
@@ -26,9 +26,9 @@ test('FormChen', (test_name) => {
                 items: {
                     type: 'array',
                     items: [  // tuple schema
-                        {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
-                        {title: 'Age [d]', width: 100, type: 'number'},
-                        {title: 'Weight [g]', width: 100, type: 'number'}
+                        { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime' },
+                        { title: 'Age [d]', width: 100, type: 'number' },
+                        { title: 'Weight [g]', width: 100, type: 'number' }
                     ]
                 }
             }
@@ -95,7 +95,7 @@ test('FormChen', (test_name) => {
             }
         }
     };
-    
+
     let data = {
         someString: 'Rubus idaeus',
         someURI: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
@@ -112,7 +112,7 @@ test('FormChen', (test_name) => {
         ]
     };
 
-    
+
     const container = document.getElementById(test_name);
     const fc = createFormChen(container, schema, data);
 
@@ -176,4 +176,49 @@ test('FormChen', (test_name) => {
     assert.equal({ op: "replace", path: "/someMatrix/0/0", value: "2020-01-01T00:00Z", "oldValue": "2019-01-01 00:00Z" }, fc.patch.pop());
 
 });
+
+test("createPathToRoot", () => {
+    // {foo: {bar: 'foobar'}, bar: 1}
+    let schema = {
+        type: 'object', properties: {
+            foo: {
+                type: 'object',
+                properties: {
+                    bar: {
+                        type: 'string'
+                    }
+                }
+            },
+            bar: {
+                type: 'number'
+            }
+        }
+    };
+
+    let tree = new NodeTree();
+    let root = new HolderNode(tree, '', schema, null);
+    let foo = new HolderNode(tree, 'foo', schema.properties.foo, root);
+    let bar = new LeafNode(tree, 'bar', schema.properties.foo.properties.bar, foo);
+    root.patchValue(null);
+    let patch = bar.patchValue('foobar');
+    assert.equal(root.obj, { "foo": { "bar": "foobar" } });
+    assert.equal(patch.operations, [
+        { "op": "add", "path": "", "value": {} },
+        { "op": "add", "path": "/foo", "value": {} },
+        { "op": "add", "path": "/foo/bar", "value": "foobar" }
+    ]);
+
+    patch = root.patchValue({});
+    assert.equal(root.obj, {});
+    assert.equal(patch.operations, [
+        { "op": "replace", "path": "", "value": {}, "oldValue": { "foo": { "bar": "foobar" } } }
+    ]);
+
+    patch = bar.patchValue('foobar');
+    assert.equal(root.obj, { "foo": { "bar": "foobar" } });
+    assert.equal(patch.operations, [
+        { "op": "add", "path": "/foo", "value": {} },
+        { "op": "add", "path": "/foo/bar", "value": "foobar" }
+    ]);
+})
 
