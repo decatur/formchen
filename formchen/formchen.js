@@ -12,7 +12,7 @@ import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
 
 import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter, UrlConverter, ColorConverter, IntegerConverter } from "./converter.js";
-import { Patch, TransactionManager, clone, deepFreeze, logger, registerUndo } from "./utils.js";
+import { Patch, TransactionManager, clone, deepFreeze, logger } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
 import { removeNoOps } from "./json_patch_merge.js";
 
@@ -206,6 +206,12 @@ class BaseNode {
             return patch
         }
 
+        function freeze(obj) {
+            obj = clone(obj);
+            deepFreeze(obj)
+            return obj
+        }
+
         /** @type{JSONPatchOperation} */
         let op;
         if (obj == null) {
@@ -227,10 +233,9 @@ class BaseNode {
             patch.operations.push(...this.clearPathToRoot());
         }
 
-        let p = clone(patch);
-        deepFreeze(p);
+        patch.operations = freeze(patch.operations);
 
-        return p
+        return patch
     }
 
     /**
@@ -444,7 +449,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
         throw Error("Root schema must be an object")
     }
 
-    registerUndo(rootElement, transactionManager);
+    //undo.register(rootElement, transactionManager);
 
     /** @type{NodeTree} */
     const rootTree = new NodeTree();
@@ -749,9 +754,11 @@ export function createFormChen(rootElement, topSchema, topObj) {
          */
         function commit(value, target, error) {
             const patch = node.patchValue(value, error);
-            const trans = transactionManager.openTransaction(target);
-            trans.patches.push(patch);
-            trans.commit();
+            if (patch.operations.length > 0) {
+                const trans = transactionManager.openTransaction(target);
+                trans.patches.push(patch);
+                trans.commit();
+            }
         };
 
     }

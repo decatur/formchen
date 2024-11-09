@@ -10,11 +10,10 @@
 /** @import { Transaction } from "../utils" */
 
 
-import { logger, Patch, wrap, TransactionManager, registerUndo, ParsedValue } from "../utils.js";
+import { logger, Patch, wrap, TransactionManager, ParsedValue } from "../utils.js";
 import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import * as edit from "./editor.js"
 import { createView } from "../gridchen/matrixview.js"
-
 
 
 //////////////////////
@@ -170,7 +169,7 @@ export class GridChen extends HTMLElement {
         tm = tm || new TransactionManager();
         const view = createView(schema, value);
         this.resetFromView(view, tm, pathPrefix);
-        registerUndo(/** @type{HTMLElement} */(this.shadowRoot.firstChild), tm);
+        //undo.register(/** @type{HTMLElement} */(this.shadowRoot.firstChild), tm);
     }
 
     /**
@@ -717,7 +716,8 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             // We can ignore this patch, because it is included in the patch from updateHolder().
             // TODO: Do we need removeModel()s patch at all? => No, but there is a unit test to that effect.
             void viewModel.removeModel();
-            trans.patches.push(viewModel.updateHolder());
+            const patch = viewModel.updateHolder();
+            if (patch.operations.length > 0) trans.patches.push(patch);
         }
 
         commitTransaction(trans);
@@ -812,7 +812,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             evt.preventDefault();
             evt.stopPropagation();
             deleteSelection();
-        } 
+        }
         // else if (evt.code === 'F1' && evt.altKey) {
         //     // Alt + F1 creates a modal chart of the data.
         //     evt.preventDefault();
@@ -872,7 +872,10 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
      * @param {Patch} patch
      */
     function tmListener(patch) {
+        if (patch.operations.length == 0) return
+
         viewModel.applyJSONPatch(patch.operations);
+        // TODO: What is this for?
         viewModel.updateHolder();
         // Map "/47/11" => rowIndex=47, columnIndex=11
         const [rowIndex, columnIndex] = patch.operations[0].path.split('/').slice(1).map(item => Number(item));
@@ -1061,11 +1064,12 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
 
             }
             const operations = viewModel.setCell(rowIndex, colIndex, parsedValue.value, parsedValue.validation);
-            
+
             const trans = tm.openTransaction(gridchenElement);
 
             if (model !== viewModel.getModel()) {
-                trans.patches.push(viewModel.updateHolder());
+                let patch = viewModel.updateHolder();
+                if (patch.operations.length > 0) trans.patches.push(patch);
             } else {
                 trans.patches.push(createPatch(operations, pathPrefix));
             }

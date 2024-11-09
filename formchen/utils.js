@@ -5,7 +5,6 @@
  * Module implementing, well, utilities.
  */
 
-
 /** @import { JSONPatchOperation, } from "./types" */
 
 const logLevels = {
@@ -637,12 +636,14 @@ export function applyJSONPatch(data, patch) {
     return holder[''];
 }
 
+export const undo = {};
+/** @type{TransactionManager[]} */
+const tms = [];
+
 /**
  * Add keydown listeners for KeyY and KeyZ to handle Undo/Redo.
- * @param {HTMLElement} container 
- * @param {TransactionManager} tm 
  */
-export function registerUndo(container, tm) {
+undo.register = () => {
 
     /**
      * @param {KeyboardEvent} evt
@@ -650,20 +651,27 @@ export function registerUndo(container, tm) {
     function listener(evt) {
         if (!(evt.target instanceof HTMLElement)) return
 
-        console.log(`keydown ${evt.key} ${evt.target.tagName}`)
+        console.log(`keydown ${evt.key} ${evt.target.tagName}`);
+
         if (evt.key === 'z' && evt.ctrlKey) {
+            let tm = tms.pop();
+            if (!tm) return;
             evt.preventDefault();
             evt.stopPropagation();
             tm.undo();
         } else if (evt.key === 'y' && evt.ctrlKey) {
+            let tm = tms.pop();
+            if (!tm) return;
             evt.preventDefault();
             evt.stopPropagation();
             tm.redo();
         }
     }
 
-    container.addEventListener('keydown', listener);
+    document.body.onkeydown = listener;
 }
+
+undo.register();
 
 /**
  * @callback F5Type
@@ -758,6 +766,8 @@ export class TransactionManager {
      * @returns {Transaction}
      */
     openTransaction(target) {
+        console.log("Opening Transaction")
+        tms.push(this);
         const tm = this;
         return /**@type{Transaction}*/ ({
             patches: [],
