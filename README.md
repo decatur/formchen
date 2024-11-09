@@ -27,6 +27,24 @@ Check https://decatur.github.io/formchen/index.html with both light and dark mod
 
 https://json8.github.io/patch/demos/apply/
 
+## Check JavaScript Files
+
+```
+ tsc --checkJs --allowJs formchen/formchen.js --noEmit --lib dom,es2022 --target es2022 --noUnusedLocals --noImplicitReturns --noImplicitThis --noUnusedParameters
+````
+
+### Setup tsc
+
+This is what worked for me on WSL end of 2024
+```
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
+bash
+nvm install 22
+node -v
+npm -v
+npm install -g typescript
+```
+
 ```
 http://127.0.0.1:3000/index.html?loglevel=info&console=true
 ```

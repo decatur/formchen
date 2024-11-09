@@ -4,12 +4,12 @@
 // Source located at https://github.com/decatur/formchen
 
 
-import { FormChen, JSONPatchOperation } from './types.d.ts'
+import type { JSONSchema, FormChen, JSONPatchOperation } from './types.d.ts'
+import {Patch, Transaction} from './utils.js'
 
-export interface FormChenExt extends FormChen {
-    getNodeById: (id: string) => BaseNode;
-}
-
+// export interface FormChenExt extends FormChen {
+//     getNodeById: (id: string) => BaseNode;
+// }
 
 export enum CellEditMode {
     HIDDEN = 'hidden',
@@ -90,15 +90,15 @@ export type Cell = Range;
 
 
 
-export interface PlotEventDetail {
-    graphElement: HTMLElement;
-    title: string;
-    schemas: ColumnSchema[];
-    columns: number[][];
-}
+// export interface PlotEventDetail {
+//     graphElement: HTMLElement;
+//     title: string;
+//     schemas: ColumnSchema[];
+//     columns: number[][];
+// }
 
-interface PlotEvent extends CustomEvent<PlotEventDetail> {
-}
+// interface PlotEvent extends CustomEvent<PlotEventDetail> {
+// }
 
 export type JSONPatch = JSONPatchOperation[];
 
@@ -117,7 +117,7 @@ export interface MatrixView {
     getCell: (rowIndex: number, colIndex: number) => any;
     getRow: (rowIndex: number) => any[];
     getColumn: (colIndex: number) => any[];
-    setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatchOperation[];
+    setCell: (rowIndex: number, colIndex: number, value: any, validation: string) => JSONPatchOperation[];
     splice: (rowIndex: number) => JSONPatch; // TODO: Rename to insertEmptyRow
     sort: (colIndex: number) => void;
     // TODO: Return the patched object as of getModel()?

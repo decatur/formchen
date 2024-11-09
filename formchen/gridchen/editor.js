@@ -7,7 +7,7 @@
 
 /** @import { Selection, CellEditMode } from "../private-types" */
 
-import {logger} from "../utils.js";
+import { logger } from "../utils.js";
 
 export const HIDDEN = /** @type{CellEditMode.HIDDEN} */ ('hidden');
 export const INPUT = /** @type{CellEditMode.INPUT} */ ('input');
@@ -123,7 +123,7 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
      */
     function setValue(value) {
         if (input.style.display !== 'none') {
-            input.value = value;
+            input.dataset.undoValue = input.value = value;
             if (value.includes('\n')) {
                 showTextArea();
                 textarea.value = value;
@@ -146,8 +146,10 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
      */
     function keydownHandler(evt) {
         logger.info('editor.onkeydown: ' + evt.code);
+        if (!(evt.target instanceof HTMLElement)) return
         // Clicking editor should invoke default: move caret. It should not delegate to containers action.
-        evt.stopPropagation();
+        //evt.stopPropagation();
+        console.log(`keydownHandler ${evt.target.tagName}`)
 
         if (evt.code === 'ArrowLeft' && currentMode === INPUT) {
             evt.preventDefault();
@@ -193,6 +195,20 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
             evt.preventDefault();
             evt.stopPropagation();
             commit();
+        } else if (evt.key === 'z' && evt.ctrlKey) {
+            evt.preventDefault();
+            if (input.value != input.dataset.undoValue) {
+                input.dataset.redoValue = input.value;
+                input.value = input.dataset.undoValue;
+                evt.stopPropagation();
+            }
+        } else if (evt.key === 'y' && evt.ctrlKey) {
+            evt.preventDefault();
+            if (input.dataset.redoValue) {
+                input.value = input.dataset.redoValue;
+                delete input.dataset.redoValue;
+                evt.stopPropagation();
+            }
         }
     }
 
@@ -243,7 +259,7 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
             } else if (textarea.style.display !== 'none') {
                 targetElem = textarea;
             } else {
-                throw new Error('Event send to editor but editor does not show.');
+                throw Error('Event send to editor but editor does not show.');
             }
             targetElem.dispatchEvent(new KeyboardEvent(typeArg, eventInitDict));
         }
@@ -257,7 +273,7 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
             } else if (textarea.style.display !== 'none') {
                 textarea.value += keys;
             } else {
-                throw new Error('Send keys to editor but editor does not show.');
+                throw Error('Send keys to editor but editor does not show.');
             }
         }
     }

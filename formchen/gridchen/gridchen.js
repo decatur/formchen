@@ -5,7 +5,7 @@
  * Module implementing the visual grid and scrolling behaviour.
  */
 
-/** @import { GridSelectionAbstraction, PlotEventDetail, Range as IRange, CellEditMode, ColumnSchema, MatrixView } from "../private-types" */
+/** @import { GridSelectionAbstraction, Range as IRange, CellEditMode, MatrixView } from "../private-types" */
 /** @import { JSONSchema, JSONPatchOperation, GridChenElement } from "../types" */
 /** @import { Transaction } from "../utils" */
 
@@ -169,8 +169,8 @@ export class GridChen extends HTMLElement {
     bind(schema, value, tm, pathPrefix) {
         tm = tm || new TransactionManager();
         const view = createView(schema, value);
-        //registerUndo(document.body, tm);
         this.resetFromView(view, tm, pathPrefix);
+        registerUndo(/** @type{HTMLElement} */(this.shadowRoot.firstChild), tm);
     }
 
     /**
@@ -596,7 +596,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     // Because we do not have a dblclick event, our strategy is to enter input mode on mousedown if we have touched.
     let isTouching = false;
 
-    cellParent.addEventListener('touchstart', evt => {
+    cellParent.addEventListener('touchstart', () => {
         logger.info('touchstart');
         isTouching = true;
     });
@@ -698,7 +698,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
 
             for (; rowIndex < endRowIndex; rowIndex++) {
                 for (let colIndex = r.columnIndex; colIndex < endColIndex; colIndex++) {
-                    operations.push(...viewModel.setCell(rowIndex, colIndex, null));
+                    operations.push(...viewModel.setCell(rowIndex, colIndex, null, ''));
                 }
             }
         }
@@ -812,12 +812,14 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             evt.preventDefault();
             evt.stopPropagation();
             deleteSelection();
-        } else if (evt.code === 'F1' && evt.altKey) {
-            // Alt + F1 creates a modal chart of the data.
-            evt.preventDefault();
-            evt.stopPropagation();
-            plot();
-        } else if (evt.key === '+' && evt.ctrlKey) {
+        } 
+        // else if (evt.code === 'F1' && evt.altKey) {
+        //     // Alt + F1 creates a modal chart of the data.
+        //     evt.preventDefault();
+        //     evt.stopPropagation();
+        //     plot();
+        // } 
+        else if (evt.key === '+' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation();
             insertRow();
@@ -967,47 +969,47 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         dialog.appendChild(container);
     }
 
-    function plot() {
-        let dialog = openDialog();
-        dialog.style.width = '80%';
+    // function plot() {
+    //     let dialog = openDialog();
+    //     dialog.style.width = '80%';
 
-        /** @type{Array<number>} */
-        const columnIndices = [];
-        for (const r of selection.areas) {
-            for (let count = 0; count < r.columnCount; count++) {
-                columnIndices.push(r.columnIndex + count);
-            }
-        }
+    //     /** @type{Array<number>} */
+    //     const columnIndices = [];
+    //     for (const r of selection.areas) {
+    //         for (let count = 0; count < r.columnCount; count++) {
+    //             columnIndices.push(r.columnIndex + count);
+    //         }
+    //     }
 
-        if (columnIndices.length < 2) {
-            dialog.textContent = `🤮 Please select 2 columns or more, you only selected column ${columnIndices[0]}`;
-            return
-        }
+    //     if (columnIndices.length < 2) {
+    //         dialog.textContent = `🤮 Please select 2 columns or more, you only selected column ${columnIndices[0]}`;
+    //         return
+    //     }
 
-        /** @type{ColumnSchema[]}*/
-        let columnSchemas = [];
-        /** @type{number[][]}*/
-        const columns = [];
-        for (const columnIndex of columnIndices) {
-            columnSchemas.push(schemas[columnIndex]);
-            columns.push(viewModel.getColumn(columnIndex));
-        }
+    //     /** @type{ColumnSchema[]}*/
+    //     let columnSchemas = [];
+    //     /** @type{number[][]}*/
+    //     const columns = [];
+    //     for (const columnIndex of columnIndices) {
+    //         columnSchemas.push(schemas[columnIndex]);
+    //         columns.push(viewModel.getColumn(columnIndex));
+    //     }
 
-        // Note: We completely erase dialogs content because some frameworks (plotly for example) will cache information
-        // in the HTML element.
-        dialog.textContent = '';
-        const graphElement = dialog.appendChild(document.createElement('div'));
-        /** @type {PlotEventDetail} */
-        let detail = Object.assign({
-            graphElement: graphElement,
-            title: schema.title,
-            schemas: columnSchemas,
-            columns: columns
-        });
-        // gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
-        // const evt = new CustomEvent('plot', {detail: detail});
-        //renderPlot(detail.graphElement, detail.title, detail.schemas, detail.columns);
-    }
+    //     // Note: We completely erase dialogs content because some frameworks (plotly for example) will cache information
+    //     // in the HTML element.
+    //     dialog.textContent = '';
+    //     const graphElement = dialog.appendChild(document.createElement('div'));
+    //     /** @type {PlotEventDetail} */
+    //     let detail = Object.assign({
+    //         graphElement: graphElement,
+    //         title: schema.title,
+    //         schemas: columnSchemas,
+    //         columns: columns
+    //     });
+    //     gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
+    //     const evt = new CustomEvent('plot', {detail: detail});
+    //     renderPlot(detail.graphElement, detail.title, detail.schemas, detail.columns);
+    // }
 
     /**
      * @param {number} rowIndex 
@@ -1203,6 +1205,9 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         return patch;
     }
 
+    /**
+     * @returns {string}
+     */
     function pastePrecondition() {
         if (selection.areas.length > 1) {
             return 'This action is not possible with multi-selections.'
@@ -1211,6 +1216,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         if (isSelectionReadOnly()) {
             return 'Parts of the cells are locked!'
         }
+        return ''
     }
 
     /**

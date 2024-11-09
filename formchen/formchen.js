@@ -59,7 +59,7 @@ function queryTitleElementsByPath(container) {
     const titles = container.querySelectorAll('.data-info');
     const titleElementsByPath = new Map();
 
-    for (let titleElement of titles) {
+    for (let titleElement of Array.from(titles)) {
         let parent = titleElement;
 
         while (true) {
@@ -67,7 +67,7 @@ function queryTitleElementsByPath(container) {
             let namedElements = parent.querySelectorAll('[name], [id]');
             if (namedElements.length > 0) {
                 let paths = [];
-                for (let namedElement of namedElements) {
+                for (let namedElement of Array.from(namedElements)) {
 
                     let path = (namedElement.getAttribute('name') || namedElement.getAttribute('id')).split('/');
                     paths.push(path);
@@ -146,7 +146,7 @@ class BaseNode {
      * @param {HolderNode} parent
      */
     constructor(tree, key, schema, parent) {
-        if (new.target === BaseNode) throw new Error('BaseNode cannot be instantiated')
+        if (new.target === BaseNode) throw Error('BaseNode cannot be instantiated')
         this.key = key;
         this.path = (parent ? parent.path + '/' + key : String(key));
 
@@ -557,7 +557,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
         const schema = node.schema;
         const path = node.path;
 
-        let control = new Control(container, path, node);
+        let control = new Control(container, path);
         if (!control.element) {
             console.error(`Cannot find control for ${node.path}`);
             return
@@ -641,12 +641,11 @@ export function createFormChen(rootElement, topSchema, topObj) {
                 const value = node.getValue();
                 console.log(`node.refreshUI ${value}`);
                 if (value == null) {
-                    input.defaultValue = input.value = '';
+                    input.value = '';
                 } else {
                     converter.toInput(value, input);
                 }
-                // Needed by registerUndo()
-                input.defaultValue = input.value;
+                input.dataset.undoValue = input.value;
             };
 
             input.oninput = () => {
@@ -675,7 +674,25 @@ export function createFormChen(rootElement, topSchema, topObj) {
                 console.log('onfocus ' + value);
                 if (converter.toInputEdit) converter.toInputEdit(value, input);
             }
-        } 
+
+            input.onkeydown = (evt) => {
+                if (evt.key === 'z' && evt.ctrlKey) {
+                    evt.preventDefault();
+                    if (input.value != input.dataset.undoValue) {
+                        input.dataset.redoValue = input.value;
+                        input.value = input.dataset.undoValue;
+                        evt.stopPropagation();
+                    }
+                } else if (evt.key === 'y' && evt.ctrlKey) {
+                    evt.preventDefault();
+                    if (input.dataset.redoValue) {
+                        input.value = input.dataset.redoValue;
+                        delete input.dataset.redoValue;
+                        evt.stopPropagation();
+                    }
+                }
+            };
+        }
         // else if (schema.type === 'integer' || schema.type === 'number') {
         //     if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
         //     const input = element;
@@ -718,7 +735,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
         //         node.refreshUI();
         //     }
         // } 
-        
+
 
 
         /**
@@ -743,7 +760,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
         const schema = node.schema;
         const path = node.path;
 
-        let control = new Control(rootElement, path, node);
+        let control = new Control(rootElement, path);
 
         if (schema.format === 'grid') {
             if (!control.element) {
@@ -803,9 +820,8 @@ class Control {
     /**
     * @param {HTMLElement} container
     * @param {string} path
-    * @param {BaseNode} node
     */
-    constructor(container, path, node) {
+    constructor(container, path) {
         /** @type{?HTMLElement} */
         this.control;
         /** @type{?HTMLElement} */

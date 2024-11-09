@@ -11,6 +11,8 @@
 import * as c from "../converter.js";
 import { applyJSONPatch, Patch } from '../utils.js'
 
+const ABSTRACT_METHOD = Error('Abstract method');
+
 /**
  * @param {number} count
  * @returns {number[]}
@@ -177,7 +179,7 @@ function sortedColumns(properties) {
 }
 
 // function assert(condition, ...data) {
-//     if (!condition) throw new Error(data)
+//     if (!condition) throw Error(data)
 // }
 
 /**
@@ -186,7 +188,7 @@ function sortedColumns(properties) {
  * @returns {MatrixView}
  */
 export function createView(schema, matrix) {
-    const invalidError = new Error('Invalid schema: ' + schema.title);
+    const invalidError = Error('Invalid schema: ' + schema.title);
 
     if (schema.type === 'array' && typeof schema.items === 'object' && Array.isArray(schema.items['items'])) {
         return createRowMatrixView(schema, matrix)
@@ -217,12 +219,12 @@ export function createView(schema, matrix) {
 class MatrixViewClass {
 
     /**
-         * @param {number} startRowIndex
-         * @param {string} pattern
+         * @param {number} _startRowIndex
+         * @param {string} _pattern
          * @returns {number[]}
          */
-    search(startRowIndex, pattern) {
-        throw new Error("Method not implemented.");
+    search(_startRowIndex, _pattern) {
+        throw ABSTRACT_METHOD;
     }
 
     /**
@@ -233,26 +235,26 @@ class MatrixViewClass {
     /**
      * @returns {JSONPatchOperation[]}
      */
-    removeModel() { return [] };
+    removeModel() { throw ABSTRACT_METHOD; };
 
     /**
-     * @param {number} rowIndex
+     * @param {number} _rowIndex
      * @returns {JSONPatchOperation[]}
      */
-    deleteRow(rowIndex) {
-        return [];
+    deleteRow(_rowIndex) {
+        throw ABSTRACT_METHOD;
     }
 
     /**
-     * @param {number} rowIndex
+     * @param {number} _rowIndex
      * @returns {JSONPatch}
      */
-    splice(rowIndex) { return [] };
+    splice(_rowIndex) { throw ABSTRACT_METHOD; };
 
     /**
-     * @param {number} colIndex
+     * @param {number} _colIndex
      */
-    sort(colIndex) { };
+    sort(_colIndex) { };
 
     /**@type{GridSchema}*/
     schema;
@@ -260,39 +262,40 @@ class MatrixViewClass {
     /**
     * @returns {object}
     */
-    getModel() { }
+    getModel() { throw ABSTRACT_METHOD; }
 
     /**
      * @returns {number}
      */
     columnCount() {
-        throw new Error('Abstract method');
+        throw ABSTRACT_METHOD;
     }
 
     /**
      * @returns {number}
      */
     rowCount() {
-        throw new Error('Abstract method');
+        throw ABSTRACT_METHOD;
     }
 
     /**
-     * @param {number} rowIndex
-     * @param {number} colIndex
+     * @param {number} _rowIndex
+     * @param {number} _colIndex
      * @returns {*}
      */
-    getCell(rowIndex, colIndex) {
-        throw new Error('Abstract method');
+    getCell(_rowIndex, _colIndex) {
+        throw ABSTRACT_METHOD;
     }
 
     /**
-     * @param {number} rowIndex
-     * @param {number} colIndex
-     * @param value
+     * @param {number} _rowIndex
+     * @param {number} _colIndex
+     * @param {any} _value
+     * @param {string} _validation
      * @returns {JSONPatchOperation[]}
      */
-    setCell(rowIndex, colIndex, value) {
-        return void 0
+    setCell(_rowIndex, _colIndex, _value, _validation) {
+        throw ABSTRACT_METHOD;
     }
 
     /**
@@ -312,17 +315,17 @@ class MatrixViewClass {
     }
 
     /**
-     * @param {JSONPatchOperation[]} patch
+     * @param {JSONPatchOperation[]} _patch
      */
-    applyJSONPatch(patch) {
-        return void 0
+    applyJSONPatch(_patch) {
+        throw ABSTRACT_METHOD;
     }
 
     /**
      * @returns {Patch}
      */
     updateHolder() {
-        return void 0
+        throw ABSTRACT_METHOD;
     }
 }
 
@@ -503,12 +506,13 @@ export function createRowMatrixView(jsonSchema, rows) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param {any} value
+         * @param {string} validation
          * @returns {JSONPatch}
          */
-        setCell(rowIndex, colIndex, value, error) {
+        setCell(rowIndex, colIndex, value, validation) {
             function createOperation(oldValue) {
                 let op = { op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue };
-                if (error) op.error = error;
+                if (validation) op.error = validation;
                 return op
             }
             colIndex = columnIndices[colIndex];
@@ -680,9 +684,10 @@ export function createRowObjectsView(jsonSchema, rows) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param {any} value
+         * @param {string} _validation
          * @returns {JSONPatch}
          */
-        setCell(rowIndex, colIndex, value) {
+        setCell(rowIndex, colIndex, value, _validation) {
             let patch = [];
 
             if (!rows) {
@@ -849,6 +854,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param {any} value
+         * 
          * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
@@ -949,7 +955,7 @@ export function createColumnObjectView(jsonSchema, columns) {
         const colSchema = property.items;
         if (typeof colSchema !== 'object') {
             // TODO: Be much more strict!
-            throw new Error('Invalid column schema');
+            throw Error('Invalid column schema');
         }
         if (!colSchema.title) colSchema.title = property.title || entry[0];
         if (!colSchema.width) colSchema.width = property.width;
@@ -1044,10 +1050,11 @@ export function createColumnObjectView(jsonSchema, columns) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @param value
+         * @param {any} value
+         * @param {string} _validation
          * @returns {JSONPatch}
          */
-        setCell(rowIndex, colIndex, value) {
+        setCell(rowIndex, colIndex, value, _validation) {
             let patch = [];
             const key = ids[colIndex];
 
@@ -1225,16 +1232,18 @@ export function createColumnVectorView(jsonSchema, column) {
          * @returns {*}
          */
         getCell(rowIndex, colIndex) {
+            if (colIndex !== 0) throw Error()
             return column[rowIndex];
         }
 
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @param value
+         * @param {any} value
+         * @param {string} _validation
          * @returns {JSONPatch}
          */
-        setCell(rowIndex, colIndex, value) {
+        setCell(rowIndex, colIndex, value, _validation) {
             if (colIndex !== 0) {
                 throw new RangeError();
             }

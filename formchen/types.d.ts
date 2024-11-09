@@ -41,6 +41,7 @@ export interface JSONPatchOperation {
     path: string;
     value?: any;
     oldValue?: any;
+    error?: string;
 }
 
 export type JSONSchemaOrRef = JSONSchema | JSONSchemaRef;
@@ -76,7 +77,6 @@ export interface JSONSchema {
     items?: JSONSchemaOrRef | JSONSchemaOrRef[];
     prefixItems?: JSONSchemaOrRef[];
     enum?: (string | number)[];
-    readOnly?: boolean;
     height?: number;
     fractionDigits?: number;
     // TODO: Rename according ISO

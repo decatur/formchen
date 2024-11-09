@@ -5,6 +5,7 @@
  * Module implementing, well, utilities.
  */
 
+
 /** @import { JSONPatchOperation, } from "./types" */
 
 const logLevels = {
@@ -303,13 +304,13 @@ export function localeDateParser() {
     return localeDateParserSingleton;
 }
 
-/**
- * @param {number[]} a
- * @returns {boolean}
- */
-function someNaN(a) {
-    return a.some((v) => isNaN(v))
-}
+// /**
+//  * @param {number[]} a
+//  * @returns {boolean}
+//  */
+// function someNaN(a) {
+//     return a.some((v) => isNaN(v))
+// }
 
 /**
  * @param {string} s 
@@ -427,7 +428,7 @@ function parseDateTime(s, period) {
         offsetParts = [0, 0];
     } else {
         offsetParts = m.slice(13).map((p) => parseInt(p, 10));;
-    } 
+    }
 
     // Let Date.UTC() and comparing toISOString() with the expected string do the heavy lifting.
     // @ts-ignore
@@ -458,8 +459,8 @@ export class ParsedValue {
      * @returns {string | number | boolean}
      */
     get value() {
-        return this.validation?this.input:this.parsed;
-      }
+        return this.validation ? this.input : this.parsed;
+    }
 }
 
 // /**
@@ -626,18 +627,14 @@ export function registerUndo(container, tm) {
      * @param {KeyboardEvent} evt
      */
     function listener(evt) {
-        console.log(`keydown ${evt.key}`)
+        if (!(evt.target instanceof HTMLElement)) return
+
+        console.log(`keydown ${evt.key} ${evt.target.tagName}`)
         if (evt.key === 'z' && evt.ctrlKey) {
-            const target = /**@type{HTMLElement} */ (evt.target);
-            if ((target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) && target.value !== target.defaultValue) {
-                // Let the default browser undo action be performed on this input element.
-            } else {
-                evt.preventDefault();
-                evt.stopPropagation();
-                tm.undo();
-            }
+            evt.preventDefault();
+            evt.stopPropagation();
+            tm.undo();
         } else if (evt.key === 'y' && evt.ctrlKey) {
-            // Note: It it too complex to support default browser redos. We do not support those!
             evt.preventDefault();
             evt.stopPropagation();
             tm.redo();
@@ -713,7 +710,7 @@ export class TransactionManager {
      * @param {Listener} listener 
      */
     removeEventListener(type, listener) {
-        this.listenersByType[type].every(function (l, index) {
+        this.listenersByType[type].every((l, index) => {
             if (l === listener) {
                 delete this.listenersByType[type][index];
                 return false

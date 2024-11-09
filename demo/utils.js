@@ -111,7 +111,7 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
 
     const response = await fetch(scripts.shift().src);
     if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
+        throw Error(`Response status: ${response.status}`);
     }
 
     let script = await response.text();

@@ -148,14 +148,16 @@ test('Delete subtree', (test_name) => {
     };
 
     const container = document.getElementById(test_name);
-    const fc = /** @type{FormChenExt} */ (createFormChen(container, schema, { bar: { foobar: 'foobar' } }));
+    const fc = createFormChen(container, schema, { bar: { foobar: 'foobar' } });
 
     let fooInput = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/foo"]`));
     let foobarInput = /** @type{HTMLInputElement} */ (container.querySelector(`[name="/bar/foobar"]`));
 
+    // @ts-ignore
     fc.getNodeById('/bar').patchValue(undefined);
     assert.equal('', foobarInput.value);
 
+    // @ts-ignore
     fc.getNodeById('/foo').patchValue(undefined);
     assert.equal('', fooInput.value);
     assert.equal(undefined, fc.value);
