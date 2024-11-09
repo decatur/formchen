@@ -10,7 +10,7 @@
 /** @import { Transaction } from "../utils" */
 
 
-import { logger, Patch, wrap, TransactionManager, registerUndo, ParsedValue, clone } from "../utils.js";
+import { logger, Patch, wrap, TransactionManager, registerUndo, ParsedValue, clone, deepFreeze } from "../utils.js";
 import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import * as edit from "./editor.js"
 import { createView } from "../gridchen/matrixview.js"
@@ -1065,7 +1065,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             const trans = tm.openTransaction(gridchenElement);
 
             if (model !== viewModel.getModel()) {
-                trans.patches.push(clone(viewModel.updateHolder()));
+                trans.patches.push(viewModel.updateHolder());
             } else {
                 trans.patches.push(createPatch(operations, pathPrefix));
             }

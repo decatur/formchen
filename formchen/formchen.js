@@ -12,7 +12,7 @@ import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
 
 import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter, UrlConverter, ColorConverter, IntegerConverter } from "./converter.js";
-import { Patch, TransactionManager, clone, logger, registerUndo } from "./utils.js";
+import { Patch, TransactionManager, clone, deepFreeze, logger, registerUndo } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
 import { removeNoOps } from "./json_patch_merge.js";
 
@@ -183,7 +183,8 @@ class BaseNode {
     }
 
     /**
-     * @param {any} obj 
+     * @param {any} obj
+     * @param {string=} error 
      * @returns {Patch}
      */
     patchValue(obj, error) {
@@ -523,7 +524,9 @@ export function createFormChen(rootElement, topSchema, topObj) {
         grid.resetFromView(view, transactionManager, node.path);
 
         view.updateHolder = function () {
-            return node.patchValue(view.getModel())
+            const patch = clone(node.patchValue(view.getModel()));
+            deepFreeze(patch);
+            return patch
         };
 
         node.refreshUI = function () {
