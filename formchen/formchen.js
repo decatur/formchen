@@ -227,7 +227,10 @@ class BaseNode {
             patch.operations.push(...this.clearPathToRoot());
         }
 
-        return patch
+        let p = clone(patch);
+        deepFreeze(p);
+
+        return p
     }
 
     /**
@@ -524,9 +527,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
         grid.resetFromView(view, transactionManager, node.path);
 
         view.updateHolder = function () {
-            const patch = clone(node.patchValue(view.getModel()));
-            deepFreeze(patch);
-            return patch
+            return node.patchValue(view.getModel())
         };
 
         node.refreshUI = function () {

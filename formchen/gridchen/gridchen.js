@@ -10,7 +10,7 @@
 /** @import { Transaction } from "../utils" */
 
 
-import { logger, Patch, wrap, TransactionManager, registerUndo, ParsedValue, clone, deepFreeze } from "../utils.js";
+import { logger, Patch, wrap, TransactionManager, registerUndo, ParsedValue } from "../utils.js";
 import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import * as edit from "./editor.js"
 import { createView } from "../gridchen/matrixview.js"
