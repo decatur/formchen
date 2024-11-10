@@ -98,6 +98,8 @@ export function merge(obj, patch) {
         if (root === undefined) root = null;
     }
 
+    // console.log(removes)
+
     let p = patch.filter((op) => !removes.includes(op));
     // Get rid of the symbol keys.
     root = clone(root);
@@ -145,7 +147,7 @@ export class Path {
             if (o === undefined) {
                 throw Error(`path "${path.parts.slice(0, i + 1).join('/')}" does not exist`);
             }
-            if (op.op != 'remove') appendOp(o, op);
+            appendOp(o, op);
         }
 
         if (o == null || !(o.constructor == Object || o.constructor == Array)) {

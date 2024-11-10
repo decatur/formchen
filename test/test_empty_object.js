@@ -121,8 +121,6 @@ test('Delete', (test_name) => {
     foobarInput.value = '';
     foobarInput.onblur(null);
     let expected = [
-        { op: 'remove', path: "/bar/foobar", oldValue: "foobar" },
-        { op: 'remove', path: "/bar", oldValue: {} },
         { op: 'remove', path: "", oldValue: {} },
     ];
     assert.equal(expected, fc.patch);

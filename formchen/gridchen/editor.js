@@ -149,7 +149,7 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
         if (!(evt.target instanceof HTMLElement)) return
         // Clicking editor should invoke default: move caret. It should not delegate to containers action.
         //evt.stopPropagation();
-        console.log(`keydownHandler ${evt.target.tagName}`)
+        //console.log(`keydownHandler ${evt.target.tagName}`)
 
         if (evt.code === 'ArrowLeft' && currentMode === INPUT) {
             evt.preventDefault();

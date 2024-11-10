@@ -409,7 +409,87 @@ test('misc', () => {
         }
     ];
 
-    const expected = patch;
+    const expected = [
+        {
+            "op": "remove",
+            "path": "/storage/dischargeMax"
+        },
+        {
+            "op": "add",
+            "path": "/storage/dischargeMax",
+            "value": [
+                null
+            ]
+        },
+        {
+            "op": "replace",
+            "path": "/storage/dischargeMax/0",
+            "value": {}
+        },
+        {
+            "op": "add",
+            "path": "/storage/dischargeMax/0/start",
+            "value": "2020-12-03T00:00:00+01:00"
+        },
+        {
+            "op": "add",
+            "path": "/storage/dischargeMax/0/end",
+            "value": "2044-01-01T01:00:00+01:00"
+        },
+        {
+            "op": "add",
+            "path": "/storage/dischargeMax/0/value",
+            "value": 1
+        }
+    ];
+    const mergedPatch = removeNoOps(doc, patch);
+    assert.equal(mergedPatch, expected);
+
+});
+
+test('test empty object', () => {
+    const doc = { };
+    const patch = [
+        {
+            "op": "add",
+            "path": "/anObject",
+            "value": {}
+        },
+        {
+            "op": "add",
+            "path": "/anObject/anEmptyMatrix",
+            "value": [
+                [
+                    "sdsdsd"
+                ]
+            ]
+        },
+        {
+            "op": "replace",
+            "path": "/anObject/anEmptyMatrix/0/0",
+            "value": null,
+            "oldValue": "sdsdsd"
+        },
+        {
+            "op": "remove",
+            "path": "/anObject/anEmptyMatrix/0",
+            "oldValue": [
+                null
+            ]
+        },
+        {
+            "op": "remove",
+            "path": "/anObject/anEmptyMatrix",
+            "oldValue": []
+        },
+        {
+            "op": "remove",
+            "path": "/anObject",
+            "oldValue": {}
+        }
+    ];
+
+    const expected = [];
     const mergedPatch = removeNoOps(doc, patch);
     assert.equal(mergedPatch, expected);
 

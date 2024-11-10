@@ -651,7 +651,7 @@ undo.register = () => {
     function listener(evt) {
         if (!(evt.target instanceof HTMLElement)) return
 
-        console.log(`keydown ${evt.key} ${evt.target.tagName}`);
+        //console.log(`keydown ${evt.key} ${evt.target.tagName}`);
 
         if (evt.key === 'z' && evt.ctrlKey) {
             let tm = tms.pop();
@@ -766,7 +766,7 @@ export class TransactionManager {
      * @returns {Transaction}
      */
     openTransaction(target) {
-        console.log("Opening Transaction")
+        //console.log("Opening Transaction")
         tms.push(this);
         const tm = this;
         return /**@type{Transaction}*/ ({
@@ -791,7 +791,7 @@ export class TransactionManager {
     }
 
     undo() {
-        console.log('undo')
+        //console.log('undo')
         const trans = this.transactions.pop();
         if (!trans) return;
         this.redoTransactions.push(trans);

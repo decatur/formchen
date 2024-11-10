@@ -431,7 +431,7 @@ function _startSelection(evt, selection, cellParent, indexMapper) {
     selection.headerSelected = false;
 
     if (evt.shiftKey && !evt.ctrlKey) {
-        console.log('Expand Selection');
+        //console.log('Expand Selection');
         selection.hide();
         selection.areas = [selection];
         selection.convexHull();

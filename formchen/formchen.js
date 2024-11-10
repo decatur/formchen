@@ -651,7 +651,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
 
             node.refreshUI = function () {
                 const value = node.getValue();
-                console.log(`node.refreshUI ${value}`);
+                //console.log(`node.refreshUI ${value}`);
                 if (value == null) {
                     input.value = '';
                 } else {
@@ -661,16 +661,16 @@ export function createFormChen(rootElement, topSchema, topObj) {
             };
 
             input.oninput = () => {
-                console.log("oninput")
+                //console.log("oninput")
                 input.setCustomValidity('');
             }
 
             let invalidCount = 0;
 
             input.onblur = () => {
-                console.log("onblur " + input.value)
+                //console.log("onblur " + input.value)
                 let parsedValue = converter.fromInput(input);
-                console.log("onblur1 " + parsedValue)
+                //console.log("onblur1 " + parsedValue)
                 if (parsedValue.validation && ++invalidCount == 1) {
                     input.setCustomValidity(parsedValue.validation);
                     input.reportValidity();
@@ -683,7 +683,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
 
             input.onfocus = () => {
                 let value = node.getValue();
-                console.log('onfocus ' + value);
+                //console.log('onfocus ' + value);
                 if (converter.toInputEdit) converter.toInputEdit(value, input);
             }
 
