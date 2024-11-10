@@ -12,7 +12,7 @@ import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
 
 import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter, UrlConverter, ColorConverter, IntegerConverter } from "./converter.js";
-import { Patch, TransactionManager, clone, deepFreeze, logger } from "./utils.js";
+import { Patch, TransactionManager, clone, deepFreeze, logger, undo } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
 import { removeNoOps } from "./json_patch_merge.js";
 
@@ -689,19 +689,9 @@ export function createFormChen(rootElement, topSchema, topObj) {
 
             input.onkeydown = (evt) => {
                 if (evt.key === 'z' && evt.ctrlKey) {
-                    evt.preventDefault();
-                    if (input.value != input.dataset.undoValue) {
-                        input.dataset.redoValue = input.value;
-                        input.value = input.dataset.undoValue;
-                        evt.stopPropagation();
-                    }
+                    undo.handleInputUndo(evt, input);
                 } else if (evt.key === 'y' && evt.ctrlKey) {
-                    evt.preventDefault();
-                    if (input.dataset.redoValue) {
-                        input.value = input.dataset.redoValue;
-                        delete input.dataset.redoValue;
-                        evt.stopPropagation();
-                    }
+                    undo.handleInputRedo(evt, input);
                 }
             };
         }

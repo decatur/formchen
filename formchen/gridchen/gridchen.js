@@ -511,7 +511,11 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     container.tabIndex = 0;
 
     const activeCell = {
-        openEditor: function (/** @type {CellEditMode} */ mode, /** @type {any} */ value) {
+        /**
+         * @param {CellEditMode} mode 
+         * @param {string} value 
+         */
+        openEditor: function (mode, value) {
             // TODO: rowIncrement should depend on scroll direction.
             scrollIntoView(selection.active.rowIndex, selection.active.rowIndex - firstRow);
             const spanStyle = getCell(selection.active).style;
@@ -519,7 +523,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             editor.open(mode, value, spanStyle, schemas[selection.active.columnIndex], activeCell.isReadOnly());
         },
         /**
-         * @param {any} value 
+         * @param {string} value 
          */
         enterInputMode: function (value) {
             activeCell.openEditor(edit.INPUT, value);

@@ -7,7 +7,7 @@
 
 /** @import { Selection, CellEditMode } from "../private-types" */
 
-import { logger } from "../utils.js";
+import { logger, undo } from "../utils.js";
 
 export const HIDDEN = /** @type{CellEditMode.HIDDEN} */ ('hidden');
 export const INPUT = /** @type{CellEditMode.INPUT} */ ('input');
@@ -122,15 +122,19 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
      * @param {string} value
      */
     function setValue(value) {
+        let e;
         if (input.style.display !== 'none') {
-            input.dataset.undoValue = input.value = value;
             if (value.includes('\n')) {
                 showTextArea();
-                textarea.value = value;
+                e = textarea;
+            } else {
+                e = input
             }
         } else {
-            textarea.value = value;
+            e = textarea;
         }
+
+        e.dataset.undoValue = e.value = value;
     }
 
     function getValue() {
@@ -196,29 +200,23 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
             evt.stopPropagation();
             commit();
         } else if (evt.key === 'z' && evt.ctrlKey) {
-            evt.preventDefault();
-            if (input.value != input.dataset.undoValue) {
-                input.dataset.redoValue = input.value;
-                input.value = input.dataset.undoValue;
-                evt.stopPropagation();
-            }
+            undo.handleInputUndo(evt, evt.target);
         } else if (evt.key === 'y' && evt.ctrlKey) {
-            evt.preventDefault();
-            if (input.dataset.redoValue) {
-                input.value = input.dataset.redoValue;
-                delete input.dataset.redoValue;
-                evt.stopPropagation();
-            }
+            undo.handleInputRedo(evt, evt.target);
         }
     }
 
+    /**
+     * 
+     * @param {FocusEvent} evt 
+     */
     function blurHandler(evt) {
         logger.info('editor.onblur');
         if (currentMode !== HIDDEN) {
             commit();
         }
 
-        if (!container.contains(evt.relatedTarget)) {
+        if (!container.contains(/** @type{HTMLElement} */(evt.relatedTarget))) {
             container.blur();
             selection.hide();
         }
@@ -238,7 +236,7 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
 
         /**
          * @param {CellEditMode} mode
-         * @param value
+         * @param {string} value
          * @param {CSSStyleDeclaration} spanStyle
          * @param {object} schema
          * @param {boolean} readOnly

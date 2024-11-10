@@ -636,40 +636,50 @@ export function applyJSONPatch(data, patch) {
     return holder[''];
 }
 
-export const undo = {};
-/** @type{TransactionManager[]} */
-const tms = [];
-
-/**
- * Add keydown listeners for KeyY and KeyZ to handle Undo/Redo.
- */
-undo.register = () => {
+export const undo = {
+    /** @type{TransactionManager[]} */
+    transactionManagerQueue: [],
 
     /**
-     * @param {KeyboardEvent} evt
+     * Add keydown listeners for KeyY and KeyZ to handle Undo/Redo.
      */
-    function listener(evt) {
-        if (!(evt.target instanceof HTMLElement)) return
-
-        //console.log(`keydown ${evt.key} ${evt.target.tagName}`);
-
-        if (evt.key === 'z' && evt.ctrlKey) {
-            let tm = tms.pop();
-            if (!tm) return;
-            evt.preventDefault();
+    register: () => {
+        /**
+         * @param {KeyboardEvent} evt
+         */
+        document.body.onkeydown = (evt) => {
+            if (evt.key === 'z' && evt.ctrlKey) {
+                let tm = undo.transactionManagerQueue.pop();
+                if (!tm) return;
+                evt.preventDefault();
+                evt.stopPropagation();
+                tm.undo();
+            } else if (evt.key === 'y' && evt.ctrlKey) {
+                let tm = undo.transactionManagerQueue.pop();
+                if (!tm) return;
+                evt.preventDefault();
+                evt.stopPropagation();
+                tm.redo();
+            }
+        }
+    },
+    handleInputUndo: (evt, input) => {
+        evt.preventDefault();
+            if (input.value != input.dataset.undoValue) {
+                input.dataset.redoValue = input.value;
+                input.value = input.dataset.undoValue;
+                evt.stopPropagation();
+            }
+    },
+    handleInputRedo: (evt, input) => {
+        evt.preventDefault();
+        if (input.dataset.redoValue) {
+            input.value = input.dataset.redoValue;
+            delete input.dataset.redoValue;
             evt.stopPropagation();
-            tm.undo();
-        } else if (evt.key === 'y' && evt.ctrlKey) {
-            let tm = tms.pop();
-            if (!tm) return;
-            evt.preventDefault();
-            evt.stopPropagation();
-            tm.redo();
         }
     }
-
-    document.body.onkeydown = listener;
-}
+};
 
 undo.register();
 
@@ -767,7 +777,7 @@ export class TransactionManager {
      */
     openTransaction(target) {
         //console.log("Opening Transaction")
-        tms.push(this);
+        undo.transactionManagerQueue.push(this);
         const tm = this;
         return /**@type{Transaction}*/ ({
             patches: [],
