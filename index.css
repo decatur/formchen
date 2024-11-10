@@ -30,7 +30,13 @@ body {
 }
 
 code {
-    display: none;
+    visibility: hidden;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    overflow: scroll;
     font-family: monospace;
     white-space: pre;
     min-height: 5em;

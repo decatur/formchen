@@ -29,9 +29,11 @@ let scripts = Array(...document.body.getElementsByTagName('script'));
  *     <label>Live<input type="radio" name="tabs" value="live"></label>
  *     ...
  *   </form>
- *   <code></code>
  *   <div>
- *     ...
+ *     <code></code>
+ *     <div>
+ *       ...
+ *     </div>
  *   </div>
  * </div>
  * 
@@ -73,14 +75,14 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
      * @param {F1Type} func 
      */
     function showCode(func) {
-        someElement.style.display = 'none';
-        codeElement.style.display = 'block';
+        someElement.style.visibility = 'hidden';
+        codeElement.style.visibility = 'visible';
         func()
     }
 
     appendRadio('Live').onchange = () => {
-        codeElement.style.display = 'none';
-        someElement.style.display = 'block';
+        codeElement.style.visibility = 'hidden';
+        someElement.style.visibility = 'visible';
     }
 
     appendRadio('Html').onchange = () => showCode(() => {
@@ -104,10 +106,14 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
         codeElement.textContent = script;
     })
 
+    someElement.remove();
+    container.appendChild(tabsElement);
+    const tabContainer = document.createElement('div');
+    tabContainer.style.position = 'relative';
+    tabContainer.appendChild(someElement);
     let codeElement = document.createElement('code');
-    container.insertAdjacentElement('afterbegin', codeElement);
-    container.insertAdjacentElement('afterbegin', tabsElement);
-
+    tabContainer.appendChild(codeElement);
+    container.appendChild(tabContainer);
 
     const response = await fetch(scripts.shift().src);
     if (!response.ok) {
