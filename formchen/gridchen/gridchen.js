@@ -882,8 +882,19 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         viewModel.applyJSONPatch(patch.operations);
         // TODO: What is this for?
         viewModel.updateHolder();
-        // Map "/47/11" => rowIndex=47, columnIndex=11
-        const [rowIndex, columnIndex] = patch.operations[0].path.split('/').slice(1).map(item => Number(item));
+        let data = viewModel.getModel();
+        let rowIndex;
+        let columnIndex;
+        if (typeof data === 'object' && !Array.isArray(data)) {
+            // TODO: Delegate this to the view Model
+            // Map "/timestamp/11" => rowIndex=11, columnIndex=1
+            let [columnKey, ri] = patch.operations[0].path.split('/').slice(1);
+            rowIndex = Number(ri);
+            columnIndex = Object.keys(data).indexOf(columnKey);
+        } else {
+            // Map "/47/11" => rowIndex=47, columnIndex=11
+            [rowIndex, columnIndex] = patch.operations[0].path.split('/').slice(1).map(item => Number(item));
+        }
         selection.setRange(rowIndex, columnIndex, 1, 1);
         // TODO: refresh on transaction level!
         refresh();

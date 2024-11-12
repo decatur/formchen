@@ -81,6 +81,9 @@ export function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
+export const idKey = Symbol();
+let id = 0;
+
 /**
  * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze#deep_freezing
  * 
@@ -90,7 +93,7 @@ export function deepFreeze(object) {
     // Retrieve the property names defined on object
     const propNames = Reflect.ownKeys(object);
 
-    // Freeze properties before freezing self
+    // Freeze properties
     for (const name of propNames) {
         const value = object[name];
 
@@ -99,6 +102,11 @@ export function deepFreeze(object) {
         }
     }
 
+    // Now shallow freeze self
+    console.log(`Assign id ${id}`)
+    if (id == 191)
+        console.log(`Assign id ${id}`)
+    object[idKey] = id++;
     Object.freeze(object);
 }
 

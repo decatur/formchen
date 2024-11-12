@@ -670,9 +670,9 @@ export function createRowObjectsView(jsonSchema, rows) {
          * @returns {JSONPatch}
          */
         deleteRow(rowIndex) {
-            rows.splice(rowIndex, 1);
+            const deleteElements = rows.splice(rowIndex, 1);
             rowStyles.splice(rowIndex, 1);
-            return [{ op: 'remove', path: `/${rowIndex}` }];
+            return [{ op: 'remove', path: `/${rowIndex}`, oldValue: deleteElements[0] }];
         }
 
         /**
@@ -838,8 +838,8 @@ export function createColumnMatrixView(jsonSchema, columns) {
             const patch = [];
             columns.forEach(function (column, colIndex) {
                 if (column) {
-                    column.splice(rowIndex, 1);
-                    patch.push({ op: 'remove', path: `/${colIndex}/${rowIndex}` })
+                    const deletedElements = column.splice(rowIndex, 1);
+                    patch.push({ op: 'remove', path: `/${colIndex}/${rowIndex}`, oldValue: deletedElements[0] })
                 }
             });
             return patch;
@@ -948,7 +948,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
 
 /**
  * @param {JSONSchema} jsonSchema
- * @param {object} columns
+ * @param {Object.<string, any[]>} columns
  */
 export function createColumnObjectView(jsonSchema, columns) {
     // Object of columns.
@@ -1034,8 +1034,8 @@ export function createColumnObjectView(jsonSchema, columns) {
             Object.keys(columns).forEach(function (key) {
                 // TODO: Handle column == null
                 const column = columns[key];
-                column.splice(rowIndex, 1);
-                patch.push({ op: 'remove', path: `/${key}/${rowIndex}` })
+                const deletedElements = column.splice(rowIndex, 1);
+                patch.push({ op: 'remove', path: `/${key}/${rowIndex}`, oldValue: deletedElements[0]})
             });
             rowStyles.splice(rowIndex, 1);
             return patch;
@@ -1064,7 +1064,11 @@ export function createColumnObjectView(jsonSchema, columns) {
             const key = ids[colIndex];
 
             if (!columns) {
+                /**
+                 * @returns {Object.<string, any[]>}
+                 */
                 const createEmptyObject = function () {
+                    /** @type{Object.<string, any[]>} */
                     const o = {};
                     o[key] = [];
                     return o;

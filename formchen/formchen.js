@@ -12,7 +12,7 @@ import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
 
 import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter, UrlConverter, ColorConverter, IntegerConverter } from "./converter.js";
-import { Patch, TransactionManager, clone, deepFreeze, logger, undo } from "./utils.js";
+import { Patch, TransactionManager, clone, idKey, logger, undo } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
 import { removeNoOps } from "./json_patch_merge.js";
 
@@ -209,7 +209,7 @@ class BaseNode {
 
         function freeze(obj) {
             obj = clone(obj);
-            deepFreeze(obj)
+            //deepFreeze(obj)
             return obj
         }
 
@@ -247,6 +247,9 @@ class BaseNode {
             if (obj == null) {
                 delete this.parent.obj[this.key];
             } else {
+                if (this.parent.obj != null)
+                console.log(this.parent.obj[idKey])
+                //console.log(this.parent.obj)
                 this.parent.obj[this.key] = obj;
             }
         } else if (obj !== undefined && this.constructor === BaseNode) {
@@ -311,7 +314,7 @@ class BaseNode {
                     oldValue = n.parent.obj[n.key];
                     delete n.parent.obj[n.key];
                 }
-                operations.push({ op: 'remove', path: n.path, oldValue });
+                operations.push({ op: 'remove', path: n.path, oldValue: oldValue });
             } else {
                 break;
             }
