@@ -5,8 +5,8 @@
  * Module implementing the visual grid and scrolling behaviour.
  */
 
-/** @import { GridSelectionAbstraction, Range as IRange, CellEditMode, MatrixView } from "../private-types" */
-/** @import { JSONSchema, JSONPatchOperation, GridChenElement } from "../types" */
+/** @import { GridSelectionAbstraction, Range as IRange, CellEditMode, MatrixView, GridChenElement } from "../private-types" */
+/** @import { JSONSchema, JSONPatchOperation } from "../types" */
 /** @import { Transaction } from "../utils" */
 
 
@@ -14,6 +14,7 @@ import { logger, Patch, wrap, TransactionManager, ParsedValue } from "../utils.j
 import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import * as edit from "./editor.js"
 import { createView } from "../gridchen/matrixview.js"
+import { removeNoOps } from "../json_patch_merge.js";
 
 
 //////////////////////
@@ -151,7 +152,7 @@ export class GridChen extends HTMLElement {
     }
 
     get patch() {
-        return this._transactionManager.patch
+        return removeNoOps(this.value, this._transactionManager.patch)
     }
 
     clearPatch() {

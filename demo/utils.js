@@ -42,7 +42,7 @@ let scripts = Array(...document.body.getElementsByTagName('script'));
  * @param {ValueCallBack} valueCallback 
  * @param {PatchCallBack} patchCallback 
  */
-export async function bindTabs(someElement, schema, valueCallback, patchCallback) {
+export async function bindDemoTabs(someElement, schema, valueCallback, patchCallback) {
     const container = someElement.closest('.demo');
     // HTML mutates once it is bound to formchen or gridchen. So we take a snapshot here.
     let html = container.innerHTML;
@@ -121,8 +121,8 @@ export async function bindTabs(someElement, schema, valueCallback, patchCallback
     }
 
     let script = await response.text();
-    // Remove all lines containing bindTabs stuff
-    script = script.replaceAll(/.*bindTabs.*\n/g, '');
+    // Remove all lines containing bindDemoTabs stuff
+    script = script.replaceAll(/.*bindDemoTabs.*\n/g, '');
     // Remove schema and data content
     script = script.replaceAll(/(schema|data) = ([^;]*)/g, '$1 = {...}');
 

@@ -1,7 +1,7 @@
 /** @import { JSONSchema } from "../formchen/types" */
 
 import { createFormChen } from "../formchen/formchen.js";
-import { bindTabs } from "./utils.js";
+import { bindDemoTabs } from "./utils.js";
 
 
 const schema = {
@@ -31,7 +31,7 @@ const schema = {
 };
 
 const formElement = document.getElementById(schema.title);
-bindTabs(formElement, schema, value, patch);
+bindDemoTabs(formElement, schema, value, patch);
 
 // Range from 0x0 ... 0xf
 const rowRange = Array.from({ length: 0x10 }, (_, k) => k);

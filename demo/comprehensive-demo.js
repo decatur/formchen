@@ -1,7 +1,7 @@
 /** @import { JSONSchema } from "../formchen/types" */
 
 import { createFormChen } from "../formchen/formchen.js"
-import { bindTabs } from "./utils.js";
+import { bindDemoTabs } from "./utils.js";
 
 /** @type{JSONSchema} */
 const schema = {
@@ -131,9 +131,8 @@ const data = {
     ]
 };
 
-const formElement = document.getElementById(schema.title);
-bindTabs(formElement, schema, value, patch);
-const formchen = createFormChen(formElement, schema, data);
+bindDemoTabs(document.getElementById(schema.title), schema, value, patch);
+const formchen = createFormChen(document.getElementById(schema.title), schema, data);
 
 function value() {
     return formchen.value

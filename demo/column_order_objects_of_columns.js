@@ -1,27 +1,34 @@
-/** @import { GridChenElement } from "../formchen/types" */
+/** @import { JSONSchema } from "../formchen/types" */
 
-import { bindTabs } from "./utils.js";
+import { createFormChen } from "../formchen/formchen.js";
+import { bindDemoTabs } from "./utils.js";
 
+/** @type {JSONSchema} */
 const schema = {
-    title: 'Order_objects_of_columns',
     type: 'object',
+    title: 'Order_objects_of_columns',
     properties: {
-        a: { type: 'array', title: 'a', columnIndex: 0, width: 100, items: { type: 'number' } },
-        1: { type: 'array', title: '1', columnIndex: 1, width: 100, items: { type: 'number' } }
+        columns: {
+            title: 'Columns',
+            type: 'object',
+            format: 'grid',
+            properties: {
+                a: { type: 'array', title: 'a', columnIndex: 0, width: 100, items: { type: 'number' } },
+                1: { type: 'array', title: '1', columnIndex: 1, width: 100, items: { type: 'number' } }
+            }
+        }
     }
 };
 
+const data = { columns: { a: [1, 2], 1: [3, 4] } };
 
-const data = { a: [1, 2], 1: [3, 4] };
-
-const gridElement = /** @type{GridChenElement} */ (document.getElementById(schema.title));
-bindTabs(gridElement, schema, value, patch);
-gridElement.bind(schema, data);
+bindDemoTabs(document.getElementById(schema.title), schema, value, patch);
+const formchen = createFormChen(document.getElementById(schema.title), schema, data);
 
 function value() {
-    return gridElement.value
+    return formchen.value
 }
 
 function patch() {
-    return gridElement.patch
+    return formchen.patch
 }

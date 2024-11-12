@@ -326,6 +326,11 @@ class MatrixViewClass {
      */
     updateHolder() {
         throw ABSTRACT_METHOD;
+        // const patch = new Patch();
+        // if (this.getModel() == null) {
+        //     patch.operations.push({op: 'remove', path: ''});
+        // }
+        // return patch
     }
 }
 

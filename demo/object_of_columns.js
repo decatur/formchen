@@ -1,11 +1,17 @@
-/** @import { JSONSchema, GridChenElement } from "../formchen/types" */
+/** @import { JSONSchema } from "../formchen/types" */
 
-import { bindTabs } from "./utils.js";
+import { createFormChen } from "../formchen/formchen.js";
+import { bindDemoTabs } from "./utils.js";
 
 /** @type {JSONSchema} */
 const schema = {
-    title: 'Object of Columns',
     type: 'object',
+    title: 'Object of Columns',
+    properties: {
+        columns: {
+    title: 'Columns',
+    type: 'object',
+    format: 'grid',
     properties: {
         timestamp: {
             type: 'array',
@@ -18,22 +24,21 @@ const schema = {
             type: 'array', items: { title: 'Weight', width: 100, type: 'number' }
         }
     }
-};
+}}};
 
-const data = {
+const data = {columns: {
     timestamp: ["2019-01-01", "2019-01-02", "2019-01-03"],
     age: [0, 2, 4],
     weight: [0, 1, 2]
-};
+}};
 
-const gridElement = /** @type{GridChenElement} */ (document.getElementById(schema.title));
-bindTabs(gridElement, schema, value, patch);
-gridElement.bind(schema, data);
+bindDemoTabs(document.getElementById(schema.title), schema, value, patch);
+const formchen = createFormChen(document.getElementById(schema.title), schema, data);
 
 function value() {
-    return gridElement.value
+    return formchen.value
 }
 
 function patch() {
-    return gridElement.patch
+    return formchen.patch
 }

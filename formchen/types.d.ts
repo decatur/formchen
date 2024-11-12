@@ -19,23 +19,6 @@ export interface FormChen {
     clearPatch: () => void;
 }
 
-/**
- * The Web Component.
- */
-export interface GridChenElement extends HTMLElement {
-
-    bind: (schema: JSONSchemaOrRef, value: any) => void;
-
-    readonly value: any;
-
-    /**
-     * Returns a flat patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
-     * of all performed transactions.
-     */
-    readonly patch: JSONPatchOperation[];
-    clearPatch: () => void;
-}
-
 export interface JSONPatchOperation {
     op: string;
     path: string;

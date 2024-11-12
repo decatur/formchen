@@ -4,7 +4,7 @@
 // Source located at https://github.com/decatur/formchen
 
 
-import type { JSONSchema, FormChen, JSONPatchOperation } from './types.d.ts'
+import type { JSONSchema, JSONSchemaOrRef, FormChen, JSONPatchOperation } from './types.d.ts'
 import {Patch, Transaction} from './utils.js'
 
 // export interface FormChenExt extends FormChen {
@@ -178,6 +178,23 @@ export interface PatchNode {
 
 export interface ResizeObserverEntry {
     // Not yet exported by lib.dom.d.ts
+}
+
+/**
+ * The Web Component.
+ */
+export interface GridChenElement extends HTMLElement {
+
+    bind: (schema: JSONSchemaOrRef, value: any) => void;
+
+    readonly value: any;
+
+    /**
+     * Returns a flat patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
+     * of all performed transactions.
+     */
+    readonly patch: JSONPatchOperation[];
+    clearPatch: () => void;
 }
 
 

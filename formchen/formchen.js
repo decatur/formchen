@@ -5,8 +5,8 @@
  * Module implementing two-way hierachical data binding.
  */
 
-/** @import { JSONPatchOperation, JSONSchemaOrRef, JSONSchema, FormChen, GridChenElement } from "./types" */
-/** @import { Converter } from "./private-types.js" */
+/** @import { JSONPatchOperation, JSONSchemaOrRef, JSONSchema, FormChen } from "./types" */
+/** @import { GridChenElement, Converter } from "./private-types.js" */
 
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
