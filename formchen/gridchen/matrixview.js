@@ -162,20 +162,18 @@ function createColumSchemas(schemas) {
 }
 
 /**
- * @param {object} properties
+ * @param {Object.<string, Object>} properties
  * @returns {[string, object][]}
  */
 function sortedColumns(properties) {
-    const entries = Object.entries(properties);
-    entries.sort(function (e1, e2) {
-        const o1 = e1[1]['columnIndex'];
-        const o2 = e2[1]['columnIndex'];
-        if (!(o1 == null || o2 == null)) {
-            return o1 - o2;
-        }
-        return 0;
-    });
-    return entries;
+    // Note that the insert order is only stable if no key is a (positive) integer, 
+    // see also https://stackoverflow.com/a/79186747/570118
+    const keys = Object.keys(properties);
+    if (keys.find((key) => Number.isInteger(Number(key))) !== undefined) {
+        throw Error(`Schema properties must not contain an integer as property, found ${keys}`);
+    }
+
+    return Object.entries(properties)
 }
 
 // function assert(condition, ...data) {
@@ -457,7 +455,7 @@ export function createRowMatrixView(jsonSchema, rows) {
         removeModel() {
             const oldValue = rows;
             rows = null;
-            return [{ op: 'remove', path: '', oldValue: oldValue }];
+            return [{ op: 'remove', path: '', oldValue }];
         }
 
         /**
@@ -654,8 +652,9 @@ export function createRowObjectsView(jsonSchema, rows) {
          * @returns {[RemovePatch]}
          */
         removeModel() {
+            const oldValue = rows;
             rows = null;
-            return [{ op: 'remove', path: '', oldValue: rows }]
+            return [{ op: 'remove', path: '', oldValue }]
         }
 
         /**
@@ -819,8 +818,9 @@ export function createColumnMatrixView(jsonSchema, columns) {
          * @returns {RemovePatch[]}
          */
         removeModel() {
+            const oldValue = columns;
             columns = null;
-            return [{ op: 'remove', path: '', oldValue: columns }]
+            return [{ op: 'remove', path: '', oldValue }]
         }
 
         /**
@@ -1014,8 +1014,9 @@ export function createColumnObjectView(jsonSchema, columns) {
          * @returns {RemovePatch[]}
          */
         removeModel() {
+            const oldValue = columns;
             columns = null;
-            return [{ op: 'remove', path: '', oldValue: columns }]
+            return [{ op: 'remove', path: '', oldValue }]
         }
 
         /**
@@ -1215,8 +1216,9 @@ export function createColumnVectorView(jsonSchema, column) {
          * @returns {RemovePatch[]}
          */
         removeModel() {
+            const oldValue = column;
             column = null;
-            return [{ op: 'remove', path: '', oldValue: column }]
+            return [{ op: 'remove', path: '', oldValue }]
         }
 
         /**
