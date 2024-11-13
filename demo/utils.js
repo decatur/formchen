@@ -43,7 +43,17 @@ let scripts = Array(...document.body.getElementsByTagName('script'));
  * @param {PatchCallBack} patchCallback 
  */
 export async function bindDemoTabs(someElement, schema, valueCallback, patchCallback) {
-    // if (someElement.id != 'BasicDemoReadOnly') someElement.remove();
+    const id = someElement.id;
+    let hash = encodeURIComponent(id);
+    if (window.location.hash === '' || window.location.hash == '#' + hash) {
+        let url = window.location.origin + window.location.pathname + '#' + hash;
+        console.log(`Loading ${url}`)
+    } else {
+        // This will, intentionally, crash the demo.
+        someElement.remove();
+        return;
+    }
+
     const container = someElement.closest('.demo');
     // HTML mutates once it is bound to formchen or gridchen. So we take a snapshot here.
     let html = container.innerHTML;

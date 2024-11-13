@@ -248,8 +248,6 @@ class BaseNode {
                 delete this.parent.obj[this.key];
             } else {
                 if (this.parent.obj != null)
-                console.log(this.parent.obj[idKey])
-                //console.log(this.parent.obj)
                 this.parent.obj[this.key] = obj;
             }
         } else if (obj !== undefined && this.constructor === BaseNode) {
