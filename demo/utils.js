@@ -43,6 +43,7 @@ let scripts = Array(...document.body.getElementsByTagName('script'));
  * @param {PatchCallBack} patchCallback 
  */
 export async function bindDemoTabs(someElement, schema, valueCallback, patchCallback) {
+    // if (someElement.id != 'BasicDemoReadOnly') someElement.remove();
     const container = someElement.closest('.demo');
     // HTML mutates once it is bound to formchen or gridchen. So we take a snapshot here.
     let html = container.innerHTML;

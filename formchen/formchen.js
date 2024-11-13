@@ -585,8 +585,11 @@ export function createFormChen(rootElement, topSchema, topObj) {
             if (!(element instanceof HTMLInputElement)) throw Error(`Form element at path ${path} must be an input, but found a ${element.tagName}`);
             if (element.tagName != 'INPUT') throw Error(element.tagName);
             const input = element;
-            input.readOnly = node.readOnly;
             input.type = 'checkbox';
+            if (node.readOnly) {
+                // Note: Input of type checkbox does not honor readOnly attribute.
+                input.disabled = true;
+            }           
 
             node.refreshUI = function () {
                 const value = node.getValue();
@@ -634,7 +637,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
                 if (schema.format === 'date') {
                     converter = new FullDateConverter();
                 } else if (schema.format === 'datetime') {
-                    converter = new DateTimeStringConverter(schema.period || 'HOURS');
+                    converter = new DateTimeStringConverter(schema.period || 'hours');
                 } else if (schema.format === 'url') {
                     converter = new UrlConverter();
                 } else if (schema.format === 'color') {

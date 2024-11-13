@@ -37,7 +37,7 @@ interface JSONSchemaRef  {
 export interface JSONSchema {
     $defs?: { [key: string]: JSONSchema };
     width?: number;
-    period?: "HOURS" | "MINUTES" | "SECONDS";
+    period?: "hours" | "minutes" | "seconds";
     multipleOf?: number;
     // converter?: Converter;
     minimum?: number;

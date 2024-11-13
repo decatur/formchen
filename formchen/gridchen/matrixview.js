@@ -127,19 +127,19 @@ function createColumSchemas(schemas) {
             schema.compare = compareString;
         }
         // else if (schema.type === 'string' && schema.format === 'date-partial-time') {
-        //     schema.converter = new c.DatePartialTimeStringConverter(schema.period || 'MINUTES');
+        //     schema.converter = new c.DatePartialTimeStringConverter(schema.period || 'minutes');
         // } 
         else if (schema.type === 'string' && schema.format === 'datetime') {
-            schema.converter = new c.DateTimeStringConverter(schema.period || 'MINUTES');
+            schema.converter = new c.DateTimeStringConverter(schema.period || 'minutes');
             schema.compare = compareString;
         }
         // else if (schema.type === 'object' && schema.format === 'date') {
         //     schema.converter = new c.DatePartialTimeConverter('DAYS');
         // } else if (schema.type === 'object' && schema.format === 'date-partial-time') {
-        //     schema.converter = new c.DatePartialTimeConverter(schema.period || 'MINUTES');
+        //     schema.converter = new c.DatePartialTimeConverter(schema.period || 'minutes');
         // } 
         //else if (schema.type === 'object' && schema.format === 'datetime') {
-        //    schema.converter = new c.DateTimeConverter(schema.period || 'MINUTES');
+        //    schema.converter = new c.DateTimeConverter(schema.period || 'minutes');
         //}
         else if (schema.type === 'boolean') {
             schema.converter = new c.BooleanStringConverter();
