@@ -5,7 +5,7 @@
  * Module implementing, well, utilities.
  */
 
-/** @import { JSONPatchOperation, } from "./types" */
+/** @import { JSONPatch, JSONPatchOperation } from "./types" */
 
 const logLevels = {
     null: 0,
@@ -81,8 +81,8 @@ export function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
-export const idKey = Symbol();
-let id = 0;
+// export const idKey = Symbol();
+// let id = 0;
 
 /**
  * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze#deep_freezing
@@ -103,17 +103,17 @@ export function deepFreeze(object) {
     }
 
     // Now shallow freeze self
-    console.log(`Assign id ${id}`)
-    if (id == 191)
-        console.log(`Assign id ${id}`)
-    object[idKey] = id++;
+    // console.log(`Assign id ${id}`)
+    // if (id == 191)
+    //     console.log(`Assign id ${id}`)
+    // object[idKey] = id++;
     Object.freeze(object);
 }
 
 export class Patch {
     constructor() {
         this.pathPrefix = '';
-        /** @type{JSONPatchOperation[]} */
+        /** @type{JSONPatch} */
         this.operations = [];
     }
 
@@ -204,7 +204,7 @@ const MILLI_SECONDS = resolvePeriod('MILLI_SECONDS');
  * @typedef {Object} Transaction
  * @property {Patch[]} patches
  * @property {F1Type} commit
- * @property {JSONPatchOperation[]} operations
+ * @property {JSONPatch} operations
  * @property {HTMLElement} target
  * @property {string} pathPrefix
  */
@@ -554,6 +554,7 @@ export class LocalDateParserClass {
 
 /**
  * @param {JSONPatchOperation} op
+ * @returns {JSONPatchOperation}
  */
 function reverseOp(op) {
     if (op.op === 'replace') {
@@ -566,16 +567,17 @@ function reverseOp(op) {
     } else if (op.op === 'remove') {
         // {"op":"remove","path":"/1","oldValue":["2020-01-01",2]}
         return { op: 'add', path: op.path, value: op.oldValue }
+    } else {
+        throw Error()
     }
-    // No need to support move, copy, or test.
-    throw new RangeError(op.op)
 }
 
 /**
- * @param {JSONPatchOperation[]} patch
- * @returns {JSONPatchOperation[]}
+ * @param {JSONPatch} patch
+ * @returns {JSONPatch}
  */
 export function reversePatch(patch) {
+    /** @type{JSONPatch} */
     const reversedPatch = [];
     for (let op of patch) {
         reversedPatch.unshift(reverseOp(op));
@@ -610,15 +612,12 @@ function applyJSONPatchOperation(holder, op) {
         } else {
             delete holder[index];
         }
-    } else {
-        // No need to support move, copy, or test.
-        throw new RangeError(op.op)
     }
 }
 
 /**
  * @param {{'':*}} holder
- * @param {JSONPatchOperation[]} patch
+ * @param {JSONPatch} patch
  */
 function applyPatch(holder, patch) {
     for (let op of patch) {
@@ -635,7 +634,7 @@ function applyPatch(holder, patch) {
  * It does not do any validation or error handling.
  *
  * @param {object} data
- * @param {JSONPatchOperation[]} patch
+ * @param {JSONPatch} patch
  * @returns {object|undefined}
  */
 export function applyJSONPatch(data, patch) {
@@ -673,11 +672,11 @@ export const undo = {
     },
     handleInputUndo: (evt, input) => {
         evt.preventDefault();
-            if (input.value != input.dataset.undoValue) {
-                input.dataset.redoValue = input.value;
-                input.value = input.dataset.undoValue;
-                evt.stopPropagation();
-            }
+        if (input.value != input.dataset.undoValue) {
+            input.dataset.redoValue = input.value;
+            input.value = input.dataset.undoValue;
+            evt.stopPropagation();
+        }
     },
     handleInputRedo: (evt, input) => {
         evt.preventDefault();
@@ -844,7 +843,7 @@ export class TransactionManager {
     /**
      * Returns a flat patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
      * of all performed transactions.
-     * @returns {JSONPatchOperation[]}
+     * @returns {JSONPatch}
      */
     get patch() {
         const allPatches = [];

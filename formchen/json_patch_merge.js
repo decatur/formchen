@@ -1,4 +1,4 @@
-/** @import { JSONPatchOperation } from "./types" */
+/** @import { JSONPatch, JSONPatchOperation } from "./types" */
 
 import { clone } from "./utils.js";
 
@@ -36,8 +36,8 @@ function isWrapper(o) {
 /**
  * Applies a patch to an immutable object.
  * @param {any} obj
- * @param {JSONPatchOperation[]} patch
- * @returns {[any, JSONPatchOperation[]]}
+ * @param {JSONPatch} patch
+ * @returns {[any, JSONPatch]}
  */
 export function merge(obj, patch) {
     if (obj === undefined) {
@@ -70,6 +70,7 @@ export function merge(obj, patch) {
 
             if (isWrapper(c)) {
                 if (c[wasAddedKey]) {
+                    // @ts-ignore
                     if (operation == 'replace') op.op = 'add';
                     else removes.push(op);
                 }
@@ -115,8 +116,8 @@ export function merge(obj, patch) {
  * the first operation is removed.
  *
  * @param {any} obj
- * @param {JSONPatchOperation[]} patch
- * @returns {JSONPatchOperation[]}
+ * @param {JSONPatch} patch
+ * @returns {JSONPatch}
  */
 export function removeNoOps(obj, patch) {
     return merge(obj, patch)[1];

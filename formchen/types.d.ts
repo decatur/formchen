@@ -14,19 +14,33 @@ export interface FormChen {
      * Returns a flat patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
      * of all performed transactions.
      */
-    readonly patch: JSONPatchOperation[];
+    readonly patch: JSONPatch;
 
     clearPatch: () => void;
 }
 
-export interface JSONPatchOperation {
-    op: string;
+// See https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/refs/heads/master/types/json-patch/index.d.ts
+type JSONPatchOperation = AddPatch | RemovePatch | ReplacePatch;
+interface Patch {
     path: string;
-    value?: any;
+}
+interface AddPatch extends Patch {
+    op: "add";
+    value: any;
+    error?: string;
+}
+interface RemovePatch extends Patch {
+    op: "remove";
+    oldValue?: any;
+}
+interface ReplacePatch extends Patch {
+    op: "replace";
+    value: any;
     oldValue?: any;
     error?: string;
 }
 
+export type JSONPatch = JSONPatchOperation[];
 export type JSONSchemaOrRef = JSONSchema | JSONSchemaRef;
 
 interface JSONSchemaRef  {

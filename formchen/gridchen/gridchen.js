@@ -6,7 +6,7 @@
  */
 
 /** @import { GridSelectionAbstraction, Range as IRange, CellEditMode, MatrixView, GridChenElement } from "../private-types" */
-/** @import { JSONSchema, JSONPatchOperation } from "../types" */
+/** @import { JSONPatch, JSONSchema } from "../types" */
 /** @import { Transaction } from "../utils" */
 
 
@@ -901,7 +901,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     }
 
     /**
-     * @param {JSONPatchOperation[]} operations
+     * @param {JSONPatch} operations
      * @param {string} pathPrefix
      * @returns {Patch}
      */
@@ -1203,13 +1203,13 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
      * @param {number} topRowIndex
      * @param {number} topColIndex
      * @param {Array<Array<string|undefined>>} matrix
-     * @returns {JSONPatchOperation[]}
+     * @returns {JSONPatch}
      */
     function pasteSingle(topRowIndex, topColIndex, matrix) {
         let rowIndex = topRowIndex;
         let endRowIndex = rowIndex + matrix.length;
         let endColIndex = Math.min(schemas.length, topColIndex + matrix[0].length);
-        /** @type{JSONPatchOperation[]} */
+        /** @type{JSONPatch} */
         let patch = [];
 
         for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {

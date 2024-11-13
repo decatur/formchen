@@ -5,14 +5,14 @@
  * Module implementing two-way hierachical data binding.
  */
 
-/** @import { JSONPatchOperation, JSONSchemaOrRef, JSONSchema, FormChen } from "./types" */
+/** @import { JSONPatch, JSONPatchOperation, JSONSchemaOrRef, JSONSchema, FormChen } from "./types" */
 /** @import { GridChenElement, Converter } from "./private-types.js" */
 
 import "./gridchen/gridchen.js"
 import { createView } from "./gridchen/matrixview.js";
 
 import { NumberConverter, DateTimeStringConverter, FullDateConverter, StringConverter, UrlConverter, ColorConverter, IntegerConverter } from "./converter.js";
-import { Patch, TransactionManager, clone, idKey, logger, undo } from "./utils.js";
+import { Patch, TransactionManager, clone, logger, undo } from "./utils.js";
 import { GridChen } from "./gridchen/gridchen.js";
 import { removeNoOps } from "./json_patch_merge.js";
 
@@ -195,7 +195,7 @@ class BaseNode {
             apply() {
                 for (let op of this.operations) {
                     let n = node.tree.getNode(op.path);
-                    n.setValue(op.value);
+                    n.setValue(op.op === 'remove' ? null : op.value);
                     if (n instanceof LeafNode) n.formElement.focus();
                 }
             }
@@ -220,11 +220,12 @@ class BaseNode {
         } else if (oldValue == null) {
             patch.operations.push(...this.createPathToRoot(obj));
             op = { op: 'add', path: this.path, value: obj };
+            if (error) op.error = error;
+            // Object.assign({ op: 'add', path: this.path, value: obj }, ...(error?[{error}]:[]))
         } else {
             op = { op: 'replace', path: this.path, value: obj, oldValue };
+            if (error) op.error = error;
         }
-
-        if (error) op.error = error;
 
         patch.operations.push(op);
 
@@ -248,7 +249,7 @@ class BaseNode {
                 delete this.parent.obj[this.key];
             } else {
                 if (this.parent.obj != null)
-                this.parent.obj[this.key] = obj;
+                    this.parent.obj[this.key] = obj;
             }
         } else if (obj !== undefined && this.constructor === BaseNode) {
             throw Error('Value lost')
@@ -260,10 +261,10 @@ class BaseNode {
 
     /**
      * @param{number | string | boolean} value
-     * @returns {JSONPatchOperation[]}
+     * @returns {JSONPatch}
      */
     createPathToRoot(value) {
-        /** @type{JSONPatchOperation[]} */
+        /** @type{JSONPatch} */
         let operations = [];
         /** @type{HolderNode} */
         let p = this.parent;
@@ -272,7 +273,7 @@ class BaseNode {
         let key = this.key;
         while (p && (p.obj == null || p.obj[key] == null)) {
             if (p.obj == null) {
-                let ctor = p.schema.type === 'array' ? Array:Object;
+                let ctor = p.schema.type === 'array' ? Array : Object;
                 p.obj = new ctor();
                 operations.unshift({ op: 'add', path: p.path, value: new ctor() });
             }
@@ -288,9 +289,10 @@ class BaseNode {
      * Removes the value for this node.
      * If the parent holder object thus will become empty, it is also removed.
      * This will continue to the root.
-     * @returns {JSONPatchOperation[]}
+     * @returns {JSONPatch}
      */
     clearPathToRoot() {
+        /** @type{JSONPatch} */
         let operations = [];
         /** @type{HolderNode} */
         let n = this.parent;
@@ -349,30 +351,6 @@ export class LeafNode extends BaseNode {
         }
         return undefined;
     }
-
-    // /**
-    //  * @param{number | string | boolean} value
-    //  * @returns {JSONPatchOperation[]}
-    //  */
-    // createPathToRoot(value) {
-    //     /** @type{JSONPatchOperation[]} */
-    //     let operations = [];
-    //     /** @type{HolderNode} */
-    //     let n = this.parent;
-    //     let v = value;
-    //     /** @type{string | number} */
-    //     let key = this.key;
-    //     while (n && n.obj == null) {
-    //         let empty = n.schema.type === 'array' ? [[], []] : [{}, {}];
-    //         operations.unshift({ op: 'add', path: n.path, value: empty[0] });
-    //         n.obj = empty[1];
-    //         n.obj[key] = v;
-    //         key = n.key;
-    //         v = n.obj;
-    //         n = n.parent;
-    //     }
-    //     return operations
-    // }
 
     /**
      */
@@ -587,7 +565,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
             if (node.readOnly) {
                 // Note: Input of type checkbox does not honor readOnly attribute.
                 input.disabled = true;
-            }           
+            }
 
             node.refreshUI = function () {
                 const value = node.getValue();

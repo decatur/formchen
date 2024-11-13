@@ -4,7 +4,7 @@
 // Source located at https://github.com/decatur/formchen
 
 
-import type { JSONSchema, JSONSchemaOrRef, FormChen, JSONPatchOperation } from './types.d.ts'
+import type { JSONSchema, JSONSchemaOrRef, FormChen, JSONPatch } from './types.d.ts'
 import {Patch, Transaction} from './utils.js'
 
 // export interface FormChenExt extends FormChen {
@@ -100,7 +100,7 @@ export type Cell = Range;
 // interface PlotEvent extends CustomEvent<PlotEventDetail> {
 // }
 
-export type JSONPatch = JSONPatchOperation[];
+
 
 export function createView(schema: JSONSchema, view: any[] | object): MatrixView;
 
@@ -117,7 +117,7 @@ export interface MatrixView {
     getCell: (rowIndex: number, colIndex: number) => any;
     getRow: (rowIndex: number) => any[];
     getColumn: (colIndex: number) => any[];
-    setCell: (rowIndex: number, colIndex: number, value: any, validation: string) => JSONPatchOperation[];
+    setCell: (rowIndex: number, colIndex: number, value: any, validation: string) => JSONPatch;
     splice: (rowIndex: number) => JSONPatch; // TODO: Rename to insertEmptyRow
     sort: (colIndex: number) => void;
     // TODO: Return the patched object as of getModel()?
@@ -193,7 +193,7 @@ export interface GridChenElement extends HTMLElement {
      * Returns a flat patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
      * of all performed transactions.
      */
-    readonly patch: JSONPatchOperation[];
+    readonly patch: JSONPatch;
     clearPatch: () => void;
 }
 
