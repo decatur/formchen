@@ -1,7 +1,7 @@
 import { test, assert, log } from './utils.js'
 import { removeNoOps, merge, Path } from "../formchen/json_patch_merge.js";
-import { testCases as testCasesA } from "../json-patch-tests/spec_tests.js"
-import { testCases as testCasesB } from "../json-patch-tests/tests.js"
+import { testCases as testCasesA } from "./json-patch-tests/spec_tests.js"
+import { testCases as testCasesB } from "./json-patch-tests/tests.js"
 
 log('\x1B[41;93;4m####### Loading test/test_json_patch_merge.js')
 
