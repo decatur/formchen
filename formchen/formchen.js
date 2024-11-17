@@ -5,7 +5,7 @@
  * Module implementing two-way hierachical data binding.
  */
 
-/** @import { JSONPatch, JSONPatchOperation, JSONSchemaOrRef, JSONSchema, FormChen } from "./types" */
+/** @import { JSONPatch, JSONPatchOperation, JSONSchemaOrRef, JSONSchema, FormChen, ReplacePatch } from "./types" */
 /** @import { GridChenElement, Converter } from "./private-types.js" */
 
 import "./gridchen/gridchen.js"
@@ -204,6 +204,7 @@ class BaseNode {
         const patch = new MyPatch();
 
         if (obj === oldValue) {
+            this.refreshUI();
             return patch
         }
 
@@ -780,6 +781,17 @@ export function createFormChen(rootElement, topSchema, topObj) {
 
         get patch() {
             return removeNoOps(orgObj, transactionManager.patch)
+        }
+
+        /**
+         * @param {ReplacePatch[]} patch 
+         */
+        patchMerge(patch) {
+            /** @type{ReplacePatch} */
+            for (const operation of patch) {
+                const node = rootTree.getNode(operation.path)
+                node.patchValue(operation.value)
+            }
         }
 
         clearPatch() {
