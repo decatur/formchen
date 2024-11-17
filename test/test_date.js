@@ -9,9 +9,9 @@ test('FullDate', () => {
 
 test('DateTime', () => {
     let parser = localeDateParser();
-    assert.equal([2019, 9, 27, 1, 2, 0, 0, 0, 0], parser.dateTime('2019-10-27 01:02Z', resolvePeriod('MINUTES')));
-    assert.true(parser.dateTime('27.10.2019 01+01:00',  resolvePeriod('MINUTES')) instanceof SyntaxError);
-    assert.true(parser.dateTime('27.10.2019', resolvePeriod('MINUTES')) instanceof SyntaxError);
+    assert.equal([2019, 9, 27, 1, 2, 0, 0, 0, 0], parser.dateTime('2019-10-27 01:02Z', resolvePeriod('minutes')));
+    assert.true(parser.dateTime('27.10.2019 01+01:00',  resolvePeriod('minutes')) instanceof SyntaxError);
+    assert.true(parser.dateTime('27.10.2019', resolvePeriod('minutes')) instanceof SyntaxError);
 });
 
 // test('toUTCDateTimeString', () => {

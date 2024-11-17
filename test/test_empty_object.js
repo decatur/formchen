@@ -172,7 +172,7 @@ test('Empty object with grid', (test_name) => {
                 items: {
                     type: 'array',
                     items: [  // tuple schema
-                        { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime', period: 'MINUTES' },
+                        { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime', period: 'minutes' },
                         { title: 'Age [d]', width: 100, type: 'number' },
                         { title: 'Weight [g]', width: 100, type: 'number' }
                     ]

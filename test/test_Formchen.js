@@ -59,7 +59,7 @@ test('FormChen', (test_name) => {
                 title: 'Some DateTime',
                 type: 'string',
                 format: 'datetime',
-                period: 'MINUTES'
+                period: 'minutes'
 
             },
             someBoolean: {
