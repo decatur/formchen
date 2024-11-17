@@ -45,6 +45,10 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             content_type = "text/css"
         elif path.endswith("json"):
             content_type = "application/json"
+        elif path == 'favicon.ico':
+            with open(path, mode='rb') as f:
+                self._send_content(f.read(), content_type="image/x-icon")
+            return
         else:
             self._send_content(f"404: {path}", status=400)
             return
@@ -74,6 +78,6 @@ def run(port):
         print("serving at port", port)
         httpd.serve_forever()
 
-o = urlparse('http://127.0.0.1:8081')
-# webbrowser.open_new(o.geturl())
-run(port=o.port)
+# o = urlparse('http://127.0.0.1:8081')
+# # webbrowser.open_new(o.geturl())
+# run(port=o.port)
