@@ -1,10 +1,6 @@
-# Run with 
-#     python demo-server/server.py
-
 import http.server
 import socketserver
 import json
-from urllib.parse import urlparse
 
 data = {
     "_id": '4711',
@@ -34,7 +30,6 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.flush()
 
     def do_GET(self):
-        print('#####################################' + self.path)
         path = str(self.path[1:])
         
         if path.endswith(".html"):
@@ -64,20 +59,24 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         length = int(self.headers['Content-Length'])
         request = self.rfile.read(length)
         request = json.loads(str(request, encoding='utf-8'))
-        print(request)
+
         if request['_id'] == data['_id']:
             data['_id'] = str(int(data['_id']) + 1)
-            response = [{"op": "replace", "path": "/_id", "value": data['_id']}];
+            response = {"patch": [{"op": "replace", "path": "/_id", "value": data['_id']}]};
+            status = 200
         else:
-            response = "Opimistic lock failed"
-        self._send_content(json.dumps(response), content_type="application/json")
+            # Opimistic lock failed
+            response = {"patch": [{"op": "replace", "path": "", "value": data}]};
+            status = 409
+
+        self._send_content(json.dumps(response), status, content_type="application/json")
 
 
 def run(port):
-    with socketserver.TCPServer(("", port), MyHandler) as httpd:
+    with socketserver.TCPServer(("", port), MyHandler, bind_and_activate=False) as httpd:
+        # httpd.allow_reuse_address = True
+        httpd.server_bind()
+        httpd.server_activate()
         print("serving at port", port)
         httpd.serve_forever()
 
-# o = urlparse('http://127.0.0.1:8081')
-# # webbrowser.open_new(o.geturl())
-# run(port=o.port)

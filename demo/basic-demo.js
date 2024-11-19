@@ -12,7 +12,7 @@ const schema = {
             items: {
                 type: 'array',  // tuple schema
                 items: [
-                    { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime', period: 'MINUTES' },
+                    { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime', period: 'minutes' },
                     { title: 'Age [d]', width: 100, type: 'integer' },
                     { title: 'Weight [g]', width: 100, type: 'number' }
                 ]
@@ -36,7 +36,7 @@ const schema = {
             title: 'Started',
             type: 'string',
             format: 'datetime',
-            period: 'MINUTES'
+            period: 'minutes'
         },
         latitude: {
             title: 'Latitude',

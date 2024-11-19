@@ -83,8 +83,11 @@ document.getElementById('MockPatch').onclick = async () => {
     let body = { _id: formchen.value._id, patch: formchen.patch}
     const response = await fetch('/foo', {method: 'PATCH', body: JSON.stringify(body)});
     console.log(response)
-    const patch = await response.json();
-    formchen.patchMerge(patch);
+    if (response.status == 409) {
+        alert('Opimistic lock failed')
+    }
+    const data = await response.json();
+    formchen.patchMerge(data.patch);
 }
 
 const response = await fetch('/foo.json');
