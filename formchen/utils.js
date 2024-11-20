@@ -13,11 +13,18 @@ const logLevels = {
     info: 2
 };
 
-const href = new URL(window.location.href);
-// if loglevel is not set then we get logLevels.null, which is 0
-const logLevel = logLevels[(href.searchParams.get('loglevel'))];
+const [logLevel, showConsole] = (() => {
+    if (typeof window !== 'undefined') {
+        const href = new URL(window.location.href);
+        // if loglevel is not set then we get logLevels.null, which is 0
+        const logLevel = logLevels[(href.searchParams.get('loglevel'))];
 
-const showConsole = Boolean(href.searchParams.get('console'));
+        const showConsole = Boolean(href.searchParams.get('console'));
+        return [logLevel, showConsole]
+    } else {
+        return [undefined, undefined]
+    }
+})();
 
 /**
  * @callback F6Type

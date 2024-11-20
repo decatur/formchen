@@ -423,7 +423,7 @@ export class HolderNode extends BaseNode {
  * @returns {FormChen}
  */
 export function createFormChen(rootElement, topSchema, topObj) {
-    const orgObj = clone(topObj);
+    let orgObj = clone(topObj);
     const titleElementsByPath = queryTitleElementsByPath(rootElement);
 
     const transactionManager = new TransactionManager();
@@ -779,6 +779,12 @@ export function createFormChen(rootElement, topSchema, topObj) {
             return rootNode.getValue()
         }
 
+        set value(v) {
+            orgObj = clone(v);
+            rootNode.setValue(orgObj);
+            this.clearPatch();
+        }
+
         get patch() {
             return removeNoOps(orgObj, transactionManager.patch)
         }
@@ -792,6 +798,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
                 const node = rootTree.getNode(operation.path)
                 node.patchValue(operation.value)
             }
+            this.clearPatch();
         }
 
         clearPatch() {

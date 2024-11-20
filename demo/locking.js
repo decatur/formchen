@@ -88,11 +88,14 @@ document.getElementById('MockPatch').onclick = async () => {
     }
     const data = await response.json();
     formchen.patchMerge(data.patch);
+    
 }
 
 const response = await fetch('/foo.json');
 let data1 = await response.json();
-formchen.patchMerge([{op: 'replace', path:'', value: data1}]);
+// formchen.patchMerge([{op: 'replace', path:'', value: data1}]);
+formchen.value = data1;
+console.log(formchen.data)
 
 
 
