@@ -521,7 +521,7 @@ export function createRowMatrixView(jsonSchema, rows) {
             function createOperation(oldValue) {
                 /** @type{ReplacePatch} */
                 let op = { op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue };
-                if (validation) op.error = validation;
+                if (validation) op.validation = validation;
                 return op
             }
             colIndex = columnIndices[colIndex];
@@ -695,10 +695,10 @@ export function createRowObjectsView(jsonSchema, rows) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param {any} value
-         * @param {string} _validation
+         * @param {string} validation
          * @returns {JSONPatch}
          */
-        setCell(rowIndex, colIndex, value, _validation) {
+        setCell(rowIndex, colIndex, value, validation) {
             /** @type{JSONPatch} */
             let patch = [];
 
@@ -726,7 +726,12 @@ export function createRowObjectsView(jsonSchema, rows) {
                 patch.push({ op: 'add', path: `/${rowIndex}/${key}`, value });
                 rows[rowIndex][key] = value;
             } else {
-                patch.push({ op: 'replace', path: `/${rowIndex}/${key}`, value: value, oldValue: oldValue });
+                /** @type{ReplacePatch} */
+                const operation = { op: 'replace', path: `/${rowIndex}/${key}`, value: value, oldValue: oldValue };
+                if (validation) {
+                    operation.validation = validation;
+                }
+                patch.push(operation);
                 rows[rowIndex][key] = value;
             }
 

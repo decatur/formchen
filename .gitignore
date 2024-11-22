@@ -1,8 +1,2 @@
-build/
-formchen.egg-info/
-
-.idea/
-dist/
-lunatic/
-poetry.lock
-venv/
+ideas/
+py_server/__pycache__/

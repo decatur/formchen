@@ -8,7 +8,7 @@ export interface FormChen {
     /**
      * The current value of the bound object.
      */
-    readonly value: object;
+    value: object;
 
     /**
      * Returns a flat patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
@@ -27,7 +27,7 @@ interface Patch {
 interface AddPatch extends Patch {
     op: "add";
     value: any;
-    error?: string;
+    validation?: string;
 }
 interface RemovePatch extends Patch {
     op: "remove";
@@ -37,7 +37,7 @@ interface ReplacePatch extends Patch {
     op: "replace";
     value: any;
     oldValue?: any;
-    error?: string;
+    validation?: string;
 }
 
 export type JSONPatch = JSONPatchOperation[];

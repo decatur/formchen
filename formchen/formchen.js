@@ -185,10 +185,10 @@ class BaseNode {
 
     /**
      * @param {any} obj
-     * @param {string=} error 
+     * @param {string=} validation 
      * @returns {Patch}
      */
-    patchValue(obj, error) {
+    patchValue(obj, validation) {
         let oldValue = this.getValue();
         const node = this;
         class MyPatch extends Patch {
@@ -221,11 +221,10 @@ class BaseNode {
         } else if (oldValue == null) {
             patch.operations.push(...this.createPathToRoot(obj));
             op = { op: 'add', path: this.path, value: obj };
-            if (error) op.error = error;
-            // Object.assign({ op: 'add', path: this.path, value: obj }, ...(error?[{error}]:[]))
+            if (validation) op.validation = validation;
         } else {
             op = { op: 'replace', path: this.path, value: obj, oldValue };
-            if (error) op.error = error;
+            if (validation) op.validation = validation;
         }
 
         patch.operations.push(op);
@@ -619,6 +618,8 @@ export function createFormChen(rootElement, topSchema, topObj) {
                     converter = new UrlConverter();
                 } else if (schema.format === 'color') {
                     converter = new ColorConverter();
+                } else {
+                    throw Error(`Invalid schema.format ${schema.format}`);
                 }
 
                 converter.conditionInput(element, node.readOnly);
@@ -726,10 +727,10 @@ export function createFormChen(rootElement, topSchema, topObj) {
         /**
          * @param {string | number | boolean} value
          * @param {HTMLElement} target
-         * 
+         * @param {string} validation
          */
-        function commit(value, target, error) {
-            const patch = node.patchValue(value, error);
+        function commit(value, target, validation) {
+            const patch = node.patchValue(value, validation);
             if (patch.operations.length > 0) {
                 const trans = transactionManager.openTransaction(target);
                 trans.patches.push(patch);
