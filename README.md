@@ -11,22 +11,24 @@ Formchen (little form) supports undo/redo transaction management.
 Edits on the original object are emitted as standard [JSON Patch](https://tools.ietf.org/html/rfc6902),
 which can be directly passed to the back end.
 
-Formchen is written in plain EcmaScript 2017 modules and can be directly imported as such with any modern browser.
+Formchen is written in plain EcmaScript 2022 modules and can be directly imported as such with any modern browser.
 
 # Testing
 
-Both pages https://decatur.github.io/formchen/index.html and https://decatur.github.io/formchen/test/testrunner.html should load without errors or warnings in the javascript console.
+Both [demo page](https://decatur.github.io/formchen/index.html) and [test page](https://decatur.github.io/formchen/test/testrunner.html) should load without errors or warnings in the javascript console.
 
 Check both pages with
 1. different browsers
 2. different locales/languages
 
-Check https://decatur.github.io/formchen/index.html with both light and dark mode.
+Check [demo page](https://decatur.github.io/formchen/index.html) with both light and dark mode.
 
 # Local Deployment
 
 ```
-python -m demo_server 8081
+export PYTHONPATH=demo; python -m py_server 8081 $(pwd)
+# or
+node demo/js_server/server.js 8081 $(pwd)
 ```
 
 ```
@@ -64,9 +66,23 @@ http://127.0.0.1:3000/index.html?loglevel=info&console=true
 * Use TypeScript 5.5 `@import`, see 
 https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#the-jsdoc-import-tag
 
+
+
+# Deployment
+
+To provide FormChen through `cdn.jsdelivr.net`, tag and push the release:
+
+```
+git tag 1.0.1 master
+git push origin 1.0.1
+curl --head https://cdn.jsdelivr.net/gh/decatur/formchen@1.0.1/formchen/formchen.js
+```
+
+# References
+
+* [Learn Forms](https://web.dev/learn/forms)
 * https://docs.joshuatz.com/cheatsheets/js/jsdoc
 * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
-
 
 
 

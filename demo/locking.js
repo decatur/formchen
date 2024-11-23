@@ -68,34 +68,37 @@ const schema = {
 };
 
 const data = null;
-bindDemoTabs(document.getElementById(schema.title), schema, value, patch);
+bindDemoTabs(document.getElementById(schema.title), schema, () => formchen.value, () => formchen.patch);
 const formchen = createFormChen(document.getElementById(schema.title), schema, data);
 
-function value() {
-    return formchen.value
-}
+const validationElement = document.getElementById('Validation');
 
-function patch() {
-    return formchen.patch
-}
-
-document.getElementById('MockPatch').onclick = async () => {
-    let body = { _id: formchen.value._id, patch: formchen.patch}
-    const response = await fetch('/foo', {method: 'PATCH', body: JSON.stringify(body)});
+document.getElementById('Patch').onclick = async () => {
+    validationElement.textContent = '';
+    
+    const patch = formchen.patch;
+    if (patch.length == 0) {
+        validationElement.textContent = 'No edits to save!';
+        return
+    } else if (patch.find((operation) => operation.validation) !== undefined) {
+        validationElement.textContent = `Fix validation issues:\n${JSON.stringify(patch, null, 4)}`;
+        return
+    }
+    
+    let body = { _id: formchen.value._id, patch: patch}
+    const response = await fetch('/plant.json', {method: 'PATCH', body: JSON.stringify(body)});
     console.log(response)
     if (response.status == 409) {
-        alert('Opimistic lock failed')
+        validationElement.textContent = `${response.statusText}: Please reload page!`;
+        return   
     }
     const data = await response.json();
     formchen.patchMerge(data.patch);
-    
 }
 
-const response = await fetch('/foo.json');
-let data1 = await response.json();
-// formchen.patchMerge([{op: 'replace', path:'', value: data1}]);
-formchen.value = data1;
-console.log(formchen.data)
+const response = await fetch('/plant.json');
+let plant = await response.json();
+formchen.value = plant;
 
 
 

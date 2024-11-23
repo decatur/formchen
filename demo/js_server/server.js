@@ -1,33 +1,37 @@
 // Usage as JavaScript:
-//   node js_server/server.js 3000 $(pwd)
+//   node js_server/server.js 8081 $(pwd)
+//
+
+/** @import { JSONPatchOperation } from "../../formchen/utils.js" */
 
 import { createServer } from 'http';
 import { readFile } from 'fs';
 import { extname } from 'path';
-// import { applyJSONPatchOperation } from '../formchen/utils.js';
+
 
 /**
  * Applies a JSON Patch operation.
  * @param {{'':object}} holder
- * @param {JSONPatchOperation} op
+ * @param {JSONPatchOperation} operation
  */
-function applyJSONPatchOperation(holder, op) {
-  const path = op.path.split('/');
+function applyJSONPatchOperation(holder, operation) {
+  const op = operation.op;
+  const path = operation.path.split('/');
 
   while (path.length > 1) {
     holder = holder[path.shift()];
   }
   const index = path[0];
 
-  if (op.op === 'replace') {
-    holder[index] = op.value;
-  } else if (op.op === 'add') {
+  if (op === 'replace') {
+    holder[index] = operation.value;
+  } else if (op === 'add') {
     if (Array.isArray(holder)) {
-      (/**@type{object[]}*/(holder)).splice(parseInt(index), 0, op.value);
+      (/**@type{object[]}*/(holder)).splice(parseInt(index), 0, operation.value);
     } else {
-      holder[index] = op.value;
+      holder[index] = operation.value;
     }
-  } else if (op.op === 'remove') {
+  } else if (op === 'remove') {
     if (Array.isArray(holder)) {
       (/**@type{object[]}*/(holder)).splice(parseInt(index), 1);
     } else {
@@ -38,8 +42,7 @@ function applyJSONPatchOperation(holder, op) {
 
 const hostname = '127.0.0.1';
 const args = process.argv;
-console.log(args);
-const port = Number(args[2]);
+const port = args[2];
 const servedRootFolder = args[3];
 
 // See https://www.30secondsofcode.org/js/s/nodejs-static-file-server/
@@ -70,7 +73,7 @@ const entity = {
 function handlePatch(res, payload) {
   let response;
   if (payload._id == entity._id) {
-    for (const operation in payload.patch) {
+    for (const operation of payload.patch) {
       applyJSONPatchOperation({ '': entity }, operation);
     }
     entity._id = String(Number(entity._id) + 1)
@@ -88,7 +91,7 @@ function handlePatch(res, payload) {
 }
 
 const server = createServer((req, res) => {
-  if (req.method == 'GET' && req.url == '/foo.json') {
+  if (req.method == 'GET' && req.url == '/plant.json') {
     res.setHeader('Content-Type', types.json);
     res.end(JSON.stringify(entity));
   } else if (req.method == 'GET') {
