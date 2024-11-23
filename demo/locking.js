@@ -75,7 +75,7 @@ const validationElement = document.getElementById('Validation');
 
 document.getElementById('Patch').onclick = async () => {
     validationElement.textContent = '';
-    
+
     const patch = formchen.patch;
     if (patch.length == 0) {
         validationElement.textContent = 'No edits to save!';
@@ -84,22 +84,29 @@ document.getElementById('Patch').onclick = async () => {
         validationElement.textContent = `Fix validation issues:\n${JSON.stringify(patch, null, 4)}`;
         return
     }
-    
-    let body = { _id: formchen.value._id, patch: patch}
-    const response = await fetch('/plant.json', {method: 'PATCH', body: JSON.stringify(body)});
+
+    let body = { _id: formchen.value._id, patch: patch }
+    const response = await fetch('/plant.json', { method: 'PATCH', body: JSON.stringify(body) });
     console.log(response)
     if (response.status == 409) {
         validationElement.textContent = `${response.statusText}: Please reload page!`;
-        return   
+        return
     }
     const data = await response.json();
     formchen.patchMerge(data.patch);
 }
 
 const response = await fetch('/plant.json');
-let plant = await response.json();
-formchen.value = plant;
-
+if (!response.ok) {
+    let validation = response.statusText;
+    if (location.hostname.endsWith('github.io')) {
+        validation += `: This page does not load from ${location.hostname}`;
+    }
+    validationElement.textContent = validation;
+} else {
+    let plant = await response.json();
+    formchen.value = plant;
+}
 
 
 

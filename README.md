@@ -15,9 +15,10 @@ Formchen is written in plain EcmaScript 2022 modules and can be directly importe
 
 # Testing
 
-Both [demo page](https://decatur.github.io/formchen/index.html) and [test page](https://decatur.github.io/formchen/test/testrunner.html) should load without errors or warnings in the javascript console.
+All three [demo page](https://decatur.github.io/formchen/index.html), [test page](https://decatur.github.io/formchen/test/testrunner.html) and
+[integration page](https://decatur.github.io/formchen/demo/locking.html) should load without errors or warnings in the javascript console.
 
-Check both pages with
+Check all three with
 1. different browsers
 2. different locales/languages
 
