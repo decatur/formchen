@@ -74,7 +74,7 @@ https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#t
 To provide FormChen through `cdn.jsdelivr.net`, tag and push the release:
 
 ```
-git tag 1.0.1 master
+git tag 1.0.1 main
 git push origin 1.0.1
 curl --head https://cdn.jsdelivr.net/gh/decatur/formchen@1.0.1/formchen/formchen.js
 ```
