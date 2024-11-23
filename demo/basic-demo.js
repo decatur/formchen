@@ -60,7 +60,6 @@ const schema = {
         }
     }
 };
-
 const data = {
     plant: 'Rubus idaeus',
     reference: 'https://en.wikipedia.org/wiki/Rubus_idaeus',
@@ -76,16 +75,9 @@ const data = {
     isCompleted: true
 };
 
-bindDemoTabs(document.getElementById(schema.title), schema, value, patch);
+bindDemoTabs(document.getElementById(schema.title), schema, () => formchen.value, () => formchen.patch);
 const formchen = createFormChen(document.getElementById(schema.title), schema, data);
 
-function value() {
-    return formchen.value
-}
-
-function patch() {
-    return formchen.patch
-}
 
 
 

@@ -1,8 +1,7 @@
 {
-    "compilerOptions": {
+  "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },
   "moduleResolution": "nodenext"
-
 }

@@ -16,16 +16,7 @@ const schema = {
         }
     }
 };
-
 const data = { column: ["2019-01-01", "2019-01-02", "2019-01-03"] };
 
-bindDemoTabs(document.getElementById(schema.title), schema, value, patch);
+bindDemoTabs(document.getElementById(schema.title), schema, () => formchen.value, () => formchen.patch);
 const formchen = createFormChen(document.getElementById(schema.title), schema, data);
-
-function value() {
-    return formchen.value
-}
-
-function patch() {
-    return formchen.patch
-}

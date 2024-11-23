@@ -80,12 +80,12 @@ document.getElementById('Patch').onclick = async () => {
     if (patch.length == 0) {
         validationElement.textContent = 'No edits to save!';
         return
-    } else if (patch.find((operation) => operation.validation) !== undefined) {
+    } else if (patch.find((operation) => 'validation' in operation) !== undefined) {
         validationElement.textContent = `Fix validation issues:\n${JSON.stringify(patch, null, 4)}`;
         return
     }
 
-    let body = { _id: formchen.value._id, patch: patch }
+    let body = { _id: formchen.value['_id'], patch: patch }
     const response = await fetch('/plant.json', { method: 'PATCH', body: JSON.stringify(body) });
     console.log(response)
     if (response.status == 409) {

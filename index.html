@@ -87,7 +87,8 @@
     </div>
     <script type="module" src="./demo/comprehensive-demo.js"></script>
 
-    <h2>Array of row objects</h2>
+    <h2>Array of Row Objects</h2>
+    🌞Please consider this data layout as column names are contained in the data rows.
     <div class="demo">
         <div id="Array of Row Objects">
             <label><span class="data-info"></span>
@@ -97,19 +98,8 @@
     </div>
     <script type="module" src="./demo/array_of_row_objects.js"></script>
 
-
-    <h2>A tuple (fixed length array) of column arrays</h2>
-    <div class="demo">
-        <div id="Array of Column Arrays">
-            <label><span class="data-info"></span>
-                <grid-chen name="/columns" style="display:block; height: 10em"></grid-chen>
-            </label>
-        </div>
-    </div>
-    <script type="module" src="./demo/array_of_column_arrays.js"></script>
-
-
-    <h2>Array of row tuples (fixed length array)</h2>
+    <h2>Array of Row Tuples</h2>
+    ⛅More compact than object rows, but not self-describing.
     <div class="demo">
         <div id="Array of Row Tuples">
             <label><span class="data-info"></span>
@@ -117,9 +107,10 @@
             </label>
         </div>
     </div>
-    <script type="module" src="./demo/array_of_row_arrays.js"></script>
+    <script type="module" src="./demo/array_of_row_tuples.js"></script>
 
     <h2>Object of Columns</h2>
+    🌞🌞More compact than object rows and still self-describing.
     <div class="demo">
         <div id="Object of Columns">
             <label><span class="data-info"></span>
@@ -128,8 +119,20 @@
         </div>
     </div>
     <script type="module" src="./demo/object_of_columns.js"></script>
+    
+    <h2>Tuple of Column Arrays</h2>
+    🌧 This column-matrix is neither self-describing nor conventinal; do not use it.
+    <div class="demo">
+        <div id="Tuple of Column Arrays">
+            <label><span class="data-info"></span>
+                <grid-chen name="/columns" style="display:block; height: 10em"></grid-chen>
+            </label>
+        </div>
+    </div>
+    <script type="module" src="./demo/tuple_of_column_arrays.js"></script>
 
-    <h2>A single column array</h2>
+    <h2>Single Column Array</h2>
+    🌧🌧 We may deprecate single column data.
     <div class="demo">
         <div id="Single Column Array">
             <label><span class="data-info"></span>

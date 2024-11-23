@@ -60,7 +60,6 @@ const schema = {
         }
     }
 };
-
 const data = {
     plant: 'Rubus idaeus',
     observer: 'Frida Krum',
@@ -76,16 +75,8 @@ const data = {
 };
 
 const formElement = document.getElementById(schema.title);
-bindDemoTabs(formElement, schema, value, patch);
+bindDemoTabs(formElement, schema, () => formchen.value, () => formchen.patch);
 const formchen = createFormChen(formElement, schema, data);
-
-function value() {
-    return formchen.value
-}
-
-function patch() {
-    return formchen.patch
-}
 
 
 

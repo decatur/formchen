@@ -23,7 +23,6 @@ const schema = {
         }
     }
 };
-
 const data = {
     rows: [
         ["2019-01-01", 0, 0],
@@ -32,14 +31,7 @@ const data = {
     ]
 };
 
-bindDemoTabs(document.getElementById(schema.title), schema, value, patch);
+bindDemoTabs(document.getElementById(schema.title), schema, () => formchen.value, () => formchen.patch);
 const formchen = createFormChen(document.getElementById(schema.title), schema, data);
 
-function value() {
-    return formchen.value
-}
-
-function patch() {
-    return formchen.patch
-}
 

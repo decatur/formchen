@@ -514,30 +514,31 @@ export function createRowMatrixView(jsonSchema, rows) {
          * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value, validation) {
-            
+
             /**
              * @returns {ReplacePatch}
              */
             function createOperation(oldValue) {
                 /** @type{ReplacePatch} */
-                let op = { op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue };
-                if (validation) op.validation = validation;
-                return op
+                return {
+                    ...{ op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue },
+                    ...(validation && { validation })
+                }
             }
             colIndex = columnIndices[colIndex];
 
-            /** @type{JSONPatch} */
-            let patch = [];
-
             if (value == null) {
                 if (!rows[rowIndex]) {
-                    return patch
+                    return []
                 }
                 // Important: Must not delete rows[rowIndex][colIndex], as this would produce an empty index, which is not JSON.
-                patch.push(createOperation(rows[rowIndex][colIndex]));
+                const patch = [createOperation(rows[rowIndex][colIndex])];
                 rows[rowIndex][colIndex] = null;
                 return patch
             }
+
+            /** @type{JSONPatch} */
+            const patch = [];
 
             if (!rows) {
                 rows = createArray(1 + rowIndex);
@@ -727,9 +728,9 @@ export function createRowObjectsView(jsonSchema, rows) {
                 rows[rowIndex][key] = value;
             } else {
                 /** @type{ReplacePatch} */
-                const operation = { op: 'replace', path: `/${rowIndex}/${key}`, value: value, oldValue: oldValue };
-                if (validation) {
-                    operation.validation = validation;
+                const operation = {
+                    ...{ op: 'replace', path: `/${rowIndex}/${key}`, value: value, oldValue: oldValue },
+                    ...(validation && { validation })
                 }
                 patch.push(operation);
                 rows[rowIndex][key] = value;
@@ -874,7 +875,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
          * 
          * @returns {JSONPatch}
          */
-        setCell(rowIndex, colIndex, value) {
+        setCell(rowIndex, colIndex, value, validation) {
             /** @type{JSONPatch} */
             let patch = [];
             if (!columns) {
@@ -895,7 +896,10 @@ export function createColumnMatrixView(jsonSchema, columns) {
             const oldValue = columns[colIndex][rowIndex];
             // Must not use remove operation here!
             columns[colIndex][rowIndex] = value;
-            patch.push({ op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value, oldValue });
+            patch.push({
+                ...{ op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value, oldValue },
+                ...(validation && { validation })
+            });
 
             return patch;
         }
@@ -1048,7 +1052,7 @@ export function createColumnObjectView(jsonSchema, columns) {
                 // TODO: Handle column == null
                 const column = columns[key];
                 const deletedElements = column.splice(rowIndex, 1);
-                patch.push({ op: 'remove', path: `/${key}/${rowIndex}`, oldValue: deletedElements[0]})
+                patch.push({ op: 'remove', path: `/${key}/${rowIndex}`, oldValue: deletedElements[0] })
             });
             rowStyles.splice(rowIndex, 1);
             return patch;
@@ -1069,10 +1073,10 @@ export function createColumnObjectView(jsonSchema, columns) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param {any} value
-         * @param {string} _validation
+         * @param {string} validation
          * @returns {JSONPatch}
          */
-        setCell(rowIndex, colIndex, value, _validation) {
+        setCell(rowIndex, colIndex, value, validation) {
             /** @type{JSONPatch} */
             let patch = [];
             const key = ids[colIndex];
@@ -1104,7 +1108,10 @@ export function createColumnObjectView(jsonSchema, columns) {
             const oldValue = column[rowIndex];
             column[rowIndex] = value;
             // Must not use remove operation here!
-            patch.push({ op: 'replace', path: `/${key}/${rowIndex}`, value: value, oldValue });
+            patch.push({
+                ...{ op: 'replace', path: `/${key}/${rowIndex}`, value: value, oldValue },
+                ...(validation && {validation})
+            });
 
             return patch;
         }
@@ -1263,10 +1270,10 @@ export function createColumnVectorView(jsonSchema, column) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param {any} value
-         * @param {string} _validation
+         * @param {string} validation
          * @returns {JSONPatch}
          */
-        setCell(rowIndex, colIndex, value, _validation) {
+        setCell(rowIndex, colIndex, value, validation) {
             if (colIndex !== 0) {
                 throw new RangeError();
             }
@@ -1289,7 +1296,10 @@ export function createColumnVectorView(jsonSchema, column) {
                 return patch
             }
 
-            patch.push({ op: 'replace', path: `/${rowIndex}`, value: value, oldValue });
+            patch.push({
+                ...{ op: 'replace', path: `/${rowIndex}`, value: value, oldValue },
+                ...(validation && { validation })
+            });
 
             column[rowIndex] = value;
             return patch;

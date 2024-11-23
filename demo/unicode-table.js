@@ -31,7 +31,7 @@ const schema = {
 };
 
 const formElement = document.getElementById(schema.title);
-bindDemoTabs(formElement, schema, value, patch);
+bindDemoTabs(formElement, schema, () => formchen.value, () => formchen.patch);
 
 // Range from 0x0 ... 0xf
 const rowRange = Array.from({ length: 0x10 }, (_, k) => k);
@@ -53,12 +53,5 @@ function refreshSymbols() {
 let formchen = refreshSymbols();
 document.getElementById('UnicodeTableRefresh').onclick = refreshSymbols;
 
-function value() {
-    return formchen.value
-}
-
-function patch() {
-    return formchen.patch
-}
 
 
