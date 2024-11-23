@@ -407,7 +407,7 @@ export class FullDate {
  * @returns {FullDate|SyntaxError}
  */
 function parseFullDate(s) {
-    if (!/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
         return new SyntaxError(`Date ${s} does not match yyyy-mm-dd`);
     }
     let [year, month, date] = s.split('-').map((p) => parseInt(p, 10));
