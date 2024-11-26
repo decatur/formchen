@@ -40,8 +40,6 @@ code {
     font-family: monospace;
     white-space: pre;
     min-height: 5em;
-    /*border: 1px solid #ddd;
-    background-color: #888;*/
 }
 
 .tabs {
@@ -60,7 +58,8 @@ code {
 .tabs label {
     display: inline-block;
     margin-top: 0px;
-    border: 2px solid;
+    border-right: 2px solid;
+    border-bottom: 2px solid;
     padding: 5pt;
     width: 10ex;
 }

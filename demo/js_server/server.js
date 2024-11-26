@@ -2,43 +2,14 @@
 //   node js_server/server.js 8081 $(pwd)
 //
 
-/** @import { JSONPatchOperation } from "../../formchen/utils.js" */
+/** @import { JSONPatchOperation } from "../../formchen/types.js" */
 
 import { createServer } from 'http';
 import { readFile } from 'fs';
 import { extname } from 'path';
 
 
-/**
- * Applies a JSON Patch operation.
- * @param {{'':object}} holder
- * @param {JSONPatchOperation} operation
- */
-function applyJSONPatchOperation(holder, operation) {
-  const op = operation.op;
-  const path = operation.path.split('/');
 
-  while (path.length > 1) {
-    holder = holder[path.shift()];
-  }
-  const index = path[0];
-
-  if (op === 'replace') {
-    holder[index] = operation.value;
-  } else if (op === 'add') {
-    if (Array.isArray(holder)) {
-      (/**@type{object[]}*/(holder)).splice(parseInt(index), 0, operation.value);
-    } else {
-      holder[index] = operation.value;
-    }
-  } else if (op === 'remove') {
-    if (Array.isArray(holder)) {
-      (/**@type{object[]}*/(holder)).splice(parseInt(index), 1);
-    } else {
-      delete holder[index];
-    }
-  }
-}
 
 const hostname = '127.0.0.1';
 const args = process.argv;
@@ -54,7 +25,7 @@ const types = {
   json: 'application/json'
 };
 
-const entity = {
+const plant = {
   "_id": '4711',
   "plant": 'Rubus idaeus',
   "reference": 'https://en.wikipedia.org/wiki/Rubus_idaeus',
@@ -72,16 +43,16 @@ const entity = {
 
 function handlePatch(res, payload) {
   let response;
-  if (payload._id == entity._id) {
+  if (payload._id == plant._id) {
     for (const operation of payload.patch) {
-      applyJSONPatchOperation({ '': entity }, operation);
+      applyJSONPatchOperation({ '': plant }, operation);
     }
-    entity._id = String(Number(entity._id) + 1)
-    response = { "patch": [{ "op": "replace", "path": "/_id", "value": entity._id }] };
+    plant._id = String(Number(plant._id) + 1)
+    response = { "patch": [{ "op": "replace", "path": "/_id", "value": plant._id }] };
     res.statusCode = 200
   } else {
     // Opimistic lock failed
-    response = { "patch": [{ "op": "replace", "path": "", "value": entity }] };
+    response = { "patch": [{ "op": "replace", "path": "", "value": plant }] };
     res.statusCode = 409
   }
 
@@ -91,9 +62,10 @@ function handlePatch(res, payload) {
 }
 
 const server = createServer((req, res) => {
+  console.log(`${req.method} ${req.url}`);
   if (req.method == 'GET' && req.url == '/plant.json') {
     res.setHeader('Content-Type', types.json);
-    res.end(JSON.stringify(entity));
+    res.end(JSON.stringify(plant));
   } else if (req.method == 'GET') {
     const extension = extname(req.url).slice(1);
     const cType = extension ? (types[extension] ?? types.html) : types.html;

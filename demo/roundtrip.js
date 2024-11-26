@@ -1,7 +1,7 @@
 /** @import { JSONSchema } from "../formchen/types" */
 
 import { createFormChen } from "../formchen/formchen.js"
-import { bindDemoTabs } from "../demo/utils.js";
+import { bindDemoTabs, fakeFetch } from "../demo/utils.js";
 
 /** @type{JSONSchema} */
 const schema = {
@@ -19,7 +19,7 @@ const schema = {
             }
         }
     },
-    title: 'BasicDemo',
+    title: 'RoundtripDemo',
     type: 'object',
     properties: {
         _id: {
@@ -72,6 +72,7 @@ bindDemoTabs(document.getElementById(schema.title), schema, () => formchen.value
 const formchen = createFormChen(document.getElementById(schema.title), schema, data);
 
 const validationElement = document.getElementById('Validation');
+const useFakeServer = /** @type{HTMLInputElement} */(document.getElementById('fake_server'));
 
 document.getElementById('Patch').onclick = async () => {
     validationElement.textContent = '';
@@ -86,7 +87,7 @@ document.getElementById('Patch').onclick = async () => {
     }
 
     let body = { _id: formchen.value['_id'], patch: patch }
-    const response = await fetch('/plant.json', { method: 'PATCH', body: JSON.stringify(body) });
+    const response = await fetchFactory()('/plant.json', { method: 'PATCH', body: JSON.stringify(body) });
     console.log(response)
     if (response.status == 409) {
         validationElement.textContent = `${response.statusText}: Please reload page!`;
@@ -96,7 +97,7 @@ document.getElementById('Patch').onclick = async () => {
     formchen.patchMerge(data.patch);
 }
 
-const response = await fetch('/plant.json');
+const response = await fetchFactory()('/plant.json');
 if (!response.ok) {
     let validation = response.statusText;
     if (location.hostname.endsWith('github.io')) {
@@ -106,6 +107,16 @@ if (!response.ok) {
 } else {
     let plant = await response.json();
     formchen.value = plant;
+}
+
+useFakeServer.onchange = () => {
+    window.localStorage.setItem('useFakeServer', String(useFakeServer.checked));
+}
+
+useFakeServer.checked = !(window.localStorage.getItem('useFakeServer') == 'false');
+
+function fetchFactory() {
+    return useFakeServer.checked?fakeFetch:fetch
 }
 
 

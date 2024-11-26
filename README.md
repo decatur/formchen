@@ -15,10 +15,9 @@ Formchen is written in plain EcmaScript 2022 modules and can be directly importe
 
 # Testing
 
-All three [demo page](https://decatur.github.io/formchen/index.html), [test page](https://decatur.github.io/formchen/test/testrunner.html) and
-[integration page](https://decatur.github.io/formchen/demo/locking.html) should load without errors or warnings in the javascript console.
+Both [demo page](https://decatur.github.io/formchen/index.html) and [test page](https://decatur.github.io/formchen/test/testrunner.html) should load without errors or warnings in the javascript console.
 
-Check all three with
+Check both with
 1. different browsers
 2. different locales/languages
 
@@ -34,7 +33,6 @@ node demo/js_server/server.js 8081 $(pwd)
 
 ```
 http://127.0.0.1:8081/index.html?loglevel=info&console=true
-http://127.0.0.1:8081/demo/locking.html
 http://127.0.0.1:8081/test/testrunner.html
 ```
 
@@ -63,11 +61,6 @@ npm install -g typescript
 ```
 http://127.0.0.1:3000/index.html?loglevel=info&console=true
 ```
-
-* Use TypeScript 5.5 `@import`, see 
-https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#the-jsdoc-import-tag
-
-
 
 # Deployment
 
