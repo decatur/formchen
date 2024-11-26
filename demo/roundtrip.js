@@ -89,7 +89,7 @@ document.getElementById('Patch').onclick = async () => {
     const response = await fetchFactory()('/plant.json', { method: 'PATCH', body: JSON.stringify(body) });
     console.log(response)
     if (!response.ok) {
-        validationElement.textContent = `${response.statusText} ${response.status}`;
+        validationElement.textContent = `${response.statusText} ${response.status}: Cannot PATCH from ${location.hostname}`;
         if (response.status == 409) {
             validationElement.textContent += ': Please reload page!';
         }
@@ -101,7 +101,7 @@ document.getElementById('Patch').onclick = async () => {
 
 const response = await fetchFactory()('/plant.json');
 if (!response.ok) {
-    validationElement.textContent = `${response.statusText} ${response.status}: Cannot load from ${location.hostname}`;
+    validationElement.textContent = `${response.statusText} ${response.status}: Cannot GET from ${location.hostname}`;
 } else {
     let plant = await response.json();
     formchen.value = plant;
