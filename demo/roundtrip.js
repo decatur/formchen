@@ -1,7 +1,7 @@
 /** @import { JSONSchema } from "../formchen/types" */
 
 import { createFormChen } from "../formchen/formchen.js"
-import { bindDemoTabs, fakeFetch } from "../demo/utils.js";
+import { bindDemoTabs, fetchFactory } from "../demo/utils.js";
 
 /** @type{JSONSchema} */
 const schema = {
@@ -72,8 +72,6 @@ bindDemoTabs(document.getElementById(schema.title), schema, () => formchen.value
 const formchen = createFormChen(document.getElementById(schema.title), schema, data);
 
 const validationElement = document.getElementById('Validation');
-const useFakeServer = /** @type{HTMLInputElement} */(document.getElementById('fake_server'));
-useFakeServer.checked = !(window.localStorage.getItem('useFakeServer') == 'false');
 
 document.getElementById('Patch').onclick = async () => {
     validationElement.textContent = '';
@@ -91,8 +89,9 @@ document.getElementById('Patch').onclick = async () => {
     const response = await fetchFactory()('/plant.json', { method: 'PATCH', body: JSON.stringify(body) });
     console.log(response)
     if (!response.ok) {
+        validationElement.textContent = `${response.statusText} ${response.status}`;
         if (response.status == 409) {
-            validationElement.textContent = response.statusText + ': Please reload page!';
+            validationElement.textContent += ': Please reload page!';
         }
         return
     }
@@ -102,25 +101,13 @@ document.getElementById('Patch').onclick = async () => {
 
 const response = await fetchFactory()('/plant.json');
 if (!response.ok) {
-    let validation = response.statusText;
-    if (location.hostname.endsWith('github.io')) {
-        validation += `: This page does not load from ${location.hostname}`;
-    }
-    validationElement.textContent = validation;
+    validationElement.textContent = `${response.statusText} ${response.status}: Cannot load from ${location.hostname}`;
 } else {
     let plant = await response.json();
     formchen.value = plant;
 }
 
-useFakeServer.onchange = () => {
-    window.localStorage.setItem('useFakeServer', String(useFakeServer.checked));
-}
 
-
-
-function fetchFactory() {
-    return useFakeServer.checked?fakeFetch:fetch
-}
 
 
 

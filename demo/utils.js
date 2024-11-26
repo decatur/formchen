@@ -252,3 +252,15 @@ export async function fakeFetch(_input, init) {
     return /** @type{Response} */(response)
 }
 
+const useFakeServerElement = /** @type{HTMLInputElement} */(document.getElementById('fake_server'));
+if (useFakeServerElement) {
+    useFakeServerElement.checked = !(window.localStorage.getItem('useFakeServer') == 'false');
+    useFakeServerElement.onchange = () => {
+        window.localStorage.setItem('useFakeServer', String(useFakeServerElement.checked));
+    }
+}
+
+export function fetchFactory() {
+    return (useFakeServerElement?.checked)?fakeFetch:fetch
+}
+
