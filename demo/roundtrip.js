@@ -73,6 +73,7 @@ const formchen = createFormChen(document.getElementById(schema.title), schema, d
 
 const validationElement = document.getElementById('Validation');
 const useFakeServer = /** @type{HTMLInputElement} */(document.getElementById('fake_server'));
+useFakeServer.checked = !(window.localStorage.getItem('useFakeServer') == 'false');
 
 document.getElementById('Patch').onclick = async () => {
     validationElement.textContent = '';
@@ -89,8 +90,10 @@ document.getElementById('Patch').onclick = async () => {
     let body = { _id: formchen.value['_id'], patch: patch }
     const response = await fetchFactory()('/plant.json', { method: 'PATCH', body: JSON.stringify(body) });
     console.log(response)
-    if (response.status == 409) {
-        validationElement.textContent = `${response.statusText}: Please reload page!`;
+    if (!response.ok) {
+        if (response.status == 409) {
+            validationElement.textContent = response.statusText + ': Please reload page!';
+        }
         return
     }
     const data = await response.json();
@@ -113,7 +116,7 @@ useFakeServer.onchange = () => {
     window.localStorage.setItem('useFakeServer', String(useFakeServer.checked));
 }
 
-useFakeServer.checked = !(window.localStorage.getItem('useFakeServer') == 'false');
+
 
 function fetchFactory() {
     return useFakeServer.checked?fakeFetch:fetch
