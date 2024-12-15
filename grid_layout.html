@@ -1,0 +1,34 @@
+<grid-chen name="/measurements" style="display: block; height: 10em; width: 439px;" id="/measurements">
+    <div tabindex="0" style="position: absolute; width: 439px;">
+        <style>
+
+        </style>
+        <div id="headerRow" style="width: 422px; height: 24px;">
+            ... Repeat for each column ...
+            <span title="TimeStamp"
+                style="position: absolute; left: 0px; width: 200px; height: 17px; padding: 3px; border: 1px solid; overflow: hidden;">TimeStamp</span>
+            ... end loop ...
+        </div>
+        <span id="info" style="left: 422px; position: absolute;">🛈</span>
+        <div style="position: absolute; top: 24px; width: 100%; height: 121px;">
+            <style>
+                #slider {}
+
+                #slider::-webkit-slider-thumb {}
+            </style><input id="slider" type="range" min="0" max="5">
+
+            <div class="GRID" style="position: absolute; width: 422px; height: 121px;">
+                ... For each row ...
+                <div style="top: 0px; left: 0px; width: 421px;"></div>
+                ... For each column ...
+                <span class="non-string" style="cursor: cell; top: 0px; left: 0px; width: 200px; "></span>
+                ... end loop ...
+                <div style="top: 24px; left: 0px; width: 421px;"> </div>
+                ... end loop ...
+                <input id="editor" style="display: none;">
+                <textarea id="textarea" style="display: none;"></textarea>
+            </div>
+        </div>
+    </div>
+
+</grid-chen>
