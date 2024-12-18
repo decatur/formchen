@@ -4,16 +4,19 @@ import { test, assert } from './utils.js'
 import { createView } from '../formchen/gridchen/matrixview.js'
 import { applyJSONPatch, reversePatch } from '../formchen/utils.js'
 
-const apply = applyJSONPatch;
-
 /**
- * Runs tests on all five supported matrix types.
+ * Runs tests on the specified view.
  * @param {JSONSchema} schema
  * @param {function():object} createModel
  * @param {object} emptyModel
  */
-function testsOnFirstColumn(schema, createModel, emptyModel) {
+function testView(schema, createModel, emptyModel) {
 
+    test('getCellFromEmptyModel', () => {
+        const view = createView(schema, null);
+        assert.equal(view.getCell(0, 0), null);
+    });
+    
     test('getModel', () => {
         const model = createModel();
         const view = createView(schema, model);
@@ -24,7 +27,7 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(3, 0, 'x', '');
-        const patched = apply(createModel(), patch);
+        const patched = applyJSONPatch(createModel(), patch);
         assert.equal(patched, model);
 
         view.applyJSONPatch(reversePatch(patch));
@@ -35,8 +38,8 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
     test('setSecondAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
-        const patch = view.setCell(4, 0, 'x');
-        const patched = apply(createModel(), patch);
+        const patch = view.setCell(4, 0, 'x', '');
+        const patched = applyJSONPatch(createModel(), patch);
         assert.equal(patched, model);
 
         view.applyJSONPatch(reversePatch(patch));
@@ -52,8 +55,8 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         function deleteCell(rowIndex, columnIndex) {
             const model = createModel();
             const view = createView(schema, model);
-            const patch = view.setCell(rowIndex, columnIndex, null);
-            const patched = apply(createModel(), patch);
+            const patch = view.setCell(rowIndex, columnIndex, null, '');
+            const patched = applyJSONPatch(createModel(), patch);
             assert.equal(patched, model);
 
             view.applyJSONPatch(reversePatch(patch));
@@ -78,8 +81,8 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         function setCell(rowIndex, columnIndex) {
             const model = createModel();
             const view = createView(schema, model);
-            const patch = view.setCell(rowIndex, columnIndex, 'x');
-            const patched = apply(createModel(), patch);
+            const patch = view.setCell(rowIndex, columnIndex, 'x', '');
+            const patched = applyJSONPatch(createModel(), patch);
             assert.equal(patched, model);
 
             view.applyJSONPatch(reversePatch(patch));
@@ -98,8 +101,8 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
 
     test('set-from-scratch', () => {
         const view = createView(schema, null);
-        const patch = view.setCell(1, 0, 42);
-        const patched = apply(null, patch);
+        const patch = view.setCell(1, 0, 42, '');
+        const patched = applyJSONPatch(null, patch);
         assert.equal(patched, view.getModel());
 
         view.applyJSONPatch(reversePatch(patch));
@@ -111,7 +114,7 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.splice(1);
-        const patched = apply(createModel(), patch);
+        const patched = applyJSONPatch(createModel(), patch);
         assert.equal(patched, model);
 
         view.applyJSONPatch(reversePatch(patch));
@@ -123,7 +126,7 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.deleteRow(1);
-        const patched = apply(createModel(), patch);
+        const patched = applyJSONPatch(createModel(), patch);
         assert.equal(patched, model);
 
         view.applyJSONPatch(reversePatch(patch));
@@ -156,7 +159,7 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
     test('remove', () => {
         const view = createView(schema, createModel());
         const patch = view.removeModel();
-        const patched = apply(createModel(), patch);
+        const patched = applyJSONPatch(createModel(), patch);
         // jsonPatch does NOT return null, which would be more appropriate.
         assert.equal(patched, undefined);
 
@@ -175,7 +178,6 @@ function scope(name, func) {
  * ~ ~ ~
  * c ~ d
  */
-
 scope('RowMatrixView', () => {
     const createModel = () => [['a', null, 'b'], null, ['c', null, 'd']];
     const emptyModel = [];
@@ -192,7 +194,7 @@ scope('RowMatrixView', () => {
         }
     };
 
-    testsOnFirstColumn(schema, createModel, emptyModel);
+    testView(schema, createModel, emptyModel);
 
     test('sort', () => {
         const rowMatrix = [[1, 'b'], [NaN], [3, 'c'], [2, 'a']];
@@ -224,7 +226,7 @@ scope('RowObjectsView', () => {
         }
     };
 
-    testsOnFirstColumn(schema, createModel, emptyModel);
+    testView(schema, createModel, emptyModel);
 
     test('sort', () => {
         const rowMatrix = [{ c1: 1, c2: 'b' }, { c1: NaN }, { c1: 3, c2: 'c' }, { c1: 2, c2: 'a' }];
@@ -253,7 +255,7 @@ scope('ColumnMatrixView', () => {
         ]
     };
 
-    testsOnFirstColumn(schema, createModel, emptyModel);
+    testView(schema, createModel, emptyModel);
 
     test('sort', () => {
         const model = [[1, NaN, 3, 2], ['b', null, 'c', 'a']];
@@ -284,7 +286,7 @@ scope('ColumnObjectView', () => {
         }
     };
 
-    testsOnFirstColumn(schema, createModel, emptyModel);
+    testView(schema, createModel, emptyModel);
 
     test('sort', () => {
         const model = {
@@ -312,7 +314,7 @@ scope('ColumnVectorView', () => {
         }
     };
 
-    testsOnFirstColumn(schema, createModel, emptyModel);
+    testView(schema, createModel, emptyModel);
 
     test('sort', () => {
         const column = [1, NaN, 3, 2];
