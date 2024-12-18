@@ -1103,7 +1103,7 @@ export function createColumnObjectView(jsonSchema, columns) {
             // Must not use remove operation here!
             patch.push({
                 ...{ op: 'replace', path: `/${key}/${rowIndex}`, value: value, oldValue },
-                ...(validation && {validation})
+                ...(validation && { validation })
             });
 
             return patch;
@@ -1256,7 +1256,7 @@ export function createColumnVectorView(jsonSchema, column) {
          */
         getCell(rowIndex, colIndex) {
             if (colIndex !== 0) throw Error()
-            return column?column[rowIndex]:null;
+            return column ? column[rowIndex] : null;
         }
 
         /**

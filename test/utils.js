@@ -92,28 +92,36 @@ export const assert = {
  */
 
 /**
- * @param {string} test_name 
+ * @param {string | string[]} path 
  * @param {F2Type} func 
  */
-export function test(test_name, func) {
-    let hash = encodeURIComponent(test_name);
+export function test(path, func) {
+    if (Array.isArray(path)) {
+        path = path.join('/')
+    }
+
+    let hash = encodeURIComponent(path);
     if (window.location.hash === '' || window.location.hash == '#' + hash) {
         let url = window.location.origin + window.location.pathname + '#' + hash;
-        log(`Running: ${test_name} ${url}`);
-        func(test_name);
+        log(`Running: ${path} ${url}`);
+        func(path);
     }
 }
 
 /**
- * @param {string} test_name 
+ * @param {string | string[]} path 
  * @param {F2Type} func 
  */
-export async function async_test(test_name, func) {
-    let hash = encodeURIComponent(test_name);
+export async function async_test(path, func) {
+    if (Array.isArray(path)) {
+        path = path.join('/')
+    }
+
+    let hash = encodeURIComponent(path);
     if (window.location.hash === '' || window.location.hash == '#' + hash) {
         let url = window.location.origin + window.location.pathname + '#' + hash;
-        log(`Running: ${test_name} ${url}`);
-        await func(test_name);
+        log(`Running: ${path} ${url}`);
+        await func(path);
     }
 }
 
