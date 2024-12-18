@@ -512,9 +512,10 @@ function failure(tc) {
 }
 
 function runJsonPatchTests(testCases) {
+    const supportedOps = new Set(['add', 'replace', 'remove']);
     foo: for (const tc of testCases) {
         for (const op of tc.patch) {
-            if (['add', 'replace', 'remove'].indexOf(op.op) == -1) {
+            if (!supportedOps.has(op.op)) {
                 log(`Skipping ${tc.comment}`)
                 continue foo;
             } else if (op.path && op.path.endsWith('-')) {

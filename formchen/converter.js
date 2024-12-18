@@ -232,6 +232,8 @@ export class UrlConverter extends StringConverter {
  * @implements {Converter}
  */
 export class BooleanStringConverter extends StringConverter {
+    truthy = new Set(['true', 'wahr', '1', 'y']);
+    falsy = new Set(['false', 'falsch', '0', 'n']);
     constructor() {
         super();
     }
@@ -258,10 +260,10 @@ export class BooleanStringConverter extends StringConverter {
      */
     fromEditable(s) {
         s = s.trim();
-        if (['true', 'wahr', '1', 'y'].indexOf(s.toLowerCase()) >= 0) {
+        if (this.truthy.has(s.toLowerCase())) {
             return new ParsedValue(s, true)
         }
-        if (['false', 'falsch', '0', 'n'].indexOf(s.toLowerCase()) >= 0) {
+        if (this.falsy.has(s.toLowerCase())) {
             return new ParsedValue(s, false)
         }
         return new ParsedValue(s, null, 'Invalid value');

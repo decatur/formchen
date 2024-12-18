@@ -183,24 +183,26 @@ function pad(v) {
     return String(v).padStart(2, '0');
 }
 
+const PERIOD = {
+    MONTHS: 1,
+    DAYS: 2,
+    HOURS: 3,
+    MINUTES: 4,
+    SECONDS: 5,
+    MILLI_SECONDS: 6
+}
+
 /**
  * @param {string} period
  * @returns {number}
  */
 export function resolvePeriod(period) {
-    const index = ['YEARS', 'MONTHS', 'DAYS', 'HOURS', 'MINUTES', 'SECONDS', 'MILLI_SECONDS'].indexOf(period.toUpperCase());
-    if (index === -1) {
+    const index = PERIOD[period.toUpperCase()];
+    if (index === undefined) {
         throw new RangeError('Invalid period: ' + period);
     }
     return index;
 }
-
-const MONTHS = resolvePeriod('MONTHS');
-const DAYS = resolvePeriod('DAYS');
-const HOURS = resolvePeriod('HOURS');
-const MINUTES = resolvePeriod('MINUTES');
-const SECONDS = resolvePeriod('SECONDS');
-const MILLI_SECONDS = resolvePeriod('MILLI_SECONDS');
 
 /**
  * @callback F1Type
@@ -272,13 +274,13 @@ const MILLI_SECONDS = resolvePeriod('MILLI_SECONDS');
  */
 function toTimeString(d, period) {
     let s = pad(d.getHours());
-    if (period >= MINUTES) {
+    if (period >= PERIOD.MINUTES) {
         s += ':' + pad(d.getMinutes());
     }
-    if (period >= SECONDS) {
+    if (period >= PERIOD.SECONDS) {
         s += ':' + pad(d.getSeconds());
     }
-    if (period > SECONDS) {
+    if (period > PERIOD.SECONDS) {
         s += '.' + String(d.getMilliseconds()).padStart(3, '0');
     }
     return s;
@@ -301,10 +303,10 @@ function toTimeString(d, period) {
  */
 export function toLocalISODateString(d, period) {
     let s = pad(d.getFullYear());
-    if (period >= MONTHS) {
+    if (period >= PERIOD.MONTHS) {
         s += '-' + pad(1 + d.getMonth());
     }
-    if (period >= DAYS) {
+    if (period >= PERIOD.DAYS) {
         s += '-' + pad(d.getDate());
     }
 
@@ -318,7 +320,7 @@ export function toLocalISODateString(d, period) {
  */
 export function toLocaleISODateTimeString(d, period) {
     let s = toLocalISODateString(d, period);
-    if (period >= HOURS) {
+    if (period >= PERIOD.HOURS) {
         // We use space, not 'T' as time separator to apeace MS-Excel.
         s += ' ' + toTimeString(d, period);
     }
@@ -446,13 +448,13 @@ function parseDateTime(s, period) {
     }
     let p = [m[1], m[2], m[3], m[5], m[7], m[9], m[11]];
     if (p[4] == undefined) p[4] = '00';
-    else if (period < MINUTES) { return new SyntaxError(s); }
+    else if (period < PERIOD.MINUTES) { return new SyntaxError(s); }
 
     if (p[5] == undefined) p[5] = '00';
-    else if (period < SECONDS) { return new SyntaxError(s); }
+    else if (period < PERIOD.SECONDS) { return new SyntaxError(s); }
 
     if (p[6] == undefined) p[6] = '000';
-    else if (period < MILLI_SECONDS) { return new SyntaxError(s); }
+    else if (period < PERIOD.MILLI_SECONDS) { return new SyntaxError(s); }
 
     let parts = p.map((item) => parseInt(item, 10));
     parts[1]--;
