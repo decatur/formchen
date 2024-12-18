@@ -35,8 +35,13 @@
     <script type="module" src="./demo/basic-demo.js"></script>
 
     <h2>Basic Example (readOnly)</h2>
-    Same as previous example, but form is now read-only. Note that in read-only mode you can sort grid columns by
-    clicking the header.
+    Same as previous example, but form is now read-only.
+    In read-only mode you can
+    <ul>
+        <li>sort grid columns by clicking the header, and</li>
+        <li>have an optional total row of either <i>sum</i> or <i>avg</i></li>
+    </ul>
+
     <div class="demo">
         <div id="BasicDemoReadOnly" class="formchen">
             <label><span class="data-info"></span><textarea name="/plant"></textarea></label>
@@ -120,7 +125,7 @@
         </div>
     </div>
     <script type="module" src="./demo/object_of_columns.js"></script>
-    
+
     <h2>Tuple of Column Arrays</h2>
     🌧 This column-matrix is neither self-describing nor conventinal; do not use it.
     <div class="demo">

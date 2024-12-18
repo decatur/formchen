@@ -5,7 +5,7 @@
  * Module implementing the visual grid and scrolling behaviour.
  */
 
-/** @import { GridSelectionAbstraction, Range as IRange, CellEditMode, MatrixView, GridChenElement } from "../private-types" */
+/** @import { GridSelectionAbstraction, Range as IRange, CellEditMode, MatrixView, GridChenElement, ColumnSchema } from "../private-types" */
 /** @import { JSONPatch, JSONSchema } from "../types" */
 /** @import { Transaction } from "../utils" */
 
@@ -283,6 +283,89 @@ class ScrollBar {
     }
 }
 
+class Footer {
+    /**
+     * @param {ColumnSchema[]} schemas
+     */
+    constructor(schemas) {
+        this.footerElement = document.createElement('div');
+        this.schemas = schemas;
+
+        this.footerElement.id = 'footerRow';
+        this.footerElement.style.position = 'absolute';
+
+    }
+
+    /**
+     * @param {ColumnSchema[]} schemas
+     * @returns {Footer | null}
+     */
+    static mayBeCreate(schemas) {
+        for (const columnSchema of schemas) {
+            if (columnSchema.total) {
+                return new Footer(schemas)
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * 
+     * @param {HTMLElement} container 
+     * @param {number} gridWidth 
+     * @param {number} rowHeight 
+     * @param {number} innerHeight 
+     * @param {number} viewPortRowCount 
+     * @param {number[]} columnEnds 
+     */
+    initialize(container, gridWidth, rowHeight, innerHeight, viewPortRowCount, columnEnds) {
+        this.innerHeight = innerHeight;
+        this.columnEnds = columnEnds;
+        this.footerElement.style.width = gridWidth + 'px';
+        this.footerElement.style.height = rowHeight + 'px';
+        this.footerElement.style.top = ((1 + viewPortRowCount) * rowHeight) + 'px';
+        container.appendChild(this.footerElement);
+    }
+
+    /**
+     * @param {MatrixView} viewModel
+     */
+    refresh(viewModel) {
+        this.footerElement.textContent = '';
+        if (viewModel.rowCount() == 0) {
+            return
+        }
+
+        let totalTitleGenerated = false;
+        for (const [colIndex, columnSchema] of this.schemas.entries()) {
+            const cell = document.createElement('span');
+            const style = cell.style;
+            style.position = 'absolute';
+            style.left = (colIndex == 0 ? 0 : this.columnEnds[colIndex - 1]) + 'px';
+            style.width = columnSchema.width + 'px';
+            style.height = this.innerHeight + 'px';
+            style.padding = cellPadding + 'px';
+            style.border = cellBorderStyle;
+            style.overflow = 'hidden';
+            if (columnSchema.total && ['integer', 'number'].indexOf(columnSchema.type) != -1) {
+                let total = 0.;
+                for (let rowIndex = 0; rowIndex < viewModel.rowCount(); rowIndex++) {
+                    total += viewModel.getCell(rowIndex, colIndex);
+                }
+                if (columnSchema.total == 'avg') total /= viewModel.rowCount();
+                columnSchema.converter.render(cell, total);
+                cell.title = columnSchema.total + ' ' + columnSchema.title;
+            } else if (!totalTitleGenerated) {
+                totalTitleGenerated = true;
+                cell.textContent = 'Total'
+            }
+
+            this.footerElement.appendChild(cell);
+        }
+    }
+}
+
 
 /**
  * @param {HTMLElement} container
@@ -290,15 +373,15 @@ class ScrollBar {
  * @param {GridChen} gridchenElement
  * @param {TransactionManager} tm
  * @param {string} pathPrefix
- * @param {number} totalHeight
+ * @param {number} totalHeight height of the custom element
  */
 function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, totalHeight) {
-    const schema = viewModel.schema
+    const schema = viewModel.schema;
 
     const schemas = schema.columnSchemas;
     const rowHeight = lineHeight + 2 * cellBorderWidth;
-    const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
-
+    const innerHeight = rowHeight - 2 * cellPadding - cellBorderWidth;
+    let footer = Footer.mayBeCreate(schemas);
 
     let total = 0;
     const columnEnds = [];
@@ -307,7 +390,9 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         columnEnds[index] = total;
     }
 
+    // The number of DOM rows.
     let viewPortRowCount = Math.max(1, Math.floor((totalHeight) / rowHeight) - 1);
+    if (footer) viewPortRowCount--;
     const viewPortHeight = rowHeight * viewPortRowCount + cellBorderWidth;
     const gridWidth = columnEnds[columnEnds.length - 1] + cellBorderWidth;
     const styleSheet = document.createElement('style');
@@ -328,7 +413,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             text-overflow: ellipsis;
             overflow: hidden;
             white-space: nowrap;
-            height: ${innerHeight};
+            height: ${innerHeight}px;
             padding: ${cellPadding}px;
         }
         
@@ -351,13 +436,13 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         }
 
         /* Important: The selectors string, non-string and error are used exclusively! */
-        .GRID .string {
+        .string {
             text-align: left;
         }
-        .GRID .non-string {
+        .non-string {
             text-align: right;
         }
-        .GRID .error {
+        .error {
             text-align: left;
             border-color: red;
             z-index: 1;
@@ -390,7 +475,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             color: ${inputColor};
             background-color: ${inputBackgroundColor};
             position: absolute;
-            height: ${innerHeight};
+            height: ${innerHeight}px;
             padding: ${cellPadding}px;
             border-width: ${cellBorderWidth}px;
         }
@@ -412,14 +497,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     style.height = rowHeight + 'px';
     container.appendChild(headerRow);
 
-    const info = document.createElement('span');
-    info.id = 'info';
-    info.innerText = '🛈';
-    style = info.style;
-    style.left = gridWidth + 'px';
-    style.position = 'absolute';
-    info.addEventListener('click', showInfo);
-    container.appendChild(info);
+    if (footer) footer.initialize(container, gridWidth, rowHeight, innerHeight, viewPortRowCount, columnEnds);
 
     /**
      * Rereads the data view content.
@@ -430,6 +508,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         gridAbstraction.rowCount = rowCount;
         setFirstRow(firstRow);
         scrollBar.setMax(Math.max(viewPortRowCount, rowCount - viewPortRowCount));
+        if (footer) footer.refresh(viewModel);
     }
 
     refreshHeaders();
@@ -471,7 +550,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             style.position = 'absolute';
             style.left = left + 'px';
             style.width = columnSchema.width + 'px';
-            style.height = innerHeight;
+            style.height = innerHeight + 'px';
             style.padding = cellPadding + 'px';
             style.border = cellBorderStyle;
             style.overflow = 'hidden';
@@ -492,6 +571,15 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
             headerRow.appendChild(header);
             left = columnEnds[index];
         }
+
+        const info = document.createElement('span');
+        info.id = 'info';
+        info.innerText = '🛈';
+        style = info.style;
+        style.left = left + 'px';
+        style.position = 'absolute';
+        info.addEventListener('click', showInfo);
+        headerRow.appendChild(info);
     }
 
     container.style.width = (gridWidth + scrollBarWidth) + 'px';
@@ -1132,7 +1220,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     }
 
     // Elements for row highlighting
-    const rowElements = [];
+    const animationRows = [];
 
     /**
      * 
@@ -1280,9 +1368,9 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
      */
     function updateViewportRows(matrix) {
         const now = Date.now() / 1000;
-        for (let index = 0; index < cellMatrix.length; index++) {
+        for (let index = 0; index < viewPortRowCount; index++) {
             let elemRow = cellMatrix[index];
-            const rowElement = rowElements[index];
+            const rowElement = animationRows[index];
             let row = matrix[index];
             let customStyle = viewModel.getRowStyles ? viewModel.getRowStyles()[firstRow + index] : null;
 
@@ -1320,8 +1408,8 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         }
     }
 
-    for (let vpRowIndex = 0; vpRowIndex < cellMatrix.length; vpRowIndex++) {
-        rowElements.push(createRow(vpRowIndex));
+    for (let vpRowIndex = 0; vpRowIndex < viewPortRowCount; vpRowIndex++) {
+        animationRows.push(createRow(vpRowIndex));
         cellMatrix[vpRowIndex] = Array(colCount);
         for (let colIndex = 0; colIndex < colCount; colIndex++) {
             createCell(vpRowIndex, colIndex);

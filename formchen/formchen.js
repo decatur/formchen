@@ -210,7 +210,8 @@ class BaseNode {
 
         function freeze(obj) {
             obj = clone(obj);
-            //deepFreeze(obj)
+            // TODO: Why can we not use deepFreeze?
+            // deepFreeze(obj)
             return obj
         }
 
@@ -822,6 +823,7 @@ export function createFormChen(rootElement, topSchema, topObj) {
     return new FormChenClass();
 }
 
+// TODO: Do we still need this class?
 class Control {
     /**
     * @param {HTMLElement} container

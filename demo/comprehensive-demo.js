@@ -15,7 +15,9 @@ const schema = {
                 items: [  // tuple schema
                     { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime' },
                     { title: 'Age [d]', width: 100, type: 'number' },
-                    { title: 'Weight [g]', width: 100, type: 'number' }
+                    { title: 'Weight [g]', width: 100, type: 'number' },
+                    { title: 'Details', width: 200, type: 'string', format: 'url' },
+                    { title: 'TimeStamp MILLIS', width: 200, type: 'string', format: 'datetime', period: 'milli_seconds'},
                 ]
             }
         }

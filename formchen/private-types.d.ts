@@ -18,12 +18,12 @@ export enum CellEditMode {
 }
 
 export interface ColumnSchema {
-    
     readonly type: string;
     format?: string;
     title: string;
     width?: number;
     fractionDigits?: number;
+    total?: 'sum' | 'avg';
     sortDirection?: number;
     // TODO: Rename according ISO
     period?: string;
