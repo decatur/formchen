@@ -394,7 +394,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     let viewPortRowCount = Math.max(1, Math.floor((totalHeight) / rowHeight) - 1);
     if (footer) viewPortRowCount--;
     const viewPortHeight = rowHeight * viewPortRowCount + cellBorderWidth;
-    const gridWidth = columnEnds[columnEnds.length - 1] + cellBorderWidth;
+    const gridWidth = columnEnds.at(-1) + cellBorderWidth;
     const styleSheet = document.createElement('style');
 
     styleSheet.textContent = `
@@ -1232,7 +1232,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         let style = rowElement.style;
         style.top = (vpRowIndex * rowHeight) + 'px';
         style.left = '0px';
-        style.width = columnEnds[columnEnds.length - 1] + 'px';
+        style.width = columnEnds.at(-1) + 'px';
         cellParent.appendChild(rowElement);
         return rowElement
     }
@@ -1537,7 +1537,7 @@ export function tsvToMatrix(text) {
     let lines = text.split(/\r?\n/);
     // We always expect a line separator, so we expect at least two lines.
     // An empty clipboard is encoded as '\n', which yields [['']]
-    if (lines[lines.length - 1] === '') {
+    if (lines.at(-1) === '') {
         lines.pop();
     }
 
@@ -1573,7 +1573,10 @@ export function tsvToMatrix(text) {
     return matrix;
 }
 
-
+/**
+ * @param {string} text 
+ * @returns {[string, string[]]}
+ */
 function normalizeQuotes(text) {
     text = text + '@';
     // Chrome understands s-flag: /(".*?"[^"])/s
@@ -1582,14 +1585,14 @@ function normalizeQuotes(text) {
     const qs = [];
     for (let i = 1; i < a.length; i += 2) {
         let s = a[i];
-        a[i] = String.fromCharCode(0) + s[s.length - 1];
-        s = s.substr(1, s.length - 3);
+        a[i] = String.fromCharCode(0) + s.at(-1);
+        s = s.substring(1, s.length - 2);
         s = s.replace(/""/g, '"');
         qs.push(s);
     }
 
     text = a.join('');
-    return [text.substr(0, text.length - 1), qs]
+    return [text.substring(0, text.length - 1), qs]
 }
 
 /*
