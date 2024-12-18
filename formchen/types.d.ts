@@ -59,7 +59,7 @@ export interface JSONSchema {
     format?: "grid" | "datetime" | "date" | "url" | "color";
     description?: string;
     readOnly?: boolean;
-    total?: 'sum' | 'avg';
+    total?: 'sum' | 'avg' | 'count';
     title?: string;
     type: string;
     /**

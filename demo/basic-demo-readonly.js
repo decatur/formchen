@@ -12,6 +12,7 @@ const schema = {
             items: {
                 type: 'array',  // tuple schema
                 items: [
+                    { title: 'Id', width: 50, type: 'string', total: 'count' },
                     { title: 'TimeStamp', width: 200, type: 'string', format: 'datetime', period: 'minutes' },
                     { title: 'Age [d]', width: 100, type: 'integer', total: 'avg' },
                     { title: 'Weight [g]', width: 100, type: 'number', total: 'sum' }
@@ -67,9 +68,9 @@ const data = {
     latitude: 41.40338,
     longitude: 2.17403,
     measurements: [
-        ["2019-01-01T00:00Z", 0, 0],
-        ["2019-02-01T00:00Z", 1, 2],
-        ["2019-03-01T00:00Z", 2, 4]
+        ['S1', "2019-01-01T00:00Z", 0, 0],
+        ['S2', "2019-02-01T00:00Z", 1, 2],
+        ['S3', "2019-03-01T00:00Z", 2, 4]
     ],
     isCompleted: true
 };

@@ -348,12 +348,25 @@ class Footer {
             style.padding = cellPadding + 'px';
             style.border = cellBorderStyle;
             style.overflow = 'hidden';
-            if (columnSchema.total && ['integer', 'number'].indexOf(columnSchema.type) != -1) {
-                let total = 0.;
+            if (columnSchema.total) { //} && ['integer', 'number'].indexOf(columnSchema.type) != -1) {
+                let sum = 0.;
+                let count = 0;
+                let countNumber = 0;
                 for (let rowIndex = 0; rowIndex < viewModel.rowCount(); rowIndex++) {
-                    total += viewModel.getCell(rowIndex, colIndex);
+                    const v = viewModel.getCell(rowIndex, colIndex);
+                    count++;
+                    if (typeof v == 'number') {
+                        sum += v;
+                        countNumber++;
+                    }
                 }
-                if (columnSchema.total == 'avg') total /= viewModel.rowCount();
+                let total = ((op) => {
+                    switch (op) {
+                        case 'avg': return countNumber == 0 ? '#DIV/0!' : sum / countNumber;
+                        case 'count': return count;
+                        case 'sum': return sum;
+                    }
+                })(columnSchema.total);
                 columnSchema.converter.render(cell, total);
                 cell.title = columnSchema.total + ' ' + columnSchema.title;
             } else if (!totalTitleGenerated) {

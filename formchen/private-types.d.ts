@@ -23,7 +23,7 @@ export interface ColumnSchema {
     title: string;
     width?: number;
     fractionDigits?: number;
-    total?: 'sum' | 'avg';
+    total?: 'sum' | 'avg' | 'count';
     sortDirection?: number;
     // TODO: Rename according ISO
     period?: string;
