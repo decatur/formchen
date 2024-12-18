@@ -416,13 +416,10 @@ export function createRowMatrixView(jsonSchema, rows) {
     /** @type{JSONSchema[]} */
     const itemSchemas = jsonSchema.items['items'];
     const columnSchemas = [];
-    /** @type{number[]} */
-    const columnIndices = [];
 
     for (const [columnIndex, columnSchema] of itemSchemas.entries()) {
         // Do not test for columnSchema.type === 'object' because the type could be a Date.
         columnSchemas.push(columnSchema);
-        columnIndices.push(columnIndex);
     }
 
     const schemas = createColumSchemas(columnSchemas);
@@ -478,7 +475,6 @@ export function createRowMatrixView(jsonSchema, rows) {
          * @returns {any[]}
          */
         getColumnSlice(rowsRange, colIndex) {
-            colIndex = columnIndices[colIndex];
             return range(rowsRange.sup - rowsRange.min).map(i => rowsRange[rowsRange.min + i][colIndex]);
         }
 
@@ -498,9 +494,7 @@ export function createRowMatrixView(jsonSchema, rows) {
          * @returns {*}
          */
         getCell(rowIndex, colIndex) {
-            colIndex = columnIndices[colIndex];
-            // TODO: Should not be called with rowIndex >= rowCount.
-            if (!rows[rowIndex]) {
+            if (!rows || !rows[rowIndex]) {
                 return null;
             }
             return rows[rowIndex][colIndex];
@@ -514,7 +508,7 @@ export function createRowMatrixView(jsonSchema, rows) {
          * @returns {JSONPatch}
          */
         setCell(rowIndex, colIndex, value, validation) {
-
+            // TODO: Review this method.
             /**
              * @returns {ReplacePatch}
              */
@@ -525,10 +519,9 @@ export function createRowMatrixView(jsonSchema, rows) {
                     ...(validation && { validation })
                 }
             }
-            colIndex = columnIndices[colIndex];
 
             if (value == null) {
-                if (!rows[rowIndex]) {
+                if (!rows || !rows[rowIndex]) {
                     return []
                 }
                 // Important: Must not delete rows[rowIndex][colIndex], as this would produce an empty index, which is not JSON.
@@ -578,7 +571,6 @@ export function createRowMatrixView(jsonSchema, rows) {
          * @param {number} colIndex
          */
         sort(colIndex) {
-            colIndex = columnIndices[colIndex];
             let sortDirection = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => schemas[colIndex].compare(row1[colIndex], row2[colIndex]) * sortDirection);
         }
@@ -688,7 +680,7 @@ export function createRowObjectsView(jsonSchema, rows) {
          * @returns {*}
          */
         getCell(rowIndex, colIndex) {
-            if (!rows[rowIndex]) return null;
+            if (!rows || !rows[rowIndex]) return null;
             return rows[rowIndex][ids[colIndex]];
         }
 
@@ -864,7 +856,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
          * @returns {*}
          */
         getCell(rowIndex, colIndex) {
-            if (!columns[colIndex]) return null;
+            if (!columns || !columns[colIndex]) return null;
             return columns[colIndex][rowIndex];
         }
 
@@ -872,6 +864,7 @@ export function createColumnMatrixView(jsonSchema, columns) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param {any} value
+         * @param {string} validation
          * 
          * @returns {JSONPatch}
          */
@@ -1065,7 +1058,7 @@ export function createColumnObjectView(jsonSchema, columns) {
          */
         getCell(rowIndex, colIndex) {
             const key = ids[colIndex];
-            if (!columns[key]) return null;
+            if (!columns || !columns[key]) return null;
             return columns[key][rowIndex];
         }
 
@@ -1110,7 +1103,7 @@ export function createColumnObjectView(jsonSchema, columns) {
             // Must not use remove operation here!
             patch.push({
                 ...{ op: 'replace', path: `/${key}/${rowIndex}`, value: value, oldValue },
-                ...(validation && {validation})
+                ...(validation && { validation })
             });
 
             return patch;
@@ -1263,7 +1256,7 @@ export function createColumnVectorView(jsonSchema, column) {
          */
         getCell(rowIndex, colIndex) {
             if (colIndex !== 0) throw Error()
-            return column[rowIndex];
+            return column ? column[rowIndex] : null;
         }
 
         /**

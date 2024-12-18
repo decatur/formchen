@@ -51,7 +51,7 @@ interface JSONSchemaRef  {
 export interface JSONSchema {
     $defs?: { [key: string]: JSONSchema };
     width?: number;
-    period?: "hours" | "minutes" | "seconds";
+    period?: "hours" | "minutes" | "seconds" | "milli_seconds";
     multipleOf?: number;
     // converter?: Converter;
     minimum?: number;
@@ -59,6 +59,7 @@ export interface JSONSchema {
     format?: "grid" | "datetime" | "date" | "url" | "color";
     description?: string;
     readOnly?: boolean;
+    total?: 'sum' | 'avg' | 'count';
     title?: string;
     type: string;
     /**
