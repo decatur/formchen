@@ -333,10 +333,6 @@ class Footer {
      */
     refresh(viewModel) {
         this.footerElement.textContent = '';
-        if (viewModel.rowCount() == 0) {
-            return
-        }
-
         let totalTitleGenerated = false;
         for (const [colIndex, columnSchema] of this.schemas.entries()) {
             const cell = document.createElement('span');
@@ -348,6 +344,7 @@ class Footer {
             style.padding = cellPadding + 'px';
             style.border = cellBorderStyle;
             style.overflow = 'hidden';
+            // TODO: Move this to viewModel
             if (columnSchema.total) { //} && ['integer', 'number'].indexOf(columnSchema.type) != -1) {
                 let sum = 0.;
                 let count = 0;

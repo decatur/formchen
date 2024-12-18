@@ -2,7 +2,6 @@ import { test, assert } from './utils.js'
 import {IndexToPixelMapper} from "../formchen/gridchen/selection.js";
 
 test('cellIndexToPixelCoords', async function () {
-    
     const elem = /** @type{HTMLElement} */({getBoundingClientRect() { return new DOMRect(0, 0, NaN, NaN)}});
     const mapper = new IndexToPixelMapper(elem, 10, [10, 30, 60, 70, 90, 100]);
     assert.equal({clientY: 10/2, clientX: 10/2}, mapper.cellIndexToPixelCoords(0, 0));

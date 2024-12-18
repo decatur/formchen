@@ -23,7 +23,7 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
     test('setAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
-        const patch = view.setCell(3, 0, 'x');
+        const patch = view.setCell(3, 0, 'x', '');
         const patched = apply(createModel(), patch);
         assert.equal(patched, model);
 
