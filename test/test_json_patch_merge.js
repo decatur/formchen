@@ -6,7 +6,7 @@ import { testCases as testCasesB } from "./json-patch-tests/tests.js"
 log('\x1B[41;93;4m####### Loading test/test_json_patch_merge.js')
 
 test('Path', () => {
-    let [p, c, key] = Path.query({"":{a:[0, 1, 2]}}, {op:'replace', path:'/a/1'});
+    let [p, c, key] = Path.query({ "": { a: [0, 1, 2] } }, { op: 'replace', path: '/a/1' });
     assert.equal(p[1], 1);
     assert.equal(c, 1);
     assert.equal(key, 1);
@@ -448,7 +448,7 @@ test('misc', () => {
 });
 
 test('test empty object', () => {
-    const doc = { };
+    const doc = {};
     const patch = [
         {
             "op": "add",

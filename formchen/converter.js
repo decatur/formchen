@@ -26,12 +26,12 @@ function createSpan() {
 export class StringConverter {
     constructor() {
     }
-    
-     /**
-     * @param {number} _n
-     * @param {HTMLInputElement} _input 
-     */
-    toInputEdit(_n, _input) {}
+
+    /**
+    * @param {number} _n
+    * @param {HTMLInputElement} _input 
+    */
+    toInputEdit(_n, _input) { }
 
     /**
      * @param {HTMLInputElement|HTMLTextAreaElement} input
@@ -64,7 +64,7 @@ export class StringConverter {
      */
     fromEditable(s) {
         s = s.trim();
-        return new ParsedValue(s, s?s:null);
+        return new ParsedValue(s, s ? s : null);
     }
 
     /**
@@ -359,7 +359,7 @@ export class NumberConverter {
         if (!s) return new ParsedValue('', null);
         if (s.toLowerCase() === 'nan') return new ParsedValue(s, NaN);
         const n = Number(s);
-        return isNaN(n) ? new ParsedValue(s, null, 'Invalid number'): new ParsedValue(s, n);
+        return isNaN(n) ? new ParsedValue(s, null, 'Invalid number') : new ParsedValue(s, n);
     }
 
     /**
