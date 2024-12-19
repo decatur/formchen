@@ -7,6 +7,8 @@
 
 /** @import { JSONPatch, JSONPatchOperation } from "./types" */
 
+import { applyJSONPatchOperation as _applyJSONPatchOperation } from "./patch.js"
+
 const logLevels = {
     null: 0,
     error: 1,
@@ -594,35 +596,7 @@ export function reversePatch(patch) {
     return reversedPatch
 }
 
-/**
- * Applies a JSON Patch operation.
- * @param {{'':object}} holder
- * @param {JSONPatchOperation} op
- */
-function applyJSONPatchOperation(holder, op) {
-    const path = op.path.split('/');
-
-    while (path.length > 1) {
-        holder = holder[path.shift()];
-    }
-    const index = path[0];
-
-    if (op.op === 'replace') {
-        holder[index] = op.value;
-    } else if (op.op === 'add') {
-        if (Array.isArray(holder)) {
-            (/**@type{object[]}*/(holder)).splice(parseInt(index), 0, op.value);
-        } else {
-            holder[index] = op.value;
-        }
-    } else if (op.op === 'remove') {
-        if (Array.isArray(holder)) {
-            (/**@type{object[]}*/(holder)).splice(parseInt(index), 1);
-        } else {
-            delete holder[index];
-        }
-    }
-}
+export const applyJSONPatchOperation = _applyJSONPatchOperation;
 
 /**
  * @param {{'':*}} holder

@@ -1,7 +1,7 @@
 /** @import { JSONSchema } from "../formchen/types" */
 
 import { createFormChen } from "../formchen/formchen.js"
-import { bindDemoTabs } from "../demo/utils.js";
+import { bindDemoTabs, fetchFactory } from "../demo/utils.js";
 
 /** @type{JSONSchema} */
 const schema = {
@@ -19,7 +19,7 @@ const schema = {
             }
         }
     },
-    title: 'BasicDemo',
+    title: 'RoundtripDemo',
     type: 'object',
     properties: {
         _id: {
@@ -86,27 +86,28 @@ document.getElementById('Patch').onclick = async () => {
     }
 
     let body = { _id: formchen.value['_id'], patch: patch }
-    const response = await fetch('/plant.json', { method: 'PATCH', body: JSON.stringify(body) });
+    const response = await fetchFactory()('/plant.json', { method: 'PATCH', body: JSON.stringify(body) });
     console.log(response)
-    if (response.status == 409) {
-        validationElement.textContent = `${response.statusText}: Please reload page!`;
+    if (!response.ok) {
+        validationElement.textContent = `${response.statusText} ${response.status}: Cannot PATCH from ${location.hostname}`;
+        if (response.status == 409) {
+            validationElement.textContent += ': Please reload page!';
+        }
         return
     }
     const data = await response.json();
     formchen.patchMerge(data.patch);
 }
 
-const response = await fetch('/plant.json');
+const response = await fetchFactory()('/plant.json');
 if (!response.ok) {
-    let validation = response.statusText;
-    if (location.hostname.endsWith('github.io')) {
-        validation += `: This page does not load from ${location.hostname}`;
-    }
-    validationElement.textContent = validation;
+    validationElement.textContent = `${response.statusText} ${response.status}: Cannot GET from ${location.hostname}`;
 } else {
     let plant = await response.json();
     formchen.value = plant;
 }
+
+
 
 
 

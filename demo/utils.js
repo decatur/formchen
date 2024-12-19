@@ -1,6 +1,7 @@
 /** @import { F1Type } from "../formchen/utils.js" */
-/** @import { JSONPatch } from "../formchen/private-types.js" */
+/** @import { JSONPatch } from "../formchen/types.js" */
 
+import { applyJSONPatchOperation } from "../formchen/utils.js";
 let scripts = Array(...document.body.getElementsByTagName('script'));
 
 /**
@@ -110,7 +111,7 @@ export async function bindDemoTabs(someElement, schema, valueCallback, patchCall
 
     appendRadio('Patch').onchange = () => showCode(() => {
         let patch = patchCallback();
-        codeElement.textContent = patch.length?REPR.stringify(patch, null, 2):'Patch is empty unless you make edits';
+        codeElement.textContent = patch.length ? REPR.stringify(patch, null, 2) : 'Patch is empty unless you make edits';
     })
 
     appendRadio('Script').onchange = () => showCode(() => {
@@ -138,7 +139,6 @@ export async function bindDemoTabs(someElement, schema, valueCallback, patchCall
     script = script.replaceAll(/(schema|data) = ([^;]*)/g, '$1 = {...}');
 
 }
-
 
 /**
  * Same as the global JSON object, but representation is JavaScript, not JSON.
@@ -197,4 +197,70 @@ const REPR = {
         return out.join('')
     }
 };
+
+/**
+ * @param{string} _input
+ * @param{RequestInit=} init
+ * @returns{Promise<Response>}
+ */
+export async function fakeFetch(_input, init) {
+    let plant = JSON.parse(window.localStorage.getItem('plant'));
+    if (plant == null) {
+        plant = {
+            "_id": '4711',
+            "plant": 'Rubus idaeus',
+            "reference": 'https://en.wikipedia.org/wiki/Rubus_idaeus',
+            "observer": 'Frida Krum',
+            "start": '2019-01-01T00:00Z',
+            "latitude": 41.40338,
+            "longitude": 2.17403,
+            "measurements": [
+                ["2019-01-01T00:00Z", 0, 0],
+                ["2019-02-01T00:00Z", 1, 2.3],
+                ["2019-03-01T00:00Z", 2, 4]
+            ],
+            "isCompleted": true
+        }
+    }
+
+    let response;
+    if (!init || init.method == 'GET') {
+        response = {
+            ok: true, statusText: 'Ok', status: 200,
+            json: async () => { return plant }
+        }
+    } else {
+        const payload = JSON.parse(String(init.body));
+        if (payload._id == plant._id) {
+            for (const operation of payload['patch']) {
+                applyJSONPatchOperation({ '': plant }, operation);
+            }
+            plant._id = String(Number(plant._id) + 1);
+            window.localStorage.setItem('plant', JSON.stringify(plant));
+            response = {
+                ok: true, statusText: 'Ok', status: 200,
+                json: async () => { return { "patch": [{ "op": "replace", "path": "/_id", "value": plant._id }] } }
+            }
+        } else {
+            response = {
+                ok: false, statusText: 'Conflict', status: 409,
+                json: async () => { return { "patch": [{ "op": "replace", "path": "", "value": plant }] } }
+            }
+        }
+    }
+
+    return /** @type{Response} */(response)
+}
+
+const useFakeServerElement = /** @type{HTMLInputElement} */(document.getElementById('fake_server'));
+if (useFakeServerElement) {
+    useFakeServerElement.checked = !(window.localStorage.getItem('useFakeServer') == 'false');
+    useFakeServerElement.onchange = () => {
+        window.localStorage.setItem('useFakeServer', String(useFakeServerElement.checked));
+    }
+}
+
+export function fetchFactory() {
+    return (useFakeServerElement?.checked)?fakeFetch:fetch
+}
 
