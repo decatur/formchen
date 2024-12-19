@@ -62,7 +62,7 @@ npm install -g typescript
 http://127.0.0.1:3000/index.html?loglevel=info&console=true
 ```
 
-# Deployment
+# CDN Deployment
 
 To provide FormChen through `cdn.jsdelivr.net`, tag and push the release:
 
@@ -70,6 +70,17 @@ To provide FormChen through `cdn.jsdelivr.net`, tag and push the release:
 git tag 1.0.1 main
 git push origin 1.0.1
 curl --head https://cdn.jsdelivr.net/gh/decatur/formchen@1.0.1/formchen/formchen.js
+```
+
+# Copy Deployment
+
+```
+release=1.0.3
+target_dist_dir=MyPublicWebDir/formchen-$release
+curl -sSL "https://github.com/decatur/formchen/archive/refs/tags/$release.zip" -o /tmp/formchen.zip
+unzip /tmp/formchen.zip -d /tmp
+mv /tmp/formchen-$release/formchen $target_dist_dir
+rm /tmp/formchen-$release /tmp/formchen.zip
 ```
 
 # References
