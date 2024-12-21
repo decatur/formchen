@@ -1021,7 +1021,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         const actions = [
             [['Key'], 'Action'],
             [['Ctrl', 'Z'], 'Undo last transaction'],
-            [['Ctrl', 'Y'], 'Redo, reverse last undo'],
+            // [['Ctrl', 'Y'], 'Redo, reverse last undo'],
             [['Arrows'], 'Move active cell up/down/left/right (not in edit mode)'],
             [['Tab'], 'Move active cell right (non-rolling)'],
             [['Enter'], 'Move active cell down (non-rolling)'],

@@ -639,6 +639,7 @@ export const undo = {
          */
         document.body.onkeydown = (evt) => {
             if (evt.key === 'z' && evt.ctrlKey) {
+                // Because we pop here, redo() below does not work.
                 let tm = undo.transactionManagerQueue.pop();
                 if (!tm) return;
                 evt.preventDefault();

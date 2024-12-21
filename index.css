@@ -29,7 +29,7 @@ body {
     background-color: Canvas;
 }
 
-code {
+.codeTab {
     visibility: hidden;
     position: absolute;
     left: 0;
@@ -45,10 +45,6 @@ code {
 .tabs {
     margin-left: -1em;
     margin-bottom: 1ex;
-}
-
-.tabs code {
-    display: none;
 }
 
 .tabs input {

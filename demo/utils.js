@@ -124,6 +124,7 @@ export async function bindDemoTabs(someElement, schema, valueCallback, patchCall
     tabContainer.style.position = 'relative';
     tabContainer.appendChild(someElement);
     let codeElement = document.createElement('code');
+    codeElement.className = 'codeTab';
     tabContainer.appendChild(codeElement);
     container.appendChild(tabContainer);
 
