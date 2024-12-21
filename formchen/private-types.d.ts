@@ -122,6 +122,7 @@ export interface MatrixView {
     sort: (colIndex: number) => void;
     // TODO: Return the patched object as of getModel()?
     applyJSONPatch: (patch: JSONPatch) => void;
+    pathToIndex: (path: string) => [number, number];
     updateHolder: () => Patch;
 }
 

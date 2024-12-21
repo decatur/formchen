@@ -974,26 +974,17 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     /**
      * @param {Patch} patch
      */
-    function tmListener(patch) {
+    function applyPatch(patch) {
         if (patch.operations.length == 0) return
 
         viewModel.applyJSONPatch(patch.operations);
         // TODO: What is this for?
         viewModel.updateHolder();
-        let data = viewModel.getModel();
-        let rowIndex;
-        let columnIndex;
-        if (typeof data === 'object' && !Array.isArray(data)) {
-            // TODO: Delegate this to the view Model
-            // Map "/timestamp/11" => rowIndex=11, columnIndex=1
-            let [columnKey, ri] = patch.operations[0].path.split('/').slice(1);
-            rowIndex = Number(ri);
-            columnIndex = Object.keys(data).indexOf(columnKey);
-        } else {
-            // Map "/47/11" => rowIndex=47, columnIndex=11
-            [rowIndex, columnIndex] = patch.operations[0].path.split('/').slice(1).map(item => Number(item));
-        }
+
+        let [rowIndex, columnIndex] = viewModel.pathToIndex(patch.operations[0].path);
+        // console.log(patch.operations[0], rowIndex, columnIndex)
         selection.setRange(rowIndex, columnIndex, 1, 1);
+
         // TODO: refresh on transaction level!
         refresh();
     }
@@ -1006,7 +997,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     function createPatch(operations, pathPrefix) {
         class MyPatch extends Patch {
             apply() {
-                tmListener(this)
+                applyPatch(this)
             }
         }
 

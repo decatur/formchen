@@ -7,7 +7,7 @@
 
 /** @import { Interval, Selection as ISelection, GridSelectionAbstraction, Range as IRange } from "../private-types" */
 
-import {logger, wrap} from "../utils.js";
+import { logger, wrap } from "../utils.js";
 
 /**
  * A rectangular area.
@@ -73,11 +73,11 @@ export class Range {
      */
     intersect(other) {
         const row = intersectInterval(
-            {min: this.rowIndex, sup: this.rowIndex + this.rowCount},
-            {min: other.rowIndex, sup: other.rowIndex + other.rowCount});
+            { min: this.rowIndex, sup: this.rowIndex + this.rowCount },
+            { min: other.rowIndex, sup: other.rowIndex + other.rowCount });
         const col = intersectInterval(
-            {min: this.columnIndex, sup: this.columnIndex + this.columnCount},
-            {min: other.columnIndex, sup: other.columnIndex + other.columnCount});
+            { min: this.columnIndex, sup: this.columnIndex + this.columnCount },
+            { min: other.columnIndex, sup: other.columnIndex + other.columnCount });
         if (col === undefined || row === undefined) {
             // TODO: Return empty range.
             return undefined
@@ -121,33 +121,33 @@ export class Range {
         {
             const other = /**@type{Range}*/(foo);
 
-        // Partition into four rectangles left, top, bottom and right strip.
-        // Example: hole in the middle
-        // this - other
-        // ###   ...   ###   ltr
-        // ### - .#. = #.# = l.r = [l, t, b, r]
-        // ###   ...   ###   lbr
+            // Partition into four rectangles left, top, bottom and right strip.
+            // Example: hole in the middle
+            // this - other
+            // ###   ...   ###   ltr
+            // ### - .#. = #.# = l.r = [l, t, b, r]
+            // ###   ...   ###   lbr
 
-        let result = [];
-        const l = new Range(this.rowIndex, this.columnIndex, this.rowCount, other.columnIndex - this.columnIndex);
-        if (!l.isEmpty()) {
-            result.push(l)
-        }
-        const t = new Range(this.rowIndex, other.columnIndex, other.rowIndex - this.rowIndex, other.columnCount);
-        if (!t.isEmpty()) {
-            result.push(t.clone())
-        }
-        const b = new Range(other.rowIndex + other.rowCount, other.columnIndex, this.rowCount - t.rowCount - other.rowCount, other.columnCount);
-        if (!b.isEmpty()) {
-            result.push(b.clone())
-        }
-        const r = new Range(this.rowIndex, other.columnIndex + other.columnCount, this.rowCount, this.columnCount - l.columnCount - other.columnCount);
-        if (!r.isEmpty()) {
-            result.push(r.clone())
-        }
+            let result = [];
+            const l = new Range(this.rowIndex, this.columnIndex, this.rowCount, other.columnIndex - this.columnIndex);
+            if (!l.isEmpty()) {
+                result.push(l)
+            }
+            const t = new Range(this.rowIndex, other.columnIndex, other.rowIndex - this.rowIndex, other.columnCount);
+            if (!t.isEmpty()) {
+                result.push(t.clone())
+            }
+            const b = new Range(other.rowIndex + other.rowCount, other.columnIndex, this.rowCount - t.rowCount - other.rowCount, other.columnCount);
+            if (!b.isEmpty()) {
+                result.push(b.clone())
+            }
+            const r = new Range(this.rowIndex, other.columnIndex + other.columnCount, this.rowCount, this.columnCount - l.columnCount - other.columnCount);
+            if (!r.isEmpty()) {
+                result.push(r.clone())
+            }
 
-        return result
-    }
+            return result
+        }
     }
 }
 
@@ -222,6 +222,10 @@ export function createSelection(uiRefresher, grid) {
          * @param {number} columnCount 
          */
         setRange(rowIndex, columnIndex, rowCount, columnCount) {
+            console.assert(Number.isInteger(rowIndex) && rowIndex >= 0);
+            console.assert(Number.isInteger(columnIndex) && columnIndex >= 0);
+            console.assert(Number.isInteger(rowCount) && rowCount > 0);
+            console.assert(Number.isInteger(columnCount) && columnCount > 0);
             if (this.areas) {
                 this.hide();
             }
@@ -412,7 +416,7 @@ function intersectInterval(i1, i2) {
     if (sup <= min) {
         return undefined;
     }
-    return {min, sup}
+    return { min, sup }
 }
 
 /**
@@ -423,7 +427,7 @@ function intersectInterval(i1, i2) {
  * @param {IndexToPixelMapper} indexMapper
  */
 function _startSelection(evt, selection, cellParent, indexMapper) {
-    let {rowIndex, columnIndex} = indexMapper.pixelCoordsToCellIndex(evt.clientX, evt.clientY);
+    let { rowIndex, columnIndex } = indexMapper.pixelCoordsToCellIndex(evt.clientX, evt.clientY);
 
     let current = new Range(rowIndex, columnIndex, 1, 1);
     const initial = current.clone();
@@ -489,7 +493,7 @@ function _startSelection(evt, selection, cellParent, indexMapper) {
      */
     function onmousemove(evt) {
         selection.uiRefresher(current, false);
-        let {rowIndex, columnIndex} = indexMapper.pixelCoordsToCellIndex(evt.clientX, evt.clientY);
+        let { rowIndex, columnIndex } = indexMapper.pixelCoordsToCellIndex(evt.clientX, evt.clientY);
         logger.info(`onmousemove ${rowIndex} ${columnIndex}`);
         pilot.setBounds(rowIndex, columnIndex, 1, 1);
         convexHull(current, [initial, pilot]);
@@ -540,7 +544,7 @@ export class IndexToPixelMapper {
         let clientY = y + rect.y;
         let x = ((columnIndex === 0 ? 0 : this.columnEnds[columnIndex - 1]) + this.columnEnds[columnIndex]) / 2;
         let clientX = x + rect.x;
-        return {clientX, clientY}
+        return { clientX, clientY }
     }
 
     /**
@@ -558,12 +562,12 @@ export class IndexToPixelMapper {
         const rowIndex = this.firstRow + Math.trunc(y / this.rowHeight);
 
         let columnIndex = this._columnIndexGuess;
-        if (this.columnEnds[columnIndex] > x && (columnIndex === 0 || this.columnEnds[columnIndex-1]<=x)) {
+        if (this.columnEnds[columnIndex] > x && (columnIndex === 0 || this.columnEnds[columnIndex - 1] <= x)) {
             // our guess is correct
         } else if (this.columnEnds[columnIndex] <= x) {
             // Our guess is too small, so increment until we find desired index.
             const colCount = this.columnEnds.length;
-            for (;columnIndex < colCount; columnIndex++) {
+            for (; columnIndex < colCount; columnIndex++) {
                 if (this.columnEnds[columnIndex] > x) {
                     break;
                 }
@@ -572,12 +576,12 @@ export class IndexToPixelMapper {
         } else {
             // Our guess is too big, so decrement until we find desired index.
             for (; columnIndex > 0; columnIndex--) {
-                if (this.columnEnds[columnIndex-1] <= x) {
+                if (this.columnEnds[columnIndex - 1] <= x) {
                     break;
                 }
             }
             this._columnIndexGuess = columnIndex;
         }
-        return {rowIndex, columnIndex}
+        return { rowIndex, columnIndex }
     }
 }

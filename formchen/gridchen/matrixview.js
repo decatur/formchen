@@ -165,7 +165,7 @@ function createColumSchemas(schemas) {
  * @param {Object.<string, Object>} properties
  * @returns {[string, object][]}
  */
-function sortedColumns(properties) {
+function columnList(properties) {
     // Note that the insert order is only stable if no key is a (positive) integer, 
     // see also https://stackoverflow.com/a/79186747/570118
     const keys = Object.keys(properties);
@@ -316,6 +316,14 @@ class MatrixViewClass {
      * @param {JSONPatch} _patch
      */
     applyJSONPatch(_patch) {
+        throw ABSTRACT_METHOD;
+    }
+
+    /**
+     * @param {string} path 
+     * @returns {[number, number]}
+     */
+    pathToIndex(path) {
         throw ABSTRACT_METHOD;
     }
 
@@ -594,6 +602,17 @@ export function createRowMatrixView(jsonSchema, rows) {
         applyJSONPatch(patch) {
             rows = /**@type{object[]}*/ (applyJSONPatch(rows, patch));
         }
+
+        /**
+         * @param {string} path 
+         * @returns {[number, number]} [rowIndex, columnIndex]
+         */
+        pathToIndex(path) {
+            // Example: path = '/13/42'
+            let [rowIndex, columnIndex] = path.split('/').slice(1).map(item => Number(item));
+            if (columnIndex == undefined) columnIndex = 0;
+            return [rowIndex, columnIndex]
+        }
     }
 
     return new RowMatrixView();
@@ -606,12 +625,13 @@ export function createRowMatrixView(jsonSchema, rows) {
  */
 export function createRowObjectsView(jsonSchema, rows) {
 
-    const entries = sortedColumns(jsonSchema.items['properties']);
+    const entries = columnList(jsonSchema.items['properties']);
     const columnSchemas = entries.map(function (e) {
         e[1].title = e[1].title || e[0];
         return e[1]
     });
-    const ids = entries.map(e => e[0]);
+    const columnIds = entries.map(e => e[0]);
+    const columnIndexById = Object.fromEntries(columnIds.map((e, index) => [e, index]));
     const rowStyles = new Array(rows ? rows.length : 0);
     const schemas = createColumSchemas(columnSchemas);
 
@@ -619,7 +639,7 @@ export function createRowObjectsView(jsonSchema, rows) {
     const schema = {
         title: jsonSchema.title,
         columnSchemas: schemas,
-        ids,
+        ids: columnIds,
         readOnly: readOnly(jsonSchema)
     };
 
@@ -681,7 +701,7 @@ export function createRowObjectsView(jsonSchema, rows) {
          */
         getCell(rowIndex, colIndex) {
             if (!rows || !rows[rowIndex]) return null;
-            return rows[rowIndex][ids[colIndex]];
+            return rows[rowIndex][columnIds[colIndex]];
         }
 
         /**
@@ -708,7 +728,7 @@ export function createRowObjectsView(jsonSchema, rows) {
                 patch.push({ op: 'replace', path: `/${rowIndex}`, value: {} });
             }
 
-            const key = ids[colIndex];
+            const key = columnIds[colIndex];
             const oldValue = rows[rowIndex][key];
             if (value == null && oldValue == null) {
                 // No Op
@@ -746,7 +766,7 @@ export function createRowObjectsView(jsonSchema, rows) {
          */
         sort(colIndex) {
             let sortDirection = updateSortDirection(schemas, colIndex);
-            rows.sort((row1, row2) => schemas[colIndex].compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
+            rows.sort((row1, row2) => schemas[colIndex].compare(row1[columnIds[colIndex]], row2[columnIds[colIndex]]) * sortDirection);
         }
 
         /**
@@ -758,7 +778,7 @@ export function createRowObjectsView(jsonSchema, rows) {
             for (let rowIndex = startRowIndex; rowIndex < rows.length; rowIndex++) {
                 const row = rows[rowIndex];
                 // TODO: Must not use String, but converter.toEditable()
-                for (const [columnIndex, id] of ids.entries()) {
+                for (const [columnIndex, id] of columnIds.entries()) {
                     if (search(pattern, row[id])) {
                         return [rowIndex, columnIndex]
                     }
@@ -772,6 +792,21 @@ export function createRowObjectsView(jsonSchema, rows) {
          */
         applyJSONPatch(patch) {
             rows = /**@type{object[]}*/ (applyJSONPatch(rows, patch));
+        }
+
+        /**
+         * @param {string} path 
+         * @returns {[number, number]} [rowIndex, columnIndex]
+         */
+        pathToIndex(path) {
+            // Example: path = '/13/columnId'
+            let [rowIndex, columnId] = path.split('/').slice(1);
+            if (columnId == undefined) return [Number(rowIndex), 0];
+
+            let columnIndex = columnIndexById[columnId];
+            if (columnIndex == undefined) throw Error(`Invalid path ${path}`);
+            return [Number(rowIndex), columnIndex]
+
         }
     }
 
@@ -951,6 +986,17 @@ export function createColumnMatrixView(jsonSchema, columns) {
         applyJSONPatch(patch) {
             columns = /**@type{object[]}*/ (applyJSONPatch(columns, patch));
         }
+
+        /**
+         * @param {string} path 
+         * @returns {[number, number]} [rowIndex, columnIndex]
+         */
+        pathToIndex(path) {
+            // Example: path = '/42/13'
+            let [columnIndex, rowIndex] = path.split('/').slice(1).map(item => Number(item));
+            if (rowIndex == undefined) rowIndex = 0;
+            return [rowIndex, columnIndex]
+        }
     }
 
     return new ColumnMatrixView();
@@ -963,10 +1009,11 @@ export function createColumnMatrixView(jsonSchema, columns) {
 export function createColumnObjectView(jsonSchema, columns) {
     // Object of columns.
 
-    const entries = sortedColumns(jsonSchema.properties);
+    const entries = columnList(jsonSchema.properties);
     const columnSchemas = [];
     for (const entry of entries) {
         const property = entry[1];
+        /** @type{JSONSchema} */
         const colSchema = property.items;
         if (typeof colSchema !== 'object') {
             // TODO: Be much more strict!
@@ -978,7 +1025,8 @@ export function createColumnObjectView(jsonSchema, columns) {
         columnSchemas.push(colSchema);
     }
 
-    const ids = entries.map(e => e[0]);
+    const columnIds = entries.map(e => e[0]);
+    const columnIndexById = Object.fromEntries(columnIds.map((e, index) => [e, index]));
     const rowStyles = new Array(getRowCount());
     let schemas = createColumSchemas(columnSchemas);
 
@@ -986,7 +1034,7 @@ export function createColumnObjectView(jsonSchema, columns) {
     const schema = {
         title: jsonSchema.title,
         columnSchemas: schemas,
-        ids,
+        ids: columnIds,
         readOnly: readOnly(jsonSchema)
     };
 
@@ -1057,7 +1105,7 @@ export function createColumnObjectView(jsonSchema, columns) {
          * @returns {*}
          */
         getCell(rowIndex, colIndex) {
-            const key = ids[colIndex];
+            const key = columnIds[colIndex];
             if (!columns || !columns[key]) return null;
             return columns[key][rowIndex];
         }
@@ -1072,7 +1120,7 @@ export function createColumnObjectView(jsonSchema, columns) {
         setCell(rowIndex, colIndex, value, validation) {
             /** @type{JSONPatch} */
             let patch = [];
-            const key = ids[colIndex];
+            const key = columnIds[colIndex];
 
             if (!columns) {
                 /**
@@ -1117,7 +1165,7 @@ export function createColumnObjectView(jsonSchema, columns) {
             /** @type{JSONPatch} */
             let patch = [];
             // TODO: Object.values and sort index?
-            ids.forEach(function (key) {
+            columnIds.forEach(function (key) {
                 const column = columns[key];
                 if (!column) {
                     return
@@ -1133,13 +1181,13 @@ export function createColumnObjectView(jsonSchema, columns) {
          * @param {number} colIndex
          */
         sort(colIndex) {
-            const key = ids[colIndex];
+            const key = columnIds[colIndex];
             let sortDirection = updateSortDirection(schemas, colIndex);
             const indexes = columns[key].map((value, rowIndex) => [value, rowIndex]);
 
             indexes.sort((a, b) => schemas[colIndex].compare(a[0], b[0]) * sortDirection);
 
-            ids.forEach(function (key) {
+            columnIds.forEach(function (key) {
                 const sortedColumn = Array();
                 const column = columns[key];
                 if (!column) return;
@@ -1158,7 +1206,7 @@ export function createColumnObjectView(jsonSchema, columns) {
         search(startRowIndex, pattern) {
             const rowCount = getRowCount();
             for (let rowIndex = startRowIndex; rowIndex < rowCount; rowIndex++) {
-                for (let columnIndex = 0; columnIndex < ids.length; columnIndex++) {
+                for (let columnIndex = 0; columnIndex < columnIds.length; columnIndex++) {
                     const value = this.getCell(rowIndex, columnIndex);
                     if (search(pattern, value)) {
                         return [rowIndex, columnIndex]
@@ -1173,6 +1221,20 @@ export function createColumnObjectView(jsonSchema, columns) {
          */
         applyJSONPatch(patch) {
             columns = applyJSONPatch(columns, patch);
+        }
+
+        /**
+         * @param {string} path 
+         * @returns {[number, number]} [rowIndex, columnIndex]
+         */
+        pathToIndex(path) {
+            // Example: path = '/foo/1'
+            let [columnId, rowIndex] = path.split('/').slice(1);
+            if (rowIndex == undefined) rowIndex = '0';
+
+            let colIndex = columnIndexById[columnId];
+            if (colIndex == undefined) throw Error(`Invalid path ${path}`);
+            return [Number(rowIndex), colIndex]
         }
     }
 
@@ -1335,6 +1397,15 @@ export function createColumnVectorView(jsonSchema, column) {
 
         applyJSONPatch(patch) {
             column = /**@type{(number|string|boolean|null)[]}*/ (applyJSONPatch(column, patch));
+        }
+
+        /**
+         * @param {string} path 
+         * @returns {[number, number]} [rowIndex, columnIndex]
+         */
+        pathToIndex(path) {
+            // Example: path=/13
+            return [Number(path.substring(1)), 0]
         }
     }
 

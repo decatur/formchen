@@ -225,6 +225,11 @@ test('RowObjectsView', (path) => {
 
     testView(schema, createModel, emptyModel);
 
+    test(path.concat('pathToIndex'), () => {
+        const view = createView(schema, null);
+        assert.equal(view.pathToIndex('/13/c2'), [13, 1]);
+    });
+
     test(path.concat('sort'), (path) => {
         const rowMatrix = [{ c1: 1, c2: 'b' }, { c1: NaN }, { c1: 3, c2: 'c' }, { c1: 2, c2: 'a' }];
         const rowView = createView(schema, rowMatrix);
@@ -253,6 +258,11 @@ test('ColumnMatrixView', (path) => {
     };
 
     testView(schema, createModel, emptyModel);
+
+    test(path.concat('pathToIndex'), () => {
+        const view = createView(schema, null);
+        assert.equal(view.pathToIndex('/42/13'), [13, 42]);
+    });
 
     test(path.concat('sort'), () => {
         const model = [[1, NaN, 3, 2], ['b', null, 'c', 'a']];
@@ -285,6 +295,11 @@ test('ColumnObjectView', (path) => {
 
     testView(schema, createModel, emptyModel);
 
+    test(path.concat('pathToIndex'), () => {
+        const view = createView(schema, null);
+        assert.equal(view.pathToIndex('/col2/13'), [13, 1]);
+    });
+
     test(path.concat('sort'), () => {
         const model = {
             col1: [1, NaN, 3, 2],
@@ -312,6 +327,11 @@ test('ColumnVectorView', (path) => {
     };
 
     testView(schema, createModel, emptyModel);
+
+    test(path.concat('pathToIndex'), () => {
+        const view = createView(schema, null);
+        assert.equal(view.pathToIndex('/13'), [13, 0]);
+    });
 
     test(path.concat('sort'), () => {
         const column = [1, NaN, 3, 2];
