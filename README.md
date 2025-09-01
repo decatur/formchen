@@ -27,8 +27,6 @@ Check [demo page](https://decatur.github.io/formchen/index.html) with both light
 
 ```
 export PYTHONPATH=demo; python -m py_server 8081 $(pwd)
-# or
-node demo/js_server/server.js 8081 $(pwd)
 ```
 
 ```

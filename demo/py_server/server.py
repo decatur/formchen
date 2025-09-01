@@ -60,7 +60,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.flush()
 
     def do_GET(self):
-        path = str(served_root_folder + self.path)
+        path = str(served_root_folder + self.path.split('?')[0])
         print('Serving file ' + path)
         
         if path.endswith(".html"):
