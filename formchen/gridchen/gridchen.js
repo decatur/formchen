@@ -738,6 +738,7 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         window.console.assert(evt.deltaMode === evt.DOM_DELTA_LINE);
         // Excel scrolls about 3 lines per wheel tick.
         let newFirstRow = firstRow + 3 * Math.sign(evt.deltaY);
+        logger.info('onmousewheel ' + newFirstRow + ' ' + rowCount);
         if (newFirstRow >= 0 && newFirstRow < rowCount) {
             setFirstRow(newFirstRow);
         }
