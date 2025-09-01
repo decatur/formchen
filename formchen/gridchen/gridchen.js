@@ -735,10 +735,10 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
         evt.stopPropagation();
         evt.preventDefault();  // Prevents scrolling of any surrounding HTML element.
 
-        window.console.assert(evt.deltaMode === evt.DOM_DELTA_PIXEL);  // We only support Chrome. FireFox will have evt.deltaMode = 1.
-        // TODO: Chrome seems to always give evt.deltaY +-150 pixels. Why?
+        window.console.assert(evt.deltaMode === evt.DOM_DELTA_LINE);
         // Excel scrolls about 3 lines per wheel tick.
         let newFirstRow = firstRow + 3 * Math.sign(evt.deltaY);
+        logger.info('onmousewheel ' + newFirstRow + ' ' + rowCount);
         if (newFirstRow >= 0 && newFirstRow < rowCount) {
             setFirstRow(newFirstRow);
         }
@@ -1190,9 +1190,10 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
     let pageIncrement = Math.max(1, viewPortRowCount);
 
     /**
-     * @param {number} firstRow 
+     * @param {number} firstRow_ 
      */
-    function setFirstRow(firstRow) {
+    function setFirstRow(firstRow_) {
+        firstRow = firstRow_;
         indexMapper.firstRow = firstRow;
         refreshHeaders();
         selection.hide();
