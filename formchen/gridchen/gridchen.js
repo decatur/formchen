@@ -1193,10 +1193,9 @@ function createGrid(container, viewModel, gridchenElement, tm, pathPrefix, total
      * @param {number} firstRow_ 
      */
     function setFirstRow(firstRow_) {
-        firstRow = firstRow_;
-        indexMapper.firstRow = firstRow;
         refreshHeaders();
         selection.hide();
+        firstRow = indexMapper.firstRow = firstRow_;
         scrollBar.setValue(firstRow);
 
         updateViewportRows(getRangeData(
