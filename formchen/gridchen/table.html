@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.container {
+  border-collapse: collapse;
+  margin: 1ex;
+}
+.container input {
+  background-color: #f1f1f1;
+  border: 1px solid black;
+  text-align: right;
+  width: 15ex;
+}
+thead {
+    position: sticky;
+    top: 0;
+    background-color: #f1f1f1;
+}
+</style>
+</head>
+<body>
+
+<h1>Grid Layout</h1>
+
+<p>A Grid Layout must have a parent element with the <em>display</em> property set to <em>grid</em> or <em>inline-grid</em>.</p>
+
+<p>Direct child element(s) of the grid container automatically becomes grid items.</p>
+
+<div style="width: 60ex; height: 10em; overflow: scroll">
+    <table class="container" >
+    <thead>
+    <tr>
+      <th>Start</th>
+      <th>Name</th>
+      <th>Age</th>
+    </tr>
+  </thead>
+  <tbody id="foo"></tbody>
+    </table>
+</div>
+
+</body>
+
+<script>
+function keyDownHandler(e) {
+  let targetRow = e.target.parentElement.parentElement;
+
+  let rowIndex = [...targetRow.parentElement.childNodes.values()].indexOf(targetRow);
+  let colIndex = [...targetRow.childNodes.values()].indexOf(e.target.parentElement);
+
+  console.log(`logKey ${e.code} ${e.target.value} ${rowIndex} ${colIndex}`);
+  
+  if ( e.code === 'Enter' ) {
+  let position;
+    if (e.shiftKey)
+        position = 'beforebegin';
+    else
+        position = 'afterend';
+    
+    targetRow.insertAdjacentElement(position, createRow());
+    return
+  }
+  
+  if ( e.code === 'ArrowUp' )
+    targetRow = targetRow.previousElementSibling
+  else if ( e.code === 'ArrowDown' )
+    targetRow = targetRow.nextElementSibling
+    
+  if (targetRow !== null) targetRow.childNodes.item(colIndex).firstChild.select()
+}
+
+function createRow() {
+    const tr = document.createElement('tr');
+    for (let j =0; j < 3; j++) { 
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.addEventListener("keydown", keyDownHandler);
+        td.appendChild(input);
+        tr.appendChild(td);
+    }
+    return tr
+}
+
+const container = document.querySelector('#foo');
+
+for (let i =0; i < 20; i++) { 
+    const tr = createRow();
+    for (let j =0; j < 3; j++) { 
+        tr.childNodes.item(j).firstChild.value = i + " " + j;
+    }
+    container.appendChild(tr);
+}
+</script>
+</html>
+
