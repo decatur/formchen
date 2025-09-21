@@ -10,7 +10,9 @@
 import { logger, undo } from "../utils.js";
 
 export const HIDDEN = /** @type{CellEditMode.HIDDEN} */ ('hidden');
+// Indicates that editor was entered by pressing a key on a cell.
 export const INPUT = /** @type{CellEditMode.INPUT} */ ('input');
+// Indicates that editor was entered by pressing F2 or dbl-click the cell.
 export const EDIT = /** @type{CellEditMode.EDIT} */ ('edit');
 
 /**
@@ -152,8 +154,11 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
         logger.info('editor.onkeydown: ' + evt.code);
         if (!(evt.target instanceof HTMLElement)) return
         // Clicking editor should invoke default: move caret. It should not delegate to containers action.
-        //evt.stopPropagation();
         //console.log(`keydownHandler ${evt.target.tagName}`)
+        
+        // We do not want to have any other keydownHandler messing up when we are in editor.
+        evt.stopPropagation();
+        
 
         if (evt.code === 'ArrowLeft' && currentMode === INPUT) {
             evt.preventDefault();

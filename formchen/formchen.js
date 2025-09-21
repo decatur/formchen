@@ -838,7 +838,7 @@ class Control {
         if (this.element) {
             // Case <label><span class="data-info"></span><input name="/plant"></label>
             this.control = this.element.closest('label')
-        } else {
+        } else if (path.length > 0) {
             this.element = document.getElementById(path);
             if (this.element) {
                 // Case <label for="/reference"><span class="data-info"></span></label><input id="/reference">
